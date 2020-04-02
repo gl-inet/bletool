@@ -14,8 +14,8 @@ opkg update
 opkg install gl-bletool
 ```
 Alternatively, you can install using the web UI. Login your router’s web UI using your browser which is http://192.168.8.1 by default. Then go to APPLICATIONS->Plug-ins. First click “Update” to refresh your software repo then search “gl-bletool”. Click “install” and wait until you got “installation successfully”.
-![](./docs/installipk.png)
-![](./docs/installsuccessful.png)
+![](https://github.com/gl-inet/bletool/tree/master/src/docs/installipk.png)
+![](https://github.com/gl-inet/bletool/tree/master/src/docs/installsuccessful.png)
 ### how to use
 BleTool provides the following elements to handle BLE advertising, connection and GATT services.
 - C/C++ APIs: This includes C functions, C header files based on which you can write your own code.
@@ -24,7 +24,7 @@ BleTool provides the following elements to handle BLE advertising, connection an
 Here is example of how to use cli commands.
 ![](./docs/openwrt.png)
 ### API Refrence
-Download and look at the [Bletool manual](https://store.arduino.cc/usa/nano-33-ble-sense-with-headers). It contains all detail about the API and CLI.
+Look at the [Bletool manual](https://github.com/gl-inet/bletool/blob/master/src/docs/BLETOOL%20Commands%20Manual_V0.5.pdf). It contains all detail about the API and CLI.
 
 ## Directory Structure
 ```
