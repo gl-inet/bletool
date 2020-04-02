@@ -1,0 +1,63 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+USE_PROCD=1
+
+start_service() {
+  . /lib/functions.sh
+  board=$(board_name)
+  model="${board#*-}"
+  if [ ! -f "/etc/config/ble" ]; then
+  touch "/etc/config/ble"
+  fi
+
+  if [ $model == s1300 ]; then
+    echo 48 > /sys/class/gpio/export
+    echo out > /sys/class/gpio/gpio48/direction
+    uci set ble.s1300='bleserial'
+    uci set ble.@bleserial[0].port='/dev/ttyHS0'
+    uci set ble.@bleserial[0].baudrate=115200
+    uci set ble.@bleserial[0].flowcontrol=0
+ 	  uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio48/value'
+ 	  uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio48/value'
+  elif [ $model == x750 ]; then
+    echo 1 > /sys/class/gpio/export
+    uci set ble.x750='bleserial'
+    uci set ble.@bleserial[0].port='/dev/ttyS0'
+    uci set ble.@bleserial[0].baudrate=115200
+    uci set ble.@bleserial[0].flowcontrol=0
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio1/value'
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio1/value'
+  elif [ $model == mt300n-v2 ]; then
+    echo 5 > /sys/class/gpio/export
+    echo out > /sys/class/gpio/gpio5/direction
+    uci set ble.mt300nv2='bleserial'
+    uci set ble.@bleserial[0].port='/dev/ttyS1'
+    uci set ble.@bleserial[0].baudrate=115200
+    uci set ble.@bleserial[0].flowcontrol=0
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio5/value'
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio5/value'
+  elif [ $model == e750 ]; then
+    echo 17 > /sys/class/gpio/export
+    uci set ble.e750='bleserial'
+    uci set ble.@bleserial[0].port='/dev/ttyUSB0'
+    uci set ble.@bleserial[0].baudrate=115200
+    uci set ble.@bleserial[0].flowcontrol=0
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio17/value'
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio17/value'
+  elif [ $model == x300b ]; then
+    echo 13 > /sys/class/gpio/export
+    uci set ble.x300b='bleserial'
+    uci set ble.@bleserial[0].port='/dev/ttyS0'
+    uci set ble.@bleserial[0].baudrate=115200
+    uci set ble.@bleserial[0].flowcontrol=0
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio13/value'
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio13/value'
+  fi
+  uci commit ble
+
+  procd_open_instance
+  procd_set_param command "bledaemon"
+  procd_set_param respawn
+  procd_close_instance
+}
