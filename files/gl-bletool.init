@@ -12,14 +12,15 @@ start_service() {
   fi
 
   if [ $model == s1300 ]; then
-    echo 48 > /sys/class/gpio/export
-    echo out > /sys/class/gpio/gpio48/direction
+    [ -n "$(ls -l /sys/class/gpio/gpiochip412 2>/dev/null)" ] && S1300_GPIO=460 || S1300_GPIO=48
+    echo ${S1300_GPIO} > /sys/class/gpio/export
+    echo out > /sys/class/gpio/gpio${S1300_GPIO}/direction
     uci set ble.s1300='bleserial'
-    uci set ble.@bleserial[0].port='/dev/ttyHS0'
+    uci set ble.@bleserial[0].port='/dev/ttyMSM1'
     uci set ble.@bleserial[0].baudrate=115200
     uci set ble.@bleserial[0].flowcontrol=0
- 	  uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio48/value'
- 	  uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio48/value'
+    uci set ble.@bleserial[0].rston="echo 1 > /sys/class/gpio/gpio${S1300_GPIO}/value"
+    uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
   elif [ $model == x750 ]; then
     echo 1 > /sys/class/gpio/export
     uci set ble.x750='bleserial'
