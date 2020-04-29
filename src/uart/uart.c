@@ -378,8 +378,8 @@ static int32_t uartCloseSerial(int32_t handle)
 }
 int clear_uart(void)
 {
-  char a;
-  while (uartRxNonBlocking(1, &a) == 1) {
-  }
+  //char a;
+  //while (uartRxNonBlocking(1, &a) == 1) {
+  //}
   return 0;
 }

@@ -531,3 +531,69 @@ int gl_ble_send_notify(method_handler_t cb,int connection,int char_handle, char*
 
 	return ubus_invoke(ctx, id, "send_notify", b.head, method_callback, NULL, 1000);
 }
+/*DTM test, tx*/
+enum
+{
+	DTM_TX_TYPE,
+	DTM_TX_LENGTH,
+	DTM_TX_CHANNEL,
+	DTM_TX_PHY,
+	DTM_TX_MAX
+};
+static const struct blobmsg_policy dtm_tx_policy[DTM_TX_MAX] = {
+	[DTM_TX_TYPE] = {.name = "dtm_tx_type", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_LENGTH] = {.name = "dtm_tx_length", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_CHANNEL] = {.name = "dtm_tx_channel", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_PHY] = {.name = "dtm_tx_phy", .type = BLOBMSG_TYPE_INT32}
+};
+int gl_ble_dtm_tx(method_handler_t cb, int packet_type,int length, int channel, int phy)
+{
+	if(cb)
+	{
+		method_handler = cb;
+	}
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_TYPE].name, packet_type);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_LENGTH].name, length);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_CHANNEL].name, channel);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_PHY].name, phy);
+
+	return ubus_invoke(ctx, id, "dtm_tx", b.head, method_callback, NULL, 1000);
+}
+/*DTM test, rx*/
+enum
+{
+	DTM_RX_CHANNEL,
+	DTM_RX_PHY,
+	DTM_RX_MAX
+};
+static const struct blobmsg_policy dtm_rx_policy[DTM_RX_MAX] = {
+	[DTM_RX_CHANNEL] = {.name = "dtm_rx_channel", .type = BLOBMSG_TYPE_INT32},
+	[DTM_RX_PHY] = {.name = "dtm_rx_phy", .type = BLOBMSG_TYPE_INT32}
+};
+int gl_ble_dtm_rx(method_handler_t cb, int channel, int phy)
+{
+	if(cb)
+	{
+		method_handler = cb;
+	}
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_CHANNEL].name, channel);
+	blobmsg_add_u32(&b, dtm_tx_policy[DTM_TX_PHY].name, phy);
+
+	return ubus_invoke(ctx, id, "dtm_rx", b.head, method_callback, NULL, 1000);
+}
+/*DTM test, end*/
+int gl_ble_dtm_end(method_handler_t cb)
+{
+	if(cb)
+	{
+		method_handler = cb;
+	}
+
+	blob_buf_init(&b, 0);
+
+	return ubus_invoke(ctx, id, "dtm_end", b.head, method_callback, NULL, 1000);
+}

@@ -1081,6 +1081,172 @@ json_object* silabs_ble_set_notify(int connection,int char_handle,int flag)
     return obj;
 }
 
+json_object* silabs_ble_dtm_tx(int packet_type,int length, int channel, int phy)
+{        
+    clear_uart();
+    json_object* obj = json_object_new_object(); 
+
+    int wait_time = 200; // >10
+    gecko_cmd_test_dtm_tx(packet_type, length, channel, phy);
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_test_dtm_tx_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.rsp_test_dtm_tx.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_test_dtm_tx.result));
+        return obj;       
+    }
+
+    wait_time = 200;
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_evt_test_dtm_completed_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.evt_test_dtm_completed.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.evt_test_dtm_completed.result));
+        return obj;
+    }
+    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"number_of_packets",json_object_new_int(pck.data.evt_test_dtm_completed.number_of_packets));
+
+    return obj;
+}
+
+json_object* silabs_ble_dtm_rx(int channel, int phy)
+{        
+    clear_uart();
+    json_object* obj = json_object_new_object(); 
+
+    int wait_time = 200; // >10
+    gecko_cmd_test_dtm_rx(channel, phy);
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_test_dtm_rx_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.rsp_test_dtm_rx.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_test_dtm_rx.result));
+        return obj;       
+    }
+
+    wait_time = 200;
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_evt_test_dtm_completed_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.evt_test_dtm_completed.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.evt_test_dtm_completed.result));
+        return obj;
+    }
+    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"number_of_packets",json_object_new_int(pck.data.evt_test_dtm_completed.number_of_packets));
+
+    return obj;
+}
+
+json_object* silabs_ble_dtm_end(void)
+{        
+    clear_uart();
+    json_object* obj = json_object_new_object(); 
+
+    int wait_time = 200; // >10
+    gecko_cmd_test_dtm_end();
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_test_dtm_end_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.rsp_test_dtm_end.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_test_dtm_end.result));
+        return obj;       
+    }
+
+    wait_time = 200;
+    if(rx_peek_timeout(wait_time))
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
+    }
+    if(silabs_get_message())
+    {
+        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
+        return obj;
+    }
+    if(BGLIB_MSG_ID(pck.header) != gecko_evt_test_dtm_completed_id)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;       
+    }
+    if(pck.data.evt_test_dtm_completed.result)
+    {
+        json_object_object_add(obj,"code",json_object_new_int(pck.data.evt_test_dtm_completed.result));
+        return obj;
+    }
+    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"number_of_packets",json_object_new_int(pck.data.evt_test_dtm_completed.number_of_packets));
+
+    return obj;
+}
+
+
 void gecko_handle_command(uint32_t hdr, void* data)
 {
     return gecko_handle_command_noresponse(hdr,data);

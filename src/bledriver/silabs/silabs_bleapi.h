@@ -42,5 +42,8 @@ json_object* silabs_ble_set_power(int power);
 json_object* silabs_ble_read_char(int connection,int char_handle);
 json_object* silabs_ble_write_char(int connection,int char_handle,char* value,int write_res);
 json_object* silabs_ble_set_notify(int connection,int char_handle,int flag);
+json_object* silabs_ble_dtm_tx(int packet_type,int length, int channel, int phy);
+json_object* silabs_ble_dtm_rx(int channel, int phy);
+json_object* silabs_ble_dtm_end(void);
 
 #endif

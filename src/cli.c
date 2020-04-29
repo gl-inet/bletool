@@ -472,6 +472,79 @@ int cmd_write_value(int argc, char** argv)
 	
 	return 0;	
 }
+int cmd_dtm_tx(int argc, char** argv)
+{
+	/* Default setting, PRBS9 packet payload, length 20, channel 0, phy 1M PHY*/
+	int ch, packet_type = 0, length = 20, channel = 0, phy =  1;
+	
+	struct option long_options[] ={
+			{"packet_type",			required_argument,	NULL,	't'},
+			{"length",				required_argument,	NULL,	'l'},
+			{"channel",				required_argument,	NULL,	'c'},
+			{"phy",					required_argument,	NULL,	'p'},
+			{0,	0, 0, 0}
+		};
+	int option_index;
+
+	while((ch = getopt_long(argc,argv,"t:l:c:p:",long_options,&option_index)) != -1)
+	{
+		switch(ch)
+		{
+			case 't':
+				packet_type = atoi(optarg);
+				break;
+			case 'l':
+				length = atoi(optarg);
+				break;
+			case 'c':
+				channel = atoi(optarg);
+				break;
+			case 'p':
+				phy = atoi(optarg);
+				break;
+		}
+	}
+
+	gl_ble_dtm_tx(print,packet_type,length,channel,phy);
+
+	return 0;
+}
+int cmd_dtm_rx(int argc, char** argv)
+{
+	/* Default setting, channel 0, phy 1M PHY*/
+	int ch, channel = 0, phy =  1;
+	
+	struct option long_options[] ={
+			{"channel",				required_argument,	NULL,	'c'},
+			{"phy",					required_argument,	NULL,	'p'},
+			{0,	0, 0, 0}
+		};
+	int option_index;
+
+	while((ch = getopt_long(argc,argv,"c:p:",long_options,&option_index)) != -1)
+	{
+		switch(ch)
+		{
+			case 'c':
+				channel = atoi(optarg);
+				break;
+			case 'p':
+				phy = atoi(optarg);
+				break;
+		}
+	}
+
+	gl_ble_dtm_rx(print,channel,phy);
+
+	return 0;
+}
+int cmd_dtm_end(int argc, char** argv)
+{
+
+	gl_ble_dtm_end(print);
+
+	return 0;
+}
 static struct {
 	const char *name;
 	int (*cb)(int argc, char **argv);
@@ -480,7 +553,7 @@ static struct {
 	/* System functions */
 	{"enable",                            cmd_enable,                             "Enable or disable the module"                },
 	{"set_power",                         cmd_set_power,                          "Set the tx power level"                      },
-  	{"local_address",                     cmd_local_address,                        "Get local Bluetooth module public address"   },
+  	{"local_address",                     cmd_local_address,                      "Get local Bluetooth module public address"   },
 	{"listen",                     		  cmd_listen,                        	  "Listen BLE event"   							},
 	/*BLE slave functions */
 	{"adv_data",                          cmd_adv_data,                           "Set adv data"                                },
@@ -497,6 +570,10 @@ static struct {
 	{"set_notify",                        cmd_set_notify,                         "Enable or disable the notifications and indications"},
 	{"read_value",                        cmd_read_value,                         "Read specified characteristic value"         },
 	{"write_value",                       cmd_write_value,                        "Write characteristic value"                  },
+	/*DTM test functions */
+	{"dtm_tx",                       	  cmd_dtm_tx,                        	  "Start transmitter for dtm test"              },
+	{"dtm_rx",                       	  cmd_dtm_rx,                        	  "Start receiver for dtm test"                 },
+	{"dtm_end",                       	  cmd_dtm_end,                            "End a dtm test"                              },
 	{ NULL, NULL, 0 }
 };
 static int usage(void)

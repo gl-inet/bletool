@@ -89,4 +89,13 @@ int gl_ble_stop_adv(method_handler_t cb);
 /*Act as BLE slave, Send Notification*/
 int gl_ble_send_notify(method_handler_t cb,int connection,int char_handle, char* value);
 
+/*DTM test, tx*/
+int gl_ble_dtm_tx(method_handler_t cb, int packet_type,int length, int channel, int phy);
+
+/*DTM test, rx*/
+int gl_ble_dtm_rx(method_handler_t cb, int channel, int phy);
+
+/*DTM test, end*/
+int gl_ble_dtm_end(method_handler_t cb);
+
 #endif

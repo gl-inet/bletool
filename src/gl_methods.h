@@ -42,6 +42,9 @@
 #define ble_read_char                   silabs_ble_read_char
 #define ble_write_char                  silabs_ble_write_char
 #define ble_set_notify                  silabs_ble_set_notify
+#define ble_dtm_tx                      silabs_ble_dtm_tx
+#define ble_dtm_rx                      silabs_ble_dtm_rx
+#define ble_dtm_end                     silabs_ble_dtm_end
 
 #endif
 

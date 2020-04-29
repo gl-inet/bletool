@@ -515,6 +515,87 @@ static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct
 	return 0;
 }
 
+/* DTM test functions, TX*/
+enum
+{
+	DTM_TX_TYPE,
+	DTM_TX_LENGTH,
+	DTM_TX_CHANNEL,
+	DTM_TX_PHY,
+	DTM_TX_MAX
+};
+static const struct blobmsg_policy dtm_tx_policy[DTM_TX_MAX] = {
+	[DTM_TX_TYPE] = {.name = "dtm_tx_type", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_LENGTH] = {.name = "dtm_tx_length", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_CHANNEL] = {.name = "dtm_tx_channel", .type = BLOBMSG_TYPE_INT32},
+	[DTM_TX_PHY] = {.name = "dtm_tx_phy", .type = BLOBMSG_TYPE_INT32}
+};
+static int dtm_tx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
+{
+    uloop_fd_delete(&serial_fd);
+
+	struct blob_attr *tb[DTM_TX_MAX];
+	blobmsg_parse(dtm_tx_policy, DTM_TX_MAX, tb, blob_data(msg), blob_len(msg));
+	int dtm_tx_type = blobmsg_get_u32(tb[DTM_TX_TYPE]);
+	int dtm_tx_length = blobmsg_get_u32(tb[DTM_TX_LENGTH]);
+	int dtm_tx_channel = blobmsg_get_u32(tb[DTM_TX_CHANNEL]);
+	int dtm_tx_phy = blobmsg_get_u32(tb[DTM_TX_PHY]);
+	json_object* output = ble_dtm_tx(dtm_tx_type,dtm_tx_length,dtm_tx_channel,dtm_tx_phy);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_object(&b, output);
+	ubus_send_reply(ctx, req, b.head);
+	json_object_put(output);
+
+	uloop_fd_add(&serial_fd, ULOOP_READ);
+	return 0;
+}
+/* DTM test functions, RX */
+enum
+{
+	DTM_RX_CHANNEL,
+	DTM_RX_PHY,
+	DTM_RX_MAX
+};
+static const struct blobmsg_policy dtm_rx_policy[DTM_RX_MAX] = {
+	[DTM_RX_CHANNEL] = {.name = "dtm_rx_channel", .type = BLOBMSG_TYPE_INT32},
+	[DTM_RX_PHY] = {.name = "dtm_rx_phy", .type = BLOBMSG_TYPE_INT32}
+};
+static int dtm_rx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
+{
+    uloop_fd_delete(&serial_fd);
+
+	struct blob_attr *tb[DTM_RX_MAX];
+	blobmsg_parse(dtm_rx_policy, DTM_RX_MAX, tb, blob_data(msg), blob_len(msg));
+	int dtm_rx_channel = blobmsg_get_u32(tb[DTM_RX_CHANNEL]);
+	int dtm_rx_phy = blobmsg_get_u32(tb[DTM_RX_PHY]);
+	json_object* output = ble_dtm_rx(dtm_rx_channel,dtm_rx_phy);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_object(&b, output);
+	ubus_send_reply(ctx, req, b.head);
+	json_object_put(output);
+
+	uloop_fd_add(&serial_fd, ULOOP_READ);
+	return 0;
+}
+/* DTM test functions, end */
+
+static int dtm_end(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
+{
+    uloop_fd_delete(&serial_fd);
+
+	json_object* output = ble_dtm_end();
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_object(&b, output);
+	ubus_send_reply(ctx, req, b.head);
+	json_object_put(output);
+
+	uloop_fd_add(&serial_fd, ULOOP_READ);
+	return 0;
+}
+
 /* BLE methods */
 static struct ubus_method ble_methods[] = 
 {
@@ -538,6 +619,11 @@ static struct ubus_method ble_methods[] =
 	UBUS_METHOD("adv_data", adv_data, adv_data_policy),
 	UBUS_METHOD_NOARG("stop_adv", stop_adv),
 	UBUS_METHOD("send_notify", send_notify, send_noti_policy),
+
+	/*Test*/
+	UBUS_METHOD("dtm_tx", dtm_tx, dtm_tx_policy),
+	UBUS_METHOD("dtm_rx", dtm_rx, dtm_rx_policy),
+	UBUS_METHOD_NOARG("dtm_end", dtm_end),
 };
 
 static struct ubus_object_type ble_obj_type = UBUS_OBJECT_TYPE("ble", ble_methods);
