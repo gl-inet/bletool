@@ -86,22 +86,6 @@ int str2addr(char* str,bd_addr *address)
     }
     return 0;
 }
-int rx_peek_timeout(int msecond)
-{
-    int timeout = msecond/10;  //detect per 10 mseconds
-
-    while(timeout)
-    {
-        timeout -- ;
-        if(uartRxPeek() > 0)
-        {
-            //fprintf(stderr,"timeout left: %d\n",timeout);
-            return 0;
-        }
-        usleep(10000);
-    }
-    return -1;
-}
 void reverse_endian(uint8_t* header,uint8_t length)
 {
   uint8_t* tmp = (uint8_t*)malloc(length);
@@ -115,7 +99,7 @@ void reverse_endian(uint8_t* header,uint8_t length)
   free(tmp);
   return;
 }
-int silabs_get_message(void)
+struct gecko_cmd_packet* silabs_read_pkt(void)
 {
     uint32_t msg_length;
     uint32_t header;
@@ -129,103 +113,146 @@ int silabs_get_message(void)
     } 
 
     if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko){
-        return -1;
+        return NULL;
     }
 
     msg_length = BGLIB_MSG_LEN(header);
     if (msg_length > BGLIB_MSG_MAX_PAYLOAD || msg_length <= 0){
-        return -1;
+        return NULL;
     }
 
     pck.header = header;
     ret = uartRx(msg_length, (uint8_t*)&pck.data.payload);
     if (ret < 0) {
-        return -1;
+        return NULL;
     }
 
     if(ENDIAN)  reverse_rev_payload(&pck);
 
-    return 0;
+    return &pck;
+}
+struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
+{
+    struct gecko_cmd_packet* p;
+    int timeout = msecond/10;  //detect per 10 mseconds
+
+    while(timeout)
+    {
+        timeout -- ;
+        if(uartRxPeek() > 0)
+        {
+            p = silabs_read_pkt();
+            if(p)
+            {
+                int i = 1;
+                while(i <= id_list[0])
+                {
+                    if(id_list[i] == BGLIB_MSG_ID(p->header))
+                    {
+                        return p;
+                    }
+                }
+            }
+        }
+        usleep(10000);
+    }
+    return NULL;
+}
+
+
+int rx_peek_timeout(int time)
+{
+
+}
+int silabs_get_message(void)
+{
+
 }
 
 json_object* silabs_get_notify(void)
 {
-    json_object* o = json_object_new_object();
+    struct gecko_cmd_packet* p = NULL;
+    p = silabs_read_pkt();
 
-    if(silabs_get_message())
+    if(!p)
     {
-        json_object_object_add(o,"type",json_object_new_string(UNKNOW_MSG));
-        return o;
+        return NULL;
     }
 
+    json_object* o = NULL;
     char value[256] = {0};
     char addr[18] = {0};
 
-    uint32 p = BGLIB_MSG_ID(pck.header);
-    switch(p){
+    switch(BGLIB_MSG_ID(p->header)){
         case gecko_evt_system_boot_id:
             {
+                o = json_object_new_object();
                 json_object_object_add(o,"type",json_object_new_string(SYSTEM_BOOT));
-                json_object_object_add(o,"major",json_object_new_int(pck.data.evt_system_boot.major));
-                json_object_object_add(o,"minor",json_object_new_int(pck.data.evt_system_boot.minor));
-                json_object_object_add(o,"patch",json_object_new_int(pck.data.evt_system_boot.patch));
-                json_object_object_add(o,"build",json_object_new_int(pck.data.evt_system_boot.build));
-                json_object_object_add(o,"bootloader",json_object_new_int(pck.data.evt_system_boot.bootloader));
-                json_object_object_add(o,"hw",json_object_new_int(pck.data.evt_system_boot.hw));
-                hex2str((uint8*)&pck.data.evt_system_boot.hash,sizeof(uint32),value);
+                json_object_object_add(o,"major",json_object_new_int(p->data.evt_system_boot.major));
+                json_object_object_add(o,"minor",json_object_new_int(p->data.evt_system_boot.minor));
+                json_object_object_add(o,"patch",json_object_new_int(p->data.evt_system_boot.patch));
+                json_object_object_add(o,"build",json_object_new_int(p->data.evt_system_boot.build));
+                json_object_object_add(o,"bootloader",json_object_new_int(p->data.evt_system_boot.bootloader));
+                json_object_object_add(o,"hw",json_object_new_int(p->data.evt_system_boot.hw));
+                hex2str((uint8*)&p->data.evt_system_boot.hash,sizeof(uint32),value);
                 json_object_object_add(o,"hash",json_object_new_string(value));
             }
             break;
         case gecko_evt_le_connection_closed_id:
             {
+                o = json_object_new_object();
                 json_object_object_add(o,"type",json_object_new_string(CONN_CLOSE));
-                json_object_object_add(o,"reason",json_object_new_int(pck.data.evt_le_connection_closed.reason));
-                json_object_object_add(o,"connection",json_object_new_int(pck.data.evt_le_connection_closed.connection));
+                json_object_object_add(o,"reason",json_object_new_int(p->data.evt_le_connection_closed.reason));
+                json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_closed.connection));
             }
             break;
         case gecko_evt_gatt_characteristic_value_id:
             {
                 if(pck.data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
+                    o = json_object_new_object();
                     json_object_object_add(o,"type",json_object_new_string(REMOTE_MOTIFY));
-                    json_object_object_add(o,"connection",json_object_new_int(pck.data.evt_gatt_characteristic_value.connection));
-                    json_object_object_add(o,"characteristic",json_object_new_int(pck.data.evt_gatt_characteristic_value.characteristic));
-                    json_object_object_add(o,"att_opcode",json_object_new_int(pck.data.evt_gatt_characteristic_value.att_opcode));
-                    json_object_object_add(o,"offset",json_object_new_int(pck.data.evt_gatt_characteristic_value.offset));
-                    hex2str(pck.data.evt_gatt_characteristic_value.value.data,pck.data.evt_gatt_characteristic_value.value.len,value);
+                    json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_characteristic_value.connection));
+                    json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_characteristic_value.characteristic));
+                    json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_characteristic_value.att_opcode));
+                    json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_characteristic_value.offset));
+                    hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,value);
                     json_object_object_add(o,"value",json_object_new_string(value));
                 }
             }
             break;
         case gecko_evt_gatt_server_attribute_value_id:
             {
+                o = json_object_new_object();
                 json_object_object_add(o,"type",json_object_new_string(REMOTE_WRITE));
-                json_object_object_add(o,"connection",json_object_new_int(pck.data.evt_gatt_server_attribute_value.connection));
-                json_object_object_add(o,"attribute",json_object_new_int(pck.data.evt_gatt_server_attribute_value.attribute));
-                json_object_object_add(o,"att_opcode",json_object_new_int(pck.data.evt_gatt_server_attribute_value.att_opcode));
-                json_object_object_add(o,"offset",json_object_new_int(pck.data.evt_gatt_server_attribute_value.offset));
-                hex2str(pck.data.evt_gatt_server_attribute_value.value.data,pck.data.evt_gatt_server_attribute_value.value.len,value);
+                json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_server_attribute_value.connection));
+                json_object_object_add(o,"attribute",json_object_new_int(p->data.evt_gatt_server_attribute_value.attribute));
+                json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_server_attribute_value.att_opcode));
+                json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_server_attribute_value.offset));
+                hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,value);
                 json_object_object_add(o,"value",json_object_new_string(value));
             }
             break;
         case gecko_evt_gatt_server_characteristic_status_id:
             {
+                o = json_object_new_object();
                 json_object_object_add(o,"type",json_object_new_string(REMOTE_SET));
-                json_object_object_add(o,"connection",json_object_new_int(pck.data.evt_gatt_server_characteristic_status.connection));
-                json_object_object_add(o,"characteristic",json_object_new_int(pck.data.evt_gatt_server_characteristic_status.characteristic));
-                json_object_object_add(o,"status_flags",json_object_new_int(pck.data.evt_gatt_server_characteristic_status.status_flags));
-                json_object_object_add(o,"client_config_flags",json_object_new_int(pck.data.evt_gatt_server_characteristic_status.client_config_flags));
+                json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_server_characteristic_status.connection));
+                json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_server_characteristic_status.characteristic));
+                json_object_object_add(o,"status_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.status_flags));
+                json_object_object_add(o,"client_config_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.client_config_flags));
             }
             break;
         case gecko_evt_le_gap_scan_response_id:
             {
+                o = json_object_new_object();
                 json_object_object_add(o,"type",json_object_new_string(ADV_PKG));
-                json_object_object_add(o,"rssi",json_object_new_int(pck.data.evt_le_gap_scan_response.rssi));
-                json_object_object_add(o,"packet_type",json_object_new_int(pck.data.evt_le_gap_scan_response.packet_type));
-                addr2str(&pck.data.evt_le_gap_scan_response.address,addr);
+                json_object_object_add(o,"rssi",json_object_new_int(p->data.evt_le_gap_scan_response.rssi));
+                json_object_object_add(o,"packet_type",json_object_new_int(p->data.evt_le_gap_scan_response.packet_type));
+                addr2str(&p->data.evt_le_gap_scan_response.address,addr);
                 json_object_object_add(o,"address",json_object_new_string(addr));
-                json_object_object_add(o,"address_type",json_object_new_int(pck.data.evt_le_gap_scan_response.address_type));
-                json_object_object_add(o,"bonding",json_object_new_int(pck.data.evt_le_gap_scan_response.bonding));
-                hex2str(pck.data.evt_le_gap_scan_response.data.data, pck.data.evt_le_gap_scan_response.data.len,value);
+                json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_gap_scan_response.address_type));
+                json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_gap_scan_response.bonding));
+                hex2str(p->data.evt_le_gap_scan_response.data.data, p->data.evt_le_gap_scan_response.data.len,value);
                 json_object_object_add(o,"data",json_object_new_string(value));
             }
         default:
@@ -281,73 +308,47 @@ json_object* silabs_ble_local_mac(void)
 }
 json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int mode)
 {
-    clear_uart();
+    struct gecko_cmd_packet* p = NULL;
     json_object* obj = json_object_new_object();
 
     gecko_cmd_le_gap_set_discovery_timing(phys,interval,window);
-    int wait_time = 200; // >10
-    if(rx_peek_timeout(wait_time))
+
+    uint32_t id_list[2] = {1,gecko_rsp_le_gap_set_discovery_timing_id};
+    p = silabs_wait_pkt(id_list,200);
+
+    if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
     }
-    if(silabs_get_message())
+    if(p->data.rsp_le_gap_set_discovery_timing.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_le_gap_set_discovery_timing_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
-    }
-    if(pck.data.rsp_le_gap_set_discovery_timing.result)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_le_gap_set_discovery_timing.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_discovery_timing.result));
         return obj;       
     }
 
     gecko_cmd_le_gap_set_discovery_type(phys,type);
-    if(rx_peek_timeout(wait_time))
+    id_list[1] = gecko_rsp_le_gap_set_discovery_type_id;
+    p = silabs_wait_pkt(id_list,200);
+    if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
     }
-    if(silabs_get_message())
-    {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_le_gap_set_discovery_type_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
-    }
-    if(pck.data.rsp_le_gap_set_discovery_type.result)
+    if(p->data.rsp_le_gap_set_discovery_type.result)
     {
         json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_le_gap_set_discovery_type.result));
         return obj;       
     }
 
     gecko_cmd_le_gap_start_discovery(phys,mode);
-    if(rx_peek_timeout(wait_time))
+    id_list[1] = gecko_rsp_le_gap_start_discovery_id;
+    p = silabs_wait_pkt(id_list,200);
+    if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
     }
-    if(silabs_get_message())
+    if(p->data.rsp_le_gap_start_discovery.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_le_gap_start_discovery_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
-    }
-    if(pck.data.rsp_le_gap_start_discovery.result)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_le_gap_start_discovery.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_start_discovery.result));
         return obj;       
     }
 
@@ -545,7 +546,7 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
 
 json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 {
-    clear_uart();
+    struct gecko_cmd_packet* p = NULL;
     json_object* obj = json_object_new_object();
 
     if(!address)
@@ -558,127 +559,70 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
     str2addr(address,&addr);
     gecko_cmd_le_gap_connect(addr, address_type, conn_phy);
 
-    int wait_time = 200; // >10
-    if(rx_peek_timeout(wait_time))
+    uint32_t id_list[2] = {1,gecko_rsp_le_gap_connect_id};
+    p = silabs_wait_pkt(id_list,200);
+
+    if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
-    }
-    if(silabs_get_message())
-    {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_le_gap_connect_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(-100));
         return obj;       
     }
-    if(pck.data.rsp_le_gap_connect.result)
+    if(p->data.rsp_le_gap_connect.result)
     {
         json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_le_gap_connect.result));
         return obj;       
     }
-    int connection = pck.data.rsp_le_gap_connect.connection;
+    int connection = p->data.rsp_le_gap_connect.connection;
 
-    wait_time = 500;
-    if(rx_peek_timeout(wait_time))
+
+    id_list[1] = gecko_evt_le_connection_opened_id;
+    p = silabs_wait_pkt(id_list,800);
+    if(!p)
     {
         gecko_cmd_le_connection_close(connection);
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(-101));
         return obj;
-    }
-    if(silabs_get_message())
-    {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_evt_le_connection_opened_id) 
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
     }
     json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
-    json_object_object_add(obj,"connection",json_object_new_int(pck.data.evt_le_connection_opened.connection));
+    json_object_object_add(obj,"connection",json_object_new_int(p->data.evt_le_connection_opened.connection));
     char str[18] = {0};
     addr2str(&pck.data.evt_le_connection_opened.address,str);
     json_object_object_add(obj,"address",json_object_new_string(str));
-    json_object_object_add(obj,"address_type",json_object_new_int(pck.data.evt_le_connection_opened.address_type));
-    json_object_object_add(obj,"master",json_object_new_int(pck.data.evt_le_connection_opened.master));
-    json_object_object_add(obj,"bonding",json_object_new_int(pck.data.evt_le_connection_opened.bonding));
-    json_object_object_add(obj,"advertiser",json_object_new_int(pck.data.evt_le_connection_opened.advertiser));
+    json_object_object_add(obj,"address_type",json_object_new_int(p->data.evt_le_connection_opened.address_type));
+    json_object_object_add(obj,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
+    json_object_object_add(obj,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
+    json_object_object_add(obj,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
 
-    wait_time = 500;
-    if(rx_peek_timeout(wait_time))
+    id_list[1] = gecko_evt_le_connection_parameters_id;
+    p = silabs_wait_pkt(id_list,500);
+    if(!p || p->data.evt_le_connection_parameters.connection != connection)
     {
-        return obj;
+        json_object_object_add(obj,"code",json_object_new_int(-103));
+        return obj;     
     }
-    if(silabs_get_message())
-    {
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_evt_le_connection_parameters_id ||
-        pck.data.evt_le_connection_parameters.connection != connection) 
-    {
-        return obj;       
-    }
-    json_object_object_add(obj,"interval",json_object_new_int(pck.data.evt_le_connection_parameters.interval));
-    json_object_object_add(obj,"latency",json_object_new_int(pck.data.evt_le_connection_parameters.latency));
-    json_object_object_add(obj,"timeout",json_object_new_int(pck.data.evt_le_connection_parameters.timeout));
-    json_object_object_add(obj,"security_mode",json_object_new_int(pck.data.evt_le_connection_parameters.security_mode));
-    json_object_object_add(obj,"txsize",json_object_new_int(pck.data.evt_le_connection_parameters.txsize));
+    json_object_object_add(obj,"interval",json_object_new_int(p->data.evt_le_connection_parameters.interval));
+    json_object_object_add(obj,"latency",json_object_new_int(p->data.evt_le_connection_parameters.latency));
+    json_object_object_add(obj,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
+    json_object_object_add(obj,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
+    json_object_object_add(obj,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
 
     return obj;
 }
 
 json_object* silabs_ble_disconnect(int connection)
 {
-    clear_uart();
+    struct gecko_cmd_packet* p = NULL;
     json_object* obj = json_object_new_object(); 
 
-    int wait_time = 200; // >10   
     gecko_cmd_le_connection_close(connection);
-    if(rx_peek_timeout(wait_time))
+    uint32_t id_list[2] = {1,gecko_rsp_le_connection_close_id};
+    p = silabs_wait_pkt(id_list,200);
+    if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
     }
-    if(silabs_get_message())
-    {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_rsp_le_connection_close_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
-    }
-    if(pck.data.rsp_le_connection_close.result)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(pck.data.rsp_le_connection_close.result));
-        return obj;       
-    }
+    json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_close.result));
 
-    wait_time = 500; // >10   
-    if(rx_peek_timeout(wait_time))
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;
-    }
-    if(silabs_get_message())
-    {
-        json_object_object_add(obj,"code",json_object_new_int(MSG_ERROR));
-        return obj;
-    }
-    if(BGLIB_MSG_ID(pck.header) != gecko_evt_le_connection_closed_id)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
-        return obj;       
-    }
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
-    json_object_object_add(obj,"connection",json_object_new_int(pck.data.evt_le_connection_closed.connection));
-    json_object_object_add(obj,"reason",json_object_new_int(pck.data.evt_le_connection_closed.reason));
-    
     return obj;
 }
 
