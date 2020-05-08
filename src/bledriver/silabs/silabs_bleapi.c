@@ -31,6 +31,7 @@
 #define REMOTE_WRITE            "remote_write"
 #define REMOTE_SET              "remote_set"
 #define ADV_PKG                 "adv_packet"
+#define CONN_UPDATE             "conn_update"
 
 
 #define SUCCESS                  0   
@@ -105,6 +106,7 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     uint32_t header;
     int      ret;
 
+    printf("get into uart read pkt\n");
     memset(&pck,0,sizeof(struct gecko_cmd_packet));
 
     ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
@@ -113,11 +115,13 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     } 
 
     if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko){
+        printf("1111111111111111\n");
         return NULL;
     }
 
     msg_length = BGLIB_MSG_LEN(header);
     if (msg_length > BGLIB_MSG_MAX_PAYLOAD || msg_length <= 0){
+        printf("2222222222222222\n");
         return NULL;
     }
 
@@ -128,7 +132,7 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     }
 
     if(ENDIAN)  reverse_rev_payload(&pck);
-
+    printf("finish a pkt get ,len is %d\n",msg_length);
     return &pck;
 }
 struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
@@ -139,6 +143,7 @@ struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
     while(timeout)
     {
         timeout -- ;
+        printf("timeout is %d\n",timeout);
         if(uartRxPeek() > 0)
         {
             p = silabs_read_pkt();
@@ -151,6 +156,7 @@ struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
                     {
                         return p;
                     }
+                    i++;
                 }
             }
         }
@@ -255,6 +261,19 @@ json_object* silabs_get_notify(void)
                 hex2str(p->data.evt_le_gap_scan_response.data.data, p->data.evt_le_gap_scan_response.data.len,value);
                 json_object_object_add(o,"data",json_object_new_string(value));
             }
+            break;
+        case gecko_evt_le_connection_parameters_id:
+            {
+                o = json_object_new_object();
+                json_object_object_add(o,"type",json_object_new_string(CONN_UPDATE));
+                json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_parameters.connection));
+                json_object_object_add(o,"interval",json_object_new_int(p->data.evt_le_connection_parameters.interval));
+                json_object_object_add(o,"latency",json_object_new_int(p->data.evt_le_connection_parameters.latency));
+                json_object_object_add(o,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
+                json_object_object_add(o,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
+                json_object_object_add(o,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
+            }
+            break;
         default:
             break;
     }
@@ -547,6 +566,7 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
 json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 {
     struct gecko_cmd_packet* p = NULL;
+    printf("start ble connect\n");
     json_object* obj = json_object_new_object();
 
     if(!address)
@@ -565,6 +585,7 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
     if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(-100));
+        printf("gecko_rsp_le_gap_connect_id not get\n");
         return obj;       
     }
     if(p->data.rsp_le_gap_connect.result)
@@ -576,9 +597,10 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 
 
     id_list[1] = gecko_evt_le_connection_opened_id;
-    p = silabs_wait_pkt(id_list,800);
+    p = silabs_wait_pkt(id_list,1000);
     if(!p)
     {
+        printf("gecko_evt_le_connection_opened_id not get\n");
         gecko_cmd_le_connection_close(connection);
         json_object_object_add(obj,"code",json_object_new_int(-101));
         return obj;
@@ -592,19 +614,6 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
     json_object_object_add(obj,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
     json_object_object_add(obj,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
     json_object_object_add(obj,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
-
-    id_list[1] = gecko_evt_le_connection_parameters_id;
-    p = silabs_wait_pkt(id_list,500);
-    if(!p || p->data.evt_le_connection_parameters.connection != connection)
-    {
-        json_object_object_add(obj,"code",json_object_new_int(-103));
-        return obj;     
-    }
-    json_object_object_add(obj,"interval",json_object_new_int(p->data.evt_le_connection_parameters.interval));
-    json_object_object_add(obj,"latency",json_object_new_int(p->data.evt_le_connection_parameters.latency));
-    json_object_object_add(obj,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
-    json_object_object_add(obj,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
-    json_object_object_add(obj,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
 
     return obj;
 }

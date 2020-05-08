@@ -178,7 +178,7 @@ static const struct blobmsg_policy conn_policy[CONN_MAX] = {
 static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
     uloop_fd_delete(&serial_fd);
-
+	printf("leave fd listen\n");
 	struct blob_attr *tb[CONN_MAX];
 	blobmsg_parse(conn_policy, CONN_MAX, tb, blob_data(msg), blob_len(msg));
 	char* address = blobmsg_get_string(tb[CONN_ADDRESS]);
@@ -191,6 +191,7 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
+	printf("start fd listen\n");
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return 0;
 }

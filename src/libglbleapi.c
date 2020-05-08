@@ -262,7 +262,7 @@ int gl_ble_connect(method_handler_t cb,char* address,int address_type,int phy)
 	blobmsg_add_u32(&b, conn_policy[CONN_ADDRESS_TYPE].name, address_type);
 	blobmsg_add_u32(&b, conn_policy[CONN_PHY].name, phy);
 
-	return ubus_invoke(ctx, id, "connect", b.head, method_callback, NULL, 1000);
+	return ubus_invoke(ctx, id, "connect", b.head, method_callback, NULL, 2000);
 }
 /*Act as master, disconnect with remote device*/
 enum
