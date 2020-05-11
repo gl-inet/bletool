@@ -73,6 +73,5 @@ int32_t uartRxPeek(void);
  *  \return  The amount of bytes written or -1 on failure.
  **************************************************************************************************/
 int32_t uartTx(uint32_t dataLength, uint8_t* data);
-int clear_uart(void);
 
 #endif

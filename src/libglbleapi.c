@@ -325,7 +325,7 @@ int gl_ble_get_service(method_handler_t cb, int connection)
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, get_service_policy[SERVICE_CONNECTION].name, connection);
 
-	return ubus_invoke(ctx, id, "get_service", b.head, method_callback, NULL, 1000);
+	return ubus_invoke(ctx, id, "get_service", b.head, method_callback, NULL, 2000);
 }
 /*Act as master, Get characteristic list of a remote GATT server*/
 enum
