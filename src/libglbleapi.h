@@ -22,10 +22,75 @@
 
 #include <json-c/json.h>
 
-typedef void (*method_handler_t) (json_object* msg);
+#define UUID_MAX                32
+#define LIST_LENGTHE_MAX        16
+#define CHAR_VALUE_MAX          256
 
-int gl_ble_init(struct ubus_context *CTX);
-int gl_ble_free(void);
+typedef struct {
+    int handle;
+    char uuid[UUID_MAX];
+}ble_service_list_t;
+
+typedef struct {
+    int handle;
+    char uuid[UUID_MAX];
+    uint8_t properties;
+}ble_characteristic_list_t;
+
+typedef struct {
+    uint8_t addr[6];
+}gl_ble_get_mac_rsp_t;
+
+typedef struct {
+    int current_power;
+}gl_ble_set_power_rsp_t;
+
+typedef struct {
+    uint8_t connection;
+    uint8_t addr[6];
+    uint8_t address_type;
+    uint8_t master;
+    uint8_t bonding;
+    uint8_t advertiser;
+}gl_ble_connect_rsp_t;
+
+typedef struct {
+    uint8_t connection;
+    int rssi;
+}gl_ble_get_rssi_rsp_t;
+
+typedef struct {
+    uint8_t connection;
+    uint8_t list_len;
+    ble_service_list_t list[LIST_LENGTHE_MAX];
+}gl_ble_get_service_rsp_t;
+
+typedef struct {
+    uint8_t connection;
+    uint8_t list_len;
+    ble_characteristic_list_t list[LIST_LENGTHE_MAX];
+}gl_ble_get_char_rsp_t;
+
+typedef struct {
+    uint8_t connection;
+    int handle;
+    uint8_t att_opcode;
+    int offset;
+    uint8_t value[CHAR_VALUE_MAX];
+}gl_ble_char_read_rsp_t;
+
+typedef struct {
+    int sent_len;
+}gl_ble_write_char_rsp_t;
+
+typedef struct {
+    int sent_len;
+}gl_ble_send_notify_rsp_t;
+
+typedef struct {
+    int number_of_packets;
+}gl_ble_dtm_test_rsp_t;
+
 int gl_ble_subscribe(method_handler_t cb);
 int gl_ble_unsubscribe(void);
 

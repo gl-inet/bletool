@@ -648,6 +648,7 @@ json_object* silabs_ble_get_service(int connection)
     }
 
     json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"connection",json_object_new_int(connection));
     char value[256] = {0};
     json_object* array = json_object_new_array();
     json_object_object_add(obj,"service_list",array);
@@ -768,6 +769,7 @@ json_object* silabs_ble_read_char(int connection,int char_handle)
         return obj;   
     }
 
+    json_object_object_add(obj,"connection",json_object_new_int(connection));
     id_list[1] = gecko_evt_gatt_characteristic_value_id;
     p = silabs_wait_pkt(id_list,500);
     if(!p || p->data.evt_gatt_characteristic_value.connection != connection)
