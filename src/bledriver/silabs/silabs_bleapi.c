@@ -629,9 +629,9 @@ json_object* silabs_ble_disconnect(int connection)
     if(!p)
     {
         json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_close.result));
-
     return obj;
 }
 
