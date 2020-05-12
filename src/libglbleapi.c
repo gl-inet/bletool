@@ -23,8 +23,69 @@
 #include <libubus.h>
 #include "libglbleapi.h"
 
-static struct ubus_subscriber msg_subscriber;
-method_handler_t sub_handler;
+static struct ubus_subscriber subscriber;
+static struct ubus_context* CTX = NULL;
+static struct uloop_timeout listen_timeout;
+static unsigned char listen;
+
+static void listen_timeout_cb(struct uloop_timeout* timeout)
+{
+	if(!listen)
+	{
+		uloop_end();
+	}
+	uloop_timeout_set(timeout, 1 * 1000);
+}
+
+int gl_ble_subscribe(ubus_subscriber_cb_t* callback)
+{
+	int ret;
+	unsigned int id = 0;
+	subscriber.cb = callback->cb;
+	subscriber.remove_cb = callback->remove_cb;
+
+	CTX = ubus_connect(NULL);
+    if (!CTX) {
+        fprintf(stderr,"ubus_connect failed.\n");
+        return -1;
+    }
+	ret = ubus_register_subscriber(CTX, &subscriber);
+	if(ret)
+	{
+		fprintf(stderr, "Failed to register subscriber: %d\n",ret);
+	}
+
+	if (ubus_lookup_id(CTX, "ble", &id)) {
+		fprintf(stderr,"ubus_lookup_id failed.\n");
+		if (CTX) {
+			ubus_free(CTX);
+		}
+		return -1;
+    }
+	ret = ubus_subscribe(CTX, &subscriber, id);
+	if(ret)
+	{
+		fprintf(stderr, "Failed to subscribe: %d\n",ret);
+	}
+
+	listen = 1;
+	listen_timeout.cb = listen_timeout_cb;
+
+	uloop_init();
+    ubus_add_uloop(CTX);
+	uloop_timeout_set(&listen_timeout, 1 * 1000);
+
+
+	uloop_run();
+	uloop_done();
+	return 0;
+}
+int gl_ble_unsubscribe(void)
+{
+	listen = 0;
+	return 0;
+}
+
 
 static void ubus_invoke_complete_cb(struct ubus_request* req, int type, struct blob_attr* msg)
 {
@@ -57,22 +118,6 @@ int json_parameter_check(json_object* obj, char** parameters, int para_num)
     return 0;
 }
 
-static void sub_remove_callback(struct ubus_context *ctx, struct ubus_subscriber *obj, uint32_t id)
-{
-	fprintf(stderr,"Removed by server\n");
-}
-static int sub_callback(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-	if(!msg)
-	{
-		return ;
-	}
-	char* str = blobmsg_format_json(msg, true);
-	json_object* o = json_tokener_parse(str);
-	sub_handler(o);
-	free(str);
-}
-
 /* C/C++ program interface */
 int gl_ble_call(const char* path, const char* method, struct blob_buf* b, int timeout, char** str)
 {
@@ -81,12 +126,12 @@ int gl_ble_call(const char* path, const char* method, struct blob_buf* b, int ti
 
     ctx = ubus_connect(NULL);
     if (!ctx) {
-        printf("ubus_connect failed.\n");
+        fprintf(stderr,"ubus_connect failed.\n");
         return -1;
     }
 
     if (ubus_lookup_id(ctx, path, &id)) {
-        printf("ubus_lookup_id failed.\n");
+        fprintf(stderr,"ubus_lookup_id failed.\n");
         if (ctx) {
             ubus_free(ctx);
         }
@@ -100,44 +145,6 @@ int gl_ble_call(const char* path, const char* method, struct blob_buf* b, int ti
 
     return 0;
 }
-
-int gl_ble_subscribe(method_handler_t cb)
-{
-	int ret;
-	msg_subscriber.cb = sub_callback;
-	msg_subscriber.remove_cb = sub_remove_callback;
-	if(cb){
-		sub_handler = cb;
-	}
-	else{
-		sub_handler = default_handler;
-	}
-	ret = ubus_register_subscriber(ctx, &msg_subscriber);
-	if(ret)
-	{
-		fprintf(stderr, "Failed to register subscriber: %d\n",ret);
-	}
-
-	ret = ubus_subscribe(ctx, &msg_subscriber, id);
-	if(ret)
-	{
-		fprintf(stderr, "Failed to subscribe: %d\n",ret);
-	}
-
-	return 0;
-}
-int gl_ble_unsubscribe(void)
-{
-	int ret;
-	ret = ubus_unsubscribe(ctx, &msg_subscriber, id);
-	if(ret)
-	{
-		fprintf(stderr, "Failed to unsubscribe: %d\n",ret);
-	}
-	return 0;
-}
-
-
 
 /* System functions */
 
@@ -354,14 +361,6 @@ int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int 
     return 0;
 }
 /*Act as master, disconnect with remote device*/
-enum
-{
-	DISCONN_CONNECTION,
-	DISCONNECT_MAX,
-};
-static const struct blobmsg_policy disconnect_policy[DISCONNECT_MAX] = {
-	[DISCONN_CONNECTION] = {.name = "disconn_connection", .type = BLOBMSG_TYPE_INT32},
-};
 int gl_ble_disconnect(int connection)
 {
 	char* str = NULL;
