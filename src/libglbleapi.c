@@ -33,8 +33,9 @@ static void listen_timeout_cb(struct uloop_timeout* timeout)
 	if(!listen)
 	{
 		uloop_end();
+	}else{
+		uloop_timeout_set(timeout, 1 * 1000);
 	}
-	uloop_timeout_set(timeout, 1 * 1000);
 }
 
 int gl_ble_subscribe(ubus_subscriber_cb_t* callback)

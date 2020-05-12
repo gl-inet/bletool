@@ -23,23 +23,63 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
+#include <json-c/json.h>
 
 #include "libglbleapi.h"
 
 #define PARA_MISSING	"parameter missing\n"
 
-
-void print(json_object* obj)
+static int sub_cb(struct ubus_context *ctx, struct ubus_object *obj,
+			    struct ubus_request_data *req,
+			    const char *method, struct blob_attr *msg)
 {
-	char* str;
-	if(obj)
-	{
-		str = json_object_to_json_string(obj);
-	}
+	char *str;
+
+	str = blobmsg_format_json(msg, true);
 	printf("%s\n",str);
-	json_object_put(obj);
+	free(str);
+
+	return 0;
+}
+static void sub_remove_cb(struct ubus_context *ctx, struct ubus_subscriber *obj, uint32_t id)
+{
+	fprintf(stderr,"Removed by server\n");
 }
 
+
+static void ubus_invoke_complete(struct ubus_request* req, int type, struct blob_attr* msg)
+{
+    char** str = (char**)req->priv;
+
+    if (msg && str)
+        *str = blobmsg_format_json_indent(msg, true, 0);
+}
+int ble_ubus_call(const char* method, struct blob_buf* b, int timeout, char** str)
+{
+    unsigned int id = 0;
+    struct ubus_context* ctx = NULL;
+
+    ctx = ubus_connect(NULL);
+    if (!ctx) {
+        fprintf(stderr,"ubus_connect failed.\n");
+        return -1;
+    }
+
+    if (ubus_lookup_id(ctx, "ble", &id)) {
+        fprintf(stderr,"ubus_lookup_id failed.\n");
+        if (ctx) {
+            ubus_free(ctx);
+        }
+        return -1;
+    }
+
+    ubus_invoke(ctx, id, method, b->head, ubus_invoke_complete, (void*)str, timeout * 1000);
+
+    if (ctx)
+        ubus_free(ctx);
+
+    return 0;
+}
 /* System functions */
 int cmd_enable(int argc, char** argv)
 {
@@ -50,7 +90,21 @@ int cmd_enable(int argc, char** argv)
 	}else{
 		enable = atoi(argv[2]);
 	}
-	gl_ble_enable(print,enable);
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "enable", enable);
+
+	ble_ubus_call("ble","enable",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 	
 	return 0;
 }
@@ -64,20 +118,53 @@ int cmd_set_power(int argc, char** argv)
 	}else{
 		power = atoi(argv[2]);
 	}
-	gl_ble_set_power(print,power);
 
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "system_power_level", power);
+
+	ble_ubus_call("ble","set_power",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
+	
 	return 0;
 }
 int cmd_local_address(int argc, char** argv)
 {
-	gl_ble_get_mac(print);
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+
+	ble_ubus_call("ble","local_mac",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
+
 	return 0;
 }
 int cmd_listen(int argc, char** argv)
 {
-	gl_ble_subscribe(print);
+	ubus_subscriber_cb_t callback;
+	callback.cb = sub_cb;
+	callback.remove_cb = sub_remove_cb;
 
-	uloop_run();
+	gl_ble_subscribe(&callback);
+	
+	return 0;
 }
 
 /*BLE slave functions */
@@ -111,7 +198,23 @@ int cmd_adv_data(int argc, char** argv)
 		printf(PARA_MISSING);
 		return -1;
 	}
-	gl_ble_adv_data(print,flag,value);
+
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "adv_data_flag", flag);
+	blobmsg_add_string(&b,"adv_data", value);
+
+	ble_ubus_call("ble","adv_data",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -156,13 +259,44 @@ int cmd_adv(int argc, char** argv)
 		interval_max = interval_min;
 	}
 
-	gl_ble_adv(print,phys,interval_min,interval_max,discover,connect);
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "adv_phys", phys);
+	blobmsg_add_u32(&b, "adv_interval_min", interval_min);
+	blobmsg_add_u32(&b, "adv_interval_max", interval_max);
+	blobmsg_add_u32(&b, "adv_discover", discover);
+	blobmsg_add_u32(&b, "adv_conn", connect);
+
+	ble_ubus_call("ble","adv",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
 int cmd_adv_stop(int argc, char** argv)
 {	
-	gl_ble_stop_adv(print);
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+
+	ble_ubus_call("ble","stop_adv",&b,1,&str);
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -202,13 +336,46 @@ int cmd_discovery(int argc, char** argv)
 		}
 	}
 
-	gl_ble_discovery(print,phys,interval,window,type,mode);
+	char* str = NULL;
+	struct blob_buf b;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "phys", phys);
+	blobmsg_add_u32(&b, "interval", interval);
+	blobmsg_add_u32(&b, "window", window);
+	blobmsg_add_u32(&b, "type", type);
+	blobmsg_add_u32(&b, "mode", mode);
+
+	ble_ubus_call("ble","discovery",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
 int cmd_stop(int argc, char** argv)
 {
-	gl_ble_stop(print);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+
+	ble_ubus_call("ble","stop",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -247,7 +414,25 @@ int cmd_connect(int argc, char** argv)
 
 		return -1;
 	}
-	gl_ble_connect(print,address,address_type,phy);
+
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "conn_address", address);
+	blobmsg_add_u32(&b, "conn_address_type", address_type);
+	blobmsg_add_u32(&b, "conn_phy", phy);
+
+	ble_ubus_call("ble","connect",&b,2,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;	
 }
@@ -270,7 +455,22 @@ int cmd_disconnect(int argc, char** argv)
 		return -1;
 	}
 
-	gl_ble_disconnect(print,connection);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "disconn_connection", connection);
+
+	ble_ubus_call("ble","disconnect",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;		
 }
@@ -293,7 +493,22 @@ int cmd_get_rssi(int argc, char** argv)
 		return -1;
 	}
 
-	gl_ble_get_rssi(print,connection);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "rssi_connection", connection);
+
+	ble_ubus_call("ble","get_rssi",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -316,7 +531,22 @@ int cmd_get_service(int argc, char** argv)
 		return -1;
 	}
 
-	gl_ble_get_service(print,connection);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "get_service_connection", connection);
+
+	ble_ubus_call("ble","get_service",&b,2,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -350,7 +580,24 @@ int cmd_get_char(int argc, char** argv)
 
 		return -1;
 	}
-	gl_ble_get_char(print,connection,service_handle);
+
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "get_service_connection", connection);
+	blobmsg_add_u32(&b, "char_service_handle", service_handle);
+
+	ble_ubus_call("ble","get_char",&b,2,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -389,7 +636,24 @@ int cmd_set_notify(int argc, char** argv)
 		return -1;
 	}	
 
-	gl_ble_set_notify(print,connection,char_handle,flag);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "connection", connection);
+	blobmsg_add_u32(&b, "char_handle", char_handle);
+	blobmsg_add_u32(&b, "notify_flag", flag);
+
+	ble_ubus_call("ble","set_notify",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 	
 	return 0;
 }
@@ -424,7 +688,23 @@ int cmd_read_value(int argc, char** argv)
 		return -1;
 	}	
 
-	gl_ble_read_char(print,connection,char_handle);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "char_connection", connection);
+	blobmsg_add_u32(&b, "char_handle", char_handle);
+
+	ble_ubus_call("ble","read_char",&b,2,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 	
 	return 0;
 }
@@ -468,7 +748,25 @@ int cmd_write_value(int argc, char** argv)
 		return -1;
 	}	
 
-	gl_ble_write_char(print,connection,char_handle,value,res);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "char_connection", connection);
+	blobmsg_add_u32(&b, "char_handle", char_handle);
+	blobmsg_add_string(&b, "char_value", value);
+	blobmsg_add_u32(&b, "write_res", res);
+
+	ble_ubus_call("ble","write_char",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 	
 	return 0;	
 }
@@ -505,7 +803,26 @@ int cmd_dtm_tx(int argc, char** argv)
 		}
 	}
 
-	gl_ble_dtm_tx(print,packet_type,length,channel,phy);
+
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "dtm_tx_type", packet_type);
+	blobmsg_add_u32(&b, "dtm_tx_length", length);
+	blobmsg_add_u32(&b, "dtm_tx_channel", channel);
+	blobmsg_add_u32(&b, "dtm_tx_phy", phy);
+
+	ble_ubus_call("ble","dtm_tx",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
@@ -534,14 +851,45 @@ int cmd_dtm_rx(int argc, char** argv)
 		}
 	}
 
-	gl_ble_dtm_rx(print,channel,phy);
+
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "dtm_rx_channel", channel);
+	blobmsg_add_u32(&b, "dtm_rx_phy", phy);
+
+	ble_ubus_call("ble","dtm_rx",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
 int cmd_dtm_end(int argc, char** argv)
 {
 
-	gl_ble_dtm_end(print);
+	char* str = NULL;
+	struct blob_buf b;
+	
+	blob_buf_init(&b, 0);
+
+	ble_ubus_call("ble","dtm_end",&b,1,&str);
+
+	if(NULL == str)
+	{
+		printf("Invoke Error\n");
+		return -1;
+	}
+	printf("%s\n",str);
+
+	free(str);
 
 	return 0;
 }
