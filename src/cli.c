@@ -52,7 +52,7 @@ static void ubus_invoke_complete(struct ubus_request* req, int type, struct blob
     char** str = (char**)req->priv;
 
     if (msg && str)
-        *str = blobmsg_format_json_indent(msg, true, 0);
+        *str = blobmsg_format_json(msg, true);
 }
 int ble_ubus_call(char* path, const char* method, struct blob_buf* b, int timeout, char** str)
 {
@@ -91,7 +91,7 @@ int cmd_enable(int argc, char** argv)
 		enable = atoi(argv[2]);
 	}
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "enable", enable);
@@ -120,7 +120,7 @@ int cmd_set_power(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "system_power_level", power);
@@ -140,7 +140,7 @@ int cmd_set_power(int argc, char** argv)
 int cmd_local_address(int argc, char** argv)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -200,7 +200,7 @@ int cmd_adv_data(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "adv_data_flag", flag);
@@ -260,7 +260,7 @@ int cmd_adv(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "adv_phys", phys);
@@ -284,7 +284,7 @@ int cmd_adv(int argc, char** argv)
 int cmd_adv_stop(int argc, char** argv)
 {	
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -337,7 +337,7 @@ int cmd_discovery(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "phys", phys);
@@ -362,7 +362,7 @@ int cmd_discovery(int argc, char** argv)
 int cmd_stop(int argc, char** argv)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 
@@ -416,7 +416,7 @@ int cmd_connect(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_string(&b, "conn_address", address);
@@ -456,7 +456,7 @@ int cmd_disconnect(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "disconn_connection", connection);
@@ -494,7 +494,7 @@ int cmd_get_rssi(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "rssi_connection", connection);
@@ -532,7 +532,7 @@ int cmd_get_service(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "get_service_connection", connection);
@@ -582,7 +582,7 @@ int cmd_get_char(int argc, char** argv)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "get_service_connection", connection);
@@ -637,7 +637,7 @@ int cmd_set_notify(int argc, char** argv)
 	}	
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "connection", connection);
@@ -689,7 +689,7 @@ int cmd_read_value(int argc, char** argv)
 	}	
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "char_connection", connection);
@@ -749,7 +749,7 @@ int cmd_write_value(int argc, char** argv)
 	}	
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "char_connection", connection);
@@ -805,7 +805,7 @@ int cmd_dtm_tx(int argc, char** argv)
 
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "dtm_tx_type", packet_type);
@@ -853,7 +853,7 @@ int cmd_dtm_rx(int argc, char** argv)
 
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "dtm_rx_channel", channel);
@@ -876,7 +876,7 @@ int cmd_dtm_end(int argc, char** argv)
 {
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 	
 	blob_buf_init(&b, 0);
 

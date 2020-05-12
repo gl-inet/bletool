@@ -24,7 +24,6 @@
 #include "libglbleapi.h"
 
 static struct ubus_subscriber subscriber;
-static struct ubus_context* CTX = NULL;
 static struct uloop_timeout listen_timeout;
 static unsigned char listen;
 
@@ -45,7 +44,7 @@ int gl_ble_subscribe(ubus_subscriber_cb_t* callback)
 	subscriber.cb = callback->cb;
 	subscriber.remove_cb = callback->remove_cb;
 
-	CTX = ubus_connect(NULL);
+	struct ubus_context *CTX = ubus_connect(NULL);
     if (!CTX) {
         fprintf(stderr,"ubus_connect failed.\n");
         return -1;
@@ -158,7 +157,7 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -194,7 +193,7 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 int gl_ble_enable(int enable)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "enable", enable);
@@ -226,7 +225,7 @@ int gl_ble_set_power(gl_ble_set_power_rsp_t * rsp, int power)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "system_power_level", power);
@@ -258,7 +257,7 @@ int gl_ble_set_power(gl_ble_set_power_rsp_t * rsp, int power)
 int gl_ble_discovery(int phys,int interval,int window,int type,int mode)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "phys", phys);
@@ -289,7 +288,7 @@ int gl_ble_discovery(int phys,int interval,int window,int type,int mode)
 int gl_ble_stop(void)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -320,7 +319,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int 
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_string(&b, "conn_address", address);
@@ -365,7 +364,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int 
 int gl_ble_disconnect(int connection)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "disconn_connection", connection);
@@ -397,7 +396,7 @@ int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t* rsp,int connection)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "rssi_connection", connection);
@@ -432,7 +431,7 @@ int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection)
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "get_service_connection", connection);
@@ -480,7 +479,7 @@ int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_hand
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "get_service_connection", connection);
@@ -530,7 +529,7 @@ int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, int connection, int char_handl
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "char_connection", connection);
@@ -569,7 +568,7 @@ int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_han
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "char_connection", connection);
@@ -605,7 +604,7 @@ int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_han
 int gl_ble_set_notify(int connection, int char_handle,int flag)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "connection", connection);
@@ -637,7 +636,7 @@ int gl_ble_set_notify(int connection, int char_handle,int flag)
 int gl_ble_adv(int phys, int interval_min,int interval_max,int discover,int connect)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "adv_phys", phys);
@@ -668,7 +667,7 @@ int gl_ble_adv(int phys, int interval_min,int interval_max,int discover,int conn
 int gl_ble_adv_data(int flag, char* data)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "adv_data_flag", flag);
@@ -696,7 +695,7 @@ int gl_ble_adv_data(int flag, char* data)
 int gl_ble_stop_adv(void)
 {
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
@@ -727,7 +726,7 @@ int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp,int connection,int char_han
 	}
 
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "send_noti_conn", connection);
@@ -762,7 +761,7 @@ int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type,int length, int ch
 	}
 	
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "dtm_tx_type", packet_type);
@@ -798,7 +797,7 @@ int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 	}
 	
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "dtm_rx_channel", channel);
@@ -832,7 +831,7 @@ int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
 	}
 	
 	char* str = NULL;
-	struct blob_buf b;
+	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 

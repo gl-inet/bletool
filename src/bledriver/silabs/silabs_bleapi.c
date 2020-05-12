@@ -106,7 +106,6 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     uint32_t header;
     int      ret;
 
-    printf("get into uart read pkt\n");
     memset(&pck,0,sizeof(struct gecko_cmd_packet));
 
     ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
@@ -115,13 +114,11 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     } 
 
     if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko){
-        printf("1111111111111111\n");
         return NULL;
     }
 
     msg_length = BGLIB_MSG_LEN(header);
     if (msg_length > BGLIB_MSG_MAX_PAYLOAD || msg_length <= 0){
-        printf("2222222222222222\n");
         return NULL;
     }
 
@@ -132,7 +129,6 @@ struct gecko_cmd_packet* silabs_read_pkt(void)
     }
 
     if(ENDIAN)  reverse_rev_payload(&pck);
-    printf("finish a pkt get ,len is %d\n",msg_length);
     return &pck;
 }
 struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
@@ -143,7 +139,6 @@ struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
     while(timeout)
     {
         timeout -- ;
-        printf("timeout is %d\n",timeout);
         if(uartRxPeek() > 0)
         {
             p = silabs_read_pkt();
@@ -163,16 +158,6 @@ struct gecko_cmd_packet* silabs_wait_pkt(uint32_t* id_list, int msecond)
         usleep(10000);
     }
     return NULL;
-}
-
-
-int rx_peek_timeout(int time)
-{
-
-}
-int silabs_get_message(void)
-{
-
 }
 
 json_object* silabs_get_notify(void)
