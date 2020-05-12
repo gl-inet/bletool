@@ -346,7 +346,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int 
 	rsp->master = json_object_get_int(json_object_object_get(o,"master"));
 	rsp->bonding = json_object_get_int(json_object_object_get(o,"bonding"));
 	rsp->advertiser = json_object_get_int(json_object_object_get(o,"advertiser"));
-	char* address = json_object_get_string(json_object_object_get(o,"address"));
+	//char* address = json_object_get_string(json_object_object_get(o,"address"));
 	int mac[6];
     sscanf(address,"%02x:%02x:%02x:%02x:%02x:%02x",
             &mac[5],&mac[4],&mac[3],&mac[2],&mac[1],&mac[0]);

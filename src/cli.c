@@ -54,7 +54,7 @@ static void ubus_invoke_complete(struct ubus_request* req, int type, struct blob
     if (msg && str)
         *str = blobmsg_format_json_indent(msg, true, 0);
 }
-int ble_ubus_call(const char* method, struct blob_buf* b, int timeout, char** str)
+int ble_ubus_call(char* path, const char* method, struct blob_buf* b, int timeout, char** str)
 {
     unsigned int id = 0;
     struct ubus_context* ctx = NULL;
@@ -65,7 +65,7 @@ int ble_ubus_call(const char* method, struct blob_buf* b, int timeout, char** st
         return -1;
     }
 
-    if (ubus_lookup_id(ctx, "ble", &id)) {
+    if (ubus_lookup_id(ctx, path, &id)) {
         fprintf(stderr,"ubus_lookup_id failed.\n");
         if (ctx) {
             ubus_free(ctx);
@@ -942,9 +942,6 @@ static int usage(void)
 }
 int main(int argc, char* argv[])
 {
-	uloop_init();
-	gl_ble_init(NULL);
-
 	if(argc < 2)
 	{
 		usage();
