@@ -542,7 +542,7 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 
 
     id_list[1] = gecko_evt_le_connection_opened_id;
-    p = silabs_wait_pkt(id_list,1000);
+    p = silabs_wait_pkt(id_list,4000);
     if(!p)
     {
         gecko_cmd_le_connection_close(connection);

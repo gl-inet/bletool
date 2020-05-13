@@ -423,7 +423,7 @@ int cmd_connect(int argc, char** argv)
 	blobmsg_add_u32(&b, "conn_address_type", address_type);
 	blobmsg_add_u32(&b, "conn_phy", phy);
 
-	ble_ubus_call("ble","connect",&b,2,&str);
+	ble_ubus_call("ble","connect",&b,5,&str);
 
 	if(NULL == str)
 	{

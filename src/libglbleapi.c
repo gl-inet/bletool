@@ -326,7 +326,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int 
 	blobmsg_add_u32(&b, "conn_address_type", address_type);
 	blobmsg_add_u32(&b, "conn_phy", phy);
 
-	gl_ble_call("ble","connect",&b,2,&str);
+	gl_ble_call("ble","connect",&b,5,&str);
 	if(NULL == str)
 	{
 		return -1;
