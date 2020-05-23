@@ -27,6 +27,7 @@
 #define UNKNOW_MSG              "unknow_msg"
 #define SYSTEM_BOOT             "system_boot"
 #define CONN_CLOSE              "conn_close"
+#define CONN_OPEN               "conn_open"
 #define REMOTE_MOTIFY           "remote_notify"
 #define REMOTE_WRITE            "remote_write"
 #define REMOTE_SET              "remote_set"
@@ -257,6 +258,19 @@ json_object* silabs_get_notify(void)
                 json_object_object_add(o,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
                 json_object_object_add(o,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
                 json_object_object_add(o,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
+            }
+            break;
+        case gecko_evt_le_connection_opened_id:
+            {
+                o = json_object_new_object();
+                json_object_object_add(o,"type",json_object_new_string(CONN_OPEN));
+                addr2str(&p->data.evt_le_connection_opened.address,addr);
+                json_object_object_add(o,"address",json_object_new_string(addr));
+                json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_connection_opened.address_type));
+                json_object_object_add(o,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
+                json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_opened.connection));
+                json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
+                json_object_object_add(o,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
             }
             break;
         default:
