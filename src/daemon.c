@@ -668,6 +668,8 @@ void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 
 int main(int argc, char * argv[])
 {	
+	ble_enable(1);	//enable ble module
+
 	uloop_init();
 
     int serialFd = hal_init();
