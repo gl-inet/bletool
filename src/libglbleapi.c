@@ -22,10 +22,76 @@
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
 #include "libglbleapi.h"
+#include <gl/debug.h>
 
 static struct ubus_subscriber subscriber;
 static struct uloop_timeout listen_timeout;
 static unsigned char listen;
+
+static gl_ble_cbs ble_msg_cb;
+
+
+static void call_adv_packet_cb(json_object* msg);
+
+
+static void sub_remove_callback(struct ubus_context *ctx, struct ubus_subscriber *obj, uint32_t id)
+{
+	fprintf(stderr,"Removed by server\n");
+}
+
+static int sub_handler(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
+{
+	if(!msg)
+	{
+		return -1;
+	}
+	
+	char* str = blobmsg_format_json(msg, true);
+	json_object* o = json_tokener_parse(str);
+	if(!o)
+	{
+		printf("json parse null\n");
+		free(str);
+		return -1;
+	}
+
+	json_object* tmp_type = json_object_object_get(o, "type");
+	char* type = json_object_get_string(tmp_type);
+	if(0 == strcmp(type, "unknow_msg")){
+		LOG(LOG_DEBUG, "ble ubus unknow_msg\n");
+
+	}else if(0 == strcmp(type, "system_boot")){
+
+
+	}else if(0 == strcmp(type, "conn_close")){
+
+
+	}else if(0 == strcmp(type, "conn_open")){
+
+
+	}else if(0 == strcmp(type, "remote_notify")){
+
+
+	}else if(0 == strcmp(type, "remote_write")){
+
+
+	}else if(0 == strcmp(type, "remote_set")){
+
+
+	}else if(0 == strcmp(type, "adv_packet")){
+		LOG(LOG_DEBUG, "ble ubus adv_packet\n");
+		call_adv_packet_cb(o);
+
+	}else if(0 == strcmp(type, "conn_update")){
+
+
+	}
+
+
+	json_object_put(o);
+	free(str);
+	return 0;
+}
 
 static void listen_timeout_cb(struct uloop_timeout* timeout)
 {
@@ -37,12 +103,33 @@ static void listen_timeout_cb(struct uloop_timeout* timeout)
 	}
 }
 
-int gl_ble_subscribe(ubus_subscriber_cb_t* callback)
+static void ble_register_cb(gl_ble_cbs* cb)
+{
+	// if(NULL != cb->ble_module_event)
+	// {
+	// 	ble_msg_cb.ble_module_event = cb->ble_module_event;
+	// }
+
+	if(NULL != cb->ble_gap_event)
+	{
+		ble_msg_cb.ble_gap_event = cb->ble_gap_event;
+	}
+
+	// if(NULL != cb->ble_gatt_event)
+	// {
+	// 	ble_msg_cb.ble_gatt_event = cb->ble_gatt_event;
+	// }
+}
+
+int gl_ble_subscribe(gl_ble_cbs* callback)
 {
 	int ret;
 	unsigned int id = 0;
-	subscriber.cb = callback->cb;
-	subscriber.remove_cb = callback->remove_cb;
+
+	ble_register_cb(callback);
+
+	subscriber.cb = sub_handler;
+	subscriber.remove_cb = sub_remove_callback;
 
 	struct ubus_context *CTX = ubus_connect(NULL);
     if (!CTX) {
@@ -853,4 +940,38 @@ int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
 	free(str);
 	json_object_put(o);
     return 0;
+}
+
+static void call_adv_packet_cb(json_object* msg)
+{
+	gl_ble_gap_data_t data;
+	memset(&data, 0, sizeof(gl_ble_gap_data_t));
+
+	//get rssi
+	json_object* json_rssi = json_object_object_get(msg, "rssi");
+	data.scan_rst.rssi = json_object_get_int(json_rssi);
+
+	//get packet_type
+	json_object* json_packet_type = json_object_object_get(msg, "packet_type");
+	data.scan_rst.packet_type = json_object_get_int(json_packet_type);
+
+	//get packet_type
+	json_object* json_address = json_object_object_get(msg, "address");
+	strcpy(data.scan_rst.addr, json_object_get_string(json_address));
+
+	//get address_type
+	json_object* json_address_type = json_object_object_get(msg, "address_type");
+	data.scan_rst.ble_addr_type = json_object_get_int(json_address_type);
+
+	//get address_type
+	json_object* json_bonding = json_object_object_get(msg, "bonding");
+	data.scan_rst.bonding = json_object_get_int(json_bonding);
+
+	//get address_type
+	json_object* json_data = json_object_object_get(msg, "data");
+	strcpy(data.scan_rst.ble_adv, json_object_get_string(json_data));
+
+	ble_msg_cb.ble_gap_event(GAP_BLE_SCAN_RESULT_EVT, &data);
+
+	return;
 }

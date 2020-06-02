@@ -28,7 +28,7 @@
 #define SYSTEM_BOOT             "system_boot"
 #define CONN_CLOSE              "conn_close"
 #define CONN_OPEN               "conn_open"
-#define REMOTE_MOTIFY           "remote_notify"
+#define REMOTE_NOTIFY           "remote_notify"
 #define REMOTE_WRITE            "remote_write"
 #define REMOTE_SET              "remote_set"
 #define ADV_PKG                 "adv_packet"
@@ -202,7 +202,7 @@ json_object* silabs_get_notify(void)
             {
                 if(pck.data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
                     o = json_object_new_object();
-                    json_object_object_add(o,"type",json_object_new_string(REMOTE_MOTIFY));
+                    json_object_object_add(o,"type",json_object_new_string(REMOTE_NOTIFY));
                     json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_characteristic_value.connection));
                     json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_characteristic_value.characteristic));
                     json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_characteristic_value.att_opcode));

@@ -158,11 +158,11 @@ int cmd_local_address(int argc, char** argv)
 }
 int cmd_listen(int argc, char** argv)
 {
-	ubus_subscriber_cb_t callback;
-	callback.cb = sub_cb;
-	callback.remove_cb = sub_remove_cb;
+	// ubus_subscriber_cb_t callback;
+	// callback.cb = sub_cb;
+	// callback.remove_cb = sub_remove_cb;
 
-	gl_ble_subscribe(&callback);
+	// gl_ble_subscribe(&callback);
 	
 	return 0;
 }
@@ -893,6 +893,50 @@ int cmd_dtm_end(int argc, char** argv)
 
 	return 0;
 }
+
+static int ble_gap_cb(gl_ble_gap_evrnt_t event, gl_ble_gap_data_t *data)
+{
+	switch(event)
+	{
+		case GAP_BLE_SCAN_RESULT_EVT:
+		{
+			gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
+			printf("***************** ble adv data *********************\n");
+			printf("{\n");
+			printf("  address: %s\n", data->scan_rst.addr);
+			printf("  address type: %d\n", data->scan_rst.ble_addr_type);
+			printf("  rssi: %d\n", data->scan_rst.rssi);
+			printf("  packet type: %d\n", data->scan_rst.packet_type);
+			printf("  bonding: %d\n", data->scan_rst.bonding);
+			printf("  data: %s\n", data->scan_rst.ble_adv);
+			printf("}\n");
+			printf("\n");
+			break;
+		}
+
+		case GAP_BLE_UPDATE_CONN_EVT:
+			break;
+
+		case GAP_BLE_CONNECT_EVT:
+			break;
+
+		case GAP_BLE_DISCONNECT_EVT:
+			break;
+
+		default:
+			break;
+	}
+}
+
+int cmd_test(int argc, char** argv)
+{
+	gl_ble_cbs ble_cb;
+	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
+
+	ble_cb.ble_gap_event = ble_gap_cb;
+	gl_ble_subscribe(&ble_cb);
+}
+
 static struct {
 	const char *name;
 	int (*cb)(int argc, char **argv);
@@ -922,6 +966,7 @@ static struct {
 	{"dtm_tx",                       	  cmd_dtm_tx,                        	  "Start transmitter for dtm test"              },
 	{"dtm_rx",                       	  cmd_dtm_rx,                        	  "Start receiver for dtm test"                 },
 	{"dtm_end",                       	  cmd_dtm_end,                            "End a dtm test"                              },
+	{"test",                       	  	  cmd_test,                               "test"                                        },
 	{ NULL, NULL, 0 }
 };
 static int usage(void)

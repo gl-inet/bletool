@@ -100,7 +100,88 @@ typedef struct {
     ubus_remove_handler_t remove_cb;
 } ubus_subscriber_cb_t;
 
-int gl_ble_subscribe(ubus_subscriber_cb_t* callback);
+
+/// module callback event type
+// typedef enum {
+//     MODULE_BOOT = 0,
+// 	MODULE_EVT_MAX,
+// } gl_ble_module_event_t;
+
+// typedef union {
+
+// } gl_ble_module_data_t;
+
+/// GAP BLE callback event type
+typedef enum {
+    GAP_BLE_SCAN_RESULT_EVT = 0,
+	GAP_BLE_UPDATE_CONN_EVT,
+	GAP_BLE_CONNECT_EVT,
+	GAP_BLE_DISCONNECT_EVT,
+    GAP_BLE_EVT_MAX,
+} gl_ble_gap_evrnt_t;
+
+/// BLE device address type
+typedef enum {
+    BLE_ADDR_TYPE_PUBLIC        = 0x00,
+    BLE_ADDR_TYPE_RANDOM        = 0x01,
+	BLE_ANONYMOUS_ADVERTISING	= 0xff,
+} gl_ble_addr_type_t;
+
+#define BLE_MAC_LEN					18
+#define MAX_ADV_DATA_LEN			255
+typedef union {
+	struct ble_scan_result_evt_data {
+		char addr[BLE_MAC_LEN];                          /*!< Bluetooth device address which has been searched */
+		gl_ble_addr_type_t ble_addr_type;          /*!< Ble device address type */
+		int packet_type;            		/*!< Ble scan result packet type */
+		int rssi;                                   /*!< Searched device's RSSI */
+		char ble_adv[MAX_ADV_DATA_LEN];    				 /*!< Received EIR */
+		int bonding;							
+    } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
+
+    struct ble_update_conn_evt_data {
+        int connection;                         	/*!< Bluetooth device address */
+        int interval;                          /*!< Min connection interval */
+        int latency;                          /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
+        int timeout;                          
+		int security_mode;
+		int txsize;
+    } update_conn_data; 
+
+	struct ble_connect_open_evt_data {
+		char addr[BLE_MAC_LEN];
+		gl_ble_addr_type_t ble_addr_type;
+		int conn_role;
+		int connection;
+		int bonding;
+		int advertiser;
+	} connect_open_data;
+	
+	struct ble_disconnect_evt_data {
+		int connection;
+		int reason;
+	} disconnect_data;
+} gl_ble_gap_data_t;
+
+/// GATT BLE callback event type
+// typedef enum {
+// 	GATT_EVT_MAX,
+// } gl_ble_gatt_event_t;
+
+// typedef union {
+
+// } gl_ble_gatt_data_t;
+
+typedef struct {
+	// int (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
+	int (*ble_gap_event)(gl_ble_gap_evrnt_t event, gl_ble_gap_data_t *data);
+	// int (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
+} gl_ble_cbs;
+
+
+
+
+int gl_ble_subscribe(gl_ble_cbs* callback);
 int gl_ble_unsubscribe(void);
 
 
