@@ -22,168 +22,225 @@
 
 #include <json-c/json.h>
 
-#define UUID_MAX                32
-#define LIST_LENGTHE_MAX        16
-#define CHAR_VALUE_MAX          256
+#define UUID_MAX 32
+#define LIST_LENGTHE_MAX 16
+#define CHAR_VALUE_MAX 256
 
-typedef struct {
+typedef struct
+{
     int handle;
     char uuid[UUID_MAX];
-}ble_service_list_t;
+} ble_service_list_t;
 
-typedef struct {
+typedef struct
+{
     int handle;
     char uuid[UUID_MAX];
     uint8_t properties;
-}ble_characteristic_list_t;
+} ble_characteristic_list_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t addr[6];
-}gl_ble_get_mac_rsp_t;
+} gl_ble_get_mac_rsp_t;
 
-typedef struct {
+typedef struct
+{
     int current_power;
-}gl_ble_set_power_rsp_t;
+} gl_ble_set_power_rsp_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t connection;
     uint8_t addr[6];
     uint8_t address_type;
     uint8_t master;
     uint8_t bonding;
     uint8_t advertiser;
-}gl_ble_connect_rsp_t;
+} gl_ble_connect_rsp_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t connection;
     int rssi;
-}gl_ble_get_rssi_rsp_t;
+} gl_ble_get_rssi_rsp_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t connection;
     uint8_t list_len;
     ble_service_list_t list[LIST_LENGTHE_MAX];
-}gl_ble_get_service_rsp_t;
+} gl_ble_get_service_rsp_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t connection;
     uint8_t list_len;
     ble_characteristic_list_t list[LIST_LENGTHE_MAX];
-}gl_ble_get_char_rsp_t;
+} gl_ble_get_char_rsp_t;
 
-typedef struct {
+typedef struct
+{
     uint8_t connection;
     int handle;
     uint8_t att_opcode;
     int offset;
     uint8_t value[CHAR_VALUE_MAX];
-}gl_ble_char_read_rsp_t;
+} gl_ble_char_read_rsp_t;
 
-typedef struct {
+typedef struct
+{
     int sent_len;
-}gl_ble_write_char_rsp_t;
+} gl_ble_write_char_rsp_t;
 
-typedef struct {
+typedef struct
+{
     int sent_len;
-}gl_ble_send_notify_rsp_t;
+} gl_ble_send_notify_rsp_t;
 
-typedef struct {
+typedef struct
+{
     int number_of_packets;
-}gl_ble_dtm_test_rsp_t;
+} gl_ble_dtm_test_rsp_t;
 
-
-
-
-
-typedef struct {
+typedef struct
+{
     ubus_handler_t cb;
     ubus_remove_handler_t remove_cb;
 } ubus_subscriber_cb_t;
 
+// module callback event type
+typedef enum
+{
+   // MODULE_BOOT = 0,
+    MODULE_BLE_SYSTEM_BOOT_EVT = 0,
+    MODULE_EVT_MAX,
+} gl_ble_module_event_t;
 
-/// module callback event type
-// typedef enum {
-//     MODULE_BOOT = 0,
-// 	MODULE_EVT_MAX,
-// } gl_ble_module_event_t;
+#define MAX_HASH_DATA_LEN 255
 
-// typedef union {
+typedef union {
+    struct ble_system_boot_data
+    {
+        int major;
+        int minor;
+        int patch;
+        int build;
+        int bootloader;
+        int hw;
+        char ble_hash[MAX_HASH_DATA_LEN];
+    } system_boot_data;
 
-// } gl_ble_module_data_t;
+} gl_ble_module_data_t;
 
 /// GAP BLE callback event type
-typedef enum {
+typedef enum
+{
     GAP_BLE_SCAN_RESULT_EVT = 0,
-	GAP_BLE_UPDATE_CONN_EVT,
-	GAP_BLE_CONNECT_EVT,
-	GAP_BLE_DISCONNECT_EVT,
+    GAP_BLE_UPDATE_CONN_EVT,
+    GAP_BLE_CONNECT_EVT,
+    GAP_BLE_DISCONNECT_EVT,
     GAP_BLE_EVT_MAX,
 } gl_ble_gap_evrnt_t;
 
 /// BLE device address type
-typedef enum {
-    BLE_ADDR_TYPE_PUBLIC        = 0x00,
-    BLE_ADDR_TYPE_RANDOM        = 0x01,
-	BLE_ANONYMOUS_ADVERTISING	= 0xff,
+typedef enum
+{
+    BLE_ADDR_TYPE_PUBLIC = 0x00,
+    BLE_ADDR_TYPE_RANDOM = 0x01,
+    BLE_ANONYMOUS_ADVERTISING = 0xff,
+
 } gl_ble_addr_type_t;
 
-#define BLE_MAC_LEN					18
-#define MAX_ADV_DATA_LEN			255
+#define BLE_MAC_LEN 18
+#define MAX_ADV_DATA_LEN 255
 typedef union {
-	struct ble_scan_result_evt_data {
-		char addr[BLE_MAC_LEN];                          /*!< Bluetooth device address which has been searched */
-		gl_ble_addr_type_t ble_addr_type;          /*!< Ble device address type */
-		int packet_type;            		/*!< Ble scan result packet type */
-		int rssi;                                   /*!< Searched device's RSSI */
-		char ble_adv[MAX_ADV_DATA_LEN];    				 /*!< Received EIR */
-		int bonding;							
-    } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
+    struct ble_scan_result_evt_data
+    {
+        char addr[BLE_MAC_LEN];           /*!< Bluetooth device address which has been searched */
+        gl_ble_addr_type_t ble_addr_type; /*!< Ble device address type */
+        int packet_type;                  /*!< Ble scan result packet type */
+        int rssi;                         /*!< Searched device's RSSI */
+        char ble_adv[MAX_ADV_DATA_LEN];   /*!< Received EIR */
+        int bonding;
+    } scan_rst; /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
 
-    struct ble_update_conn_evt_data {
-        int connection;                         	/*!< Bluetooth device address */
-        int interval;                          /*!< Min connection interval */
-        int latency;                          /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
-        int timeout;                          
-		int security_mode;
-		int txsize;
-    } update_conn_data; 
+    struct ble_update_conn_evt_data
+    {
+        int connection; /*!< Bluetooth device address */
+        int interval;   /*!< Min connection interval */
+        int latency;    /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
+        int timeout;
+        int security_mode;
+        int txsize;
+    } update_conn_data;
 
-	struct ble_connect_open_evt_data {
-		char addr[BLE_MAC_LEN];
-		gl_ble_addr_type_t ble_addr_type;
-		int conn_role;
-		int connection;
-		int bonding;
-		int advertiser;
-	} connect_open_data;
-	
-	struct ble_disconnect_evt_data {
-		int connection;
-		int reason;
-	} disconnect_data;
+    struct ble_connect_open_evt_data
+    {
+        char addr[BLE_MAC_LEN];
+        gl_ble_addr_type_t ble_addr_type;
+        int conn_role;
+        int connection;
+        int bonding;
+        int advertiser;
+    } connect_open_data;
+
+    struct ble_disconnect_evt_data
+    {
+        int connection;
+        int reason;
+    } disconnect_data;
 } gl_ble_gap_data_t;
 
-/// GATT BLE callback event type
-// typedef enum {
-// 	GATT_EVT_MAX,
-// } gl_ble_gatt_event_t;
+// GATT BLE callback event type
+typedef enum
+{
+    GATT_BLE_REMOTE_NOTIFY_EVT = 0,
+    GATT_BLE_REMOTE_WRITE_EVT,
+    GATT_BLE_REMOTE_SET_EVT,
+    GATT_EVT_MAX,
+} gl_ble_gatt_event_t;
 
-// typedef union {
+#define MAX_VALUE_DATA_LEN 255
+typedef union {
+    struct ble_remote_notify_evt_data
+    {
+        int connection;
+        int characteristic;
+        int att_opcode;
+        int offset;
+        char value[MAX_VALUE_DATA_LEN];
 
-// } gl_ble_gatt_data_t;
+    } remote_notify;
+    struct ble_remote_wirte_evt_data
+    {
+        int connection;
+        int attribute;
+        int att_opcode;
+        int offset;
+        char value[MAX_VALUE_DATA_LEN];
 
-typedef struct {
-	// int (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
-	int (*ble_gap_event)(gl_ble_gap_evrnt_t event, gl_ble_gap_data_t *data);
-	// int (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
+    } remote_write;
+    struct ble_remote_set_evt_data
+    {
+        int connection;
+        int characteristic;
+        int status_flags;
+        int client_config_flags;
+    } remote_set;
+
+} gl_ble_gatt_data_t;
+
+typedef struct
+{
+    int (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
+    int (*ble_gap_event)(gl_ble_gap_evrnt_t event, gl_ble_gap_data_t *data);
+    int (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
+
 } gl_ble_cbs;
 
-
-
-
-int gl_ble_subscribe(gl_ble_cbs* callback);
+int gl_ble_subscribe(gl_ble_cbs *callback);
 int gl_ble_unsubscribe(void);
-
 
 /* BLE System functions */
 
@@ -194,25 +251,24 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
 int gl_ble_enable(int enable);
 
 /*Set the global power level*/
-int gl_ble_set_power(gl_ble_set_power_rsp_t * rsp, int power);
-
+int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
 
 /* BLE master functions */
 
 /*Act as master, Set and start the BLE discovery*/
-int gl_ble_discovery(int phys,int interval,int window,int type,int mode);
+int gl_ble_discovery(int phys, int interval, int window, int type, int mode);
 
 /*Act as master, End the current GAP discovery procedure*/
 int gl_ble_stop(void);
 
 /*Act as master, Start connect to a remote BLE device*/
-int gl_ble_connect(gl_ble_connect_rsp_t* rsp,char* address,int address_type,int phy);
+int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy);
 
 /*Act as master, disconnect with remote device*/
 int gl_ble_disconnect(int connection);
 
 /*Act as master, Get rssi of connection with remote device*/
-int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t* rsp,int connection);
+int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, int connection);
 
 /*Act as master, Get service list of a remote GATT server*/
 int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection);
@@ -224,28 +280,27 @@ int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_hand
 int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, int connection, int char_handle);
 
 /*Act as master, Write value to specified characteristic in a remote gatt server*/
-int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_handle,char* value,int res);
+int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_handle, char *value, int res);
 
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
-int gl_ble_set_notify(int connection, int char_handle,int flag);
-
+int gl_ble_set_notify(int connection, int char_handle, int flag);
 
 /* BLE slave functions */
 
 /*Act as BLE slave, Set and Start Avertising*/
-int gl_ble_adv(int phys, int interval_min,int interval_max,int discover,int connect);
+int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int connect);
 
 /*Act as BLE slave, Set customized advertising data*/
-int gl_ble_adv_data(int flag, char* data);
+int gl_ble_adv_data(int flag, char *data);
 
 /*Act as BLE slave, Stop advertising*/
 int gl_ble_stop_adv(void);
 
 /*Act as BLE slave, Send Notification*/
-int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp,int connection,int char_handle, char* value);
+int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, int connection, int char_handle, char *value);
 
 /*DTM test, tx*/
-int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type,int length, int channel, int phy);
+int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
 
 /*DTM test, rx*/
 int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
