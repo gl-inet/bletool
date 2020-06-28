@@ -21,6 +21,7 @@ start_service() {
     uci set ble.@bleserial[0].flowcontrol=0
     uci set ble.@bleserial[0].rston="echo 1 > /sys/class/gpio/gpio${S1300_GPIO}/value"
     uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
+    sed -i '/ttyMSM1/d' /etc/inittab
   elif [ $model == x750 ]; then
     echo 1 > /sys/class/gpio/export
     uci set ble.x750='bleserial'
