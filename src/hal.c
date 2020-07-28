@@ -18,13 +18,16 @@
  ******************************************************************************/
 
 #include "uart.h"
-#include <gl/debug.h>
+#include <uci.h>
 #include "hal.h"
 
 unsigned char ENDIAN;
 extern char rston[];
 extern char rstoff[];
 
+struct uci_context* guci2_init();
+int guci2_free(struct uci_context* ctx);
+int guci2_get(struct uci_context* ctx, const char* section_or_key, char value[]);
 
 static int check_endian(void)
 {
@@ -101,4 +104,81 @@ int hal_init(void)
         exit(1);
     }
     return serialFd;
+}
+
+struct uci_context* guci2_init()
+{
+	
+	struct uci_context* ctx = uci_alloc_context();
+		
+	return ctx;
+}
+
+int guci2_free(struct uci_context* ctx)
+{
+	uci_free_context(ctx);
+	return 0;
+}
+
+static const char *delimiter = " ";
+
+static void uci_show_value(struct uci_option *o, char value[]){
+	struct uci_element *e;
+	bool sep = false;
+//	char *space;
+
+	switch(o->type) {
+	case UCI_TYPE_STRING:
+		sprintf(value,"%s", o->v.string);
+		break;
+	case UCI_TYPE_LIST:
+		uci_foreach_element(&o->v.list, e) {
+			sprintf(value,"%s", (sep ? delimiter : ""));
+			//space = strpbrk(e->name, " \t\r\n");
+			//if (!space )
+				sprintf(value,"%s", e->name);
+			//sep = true;
+		}
+		break;
+	default:
+		strcpy(value,"");
+		break;
+	}
+}
+
+int guci2_get(struct uci_context* ctx, const char* section_or_key, char value[])
+{
+	struct uci_ptr ptr;
+	struct uci_element *e;
+	int ret = UCI_OK;
+	char *str=(char*)malloc(strlen(section_or_key)+1); //must not use a const value
+	strcpy(str,section_or_key);
+	if (uci_lookup_ptr(ctx, &ptr, str, true) != UCI_OK) {
+		ret=-1;
+		strcpy(value,"");
+		goto out;
+	}
+	if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
+		ctx->err = UCI_ERR_NOTFOUND;
+		ret=-1;
+		strcpy(value,"");
+		goto out;
+	}
+	e = ptr.last;
+	switch(e->type) {
+	case UCI_TYPE_SECTION:
+		sprintf(value,"%s", ptr.s->type);
+		break;
+	case UCI_TYPE_OPTION:
+		uci_show_value(ptr.o, value);
+		break;
+	default:
+		strcpy(value,"");
+		ret=-1;
+		goto out;
+		break;
+	}
+out:
+	free(str);
+	return ret;
 }

@@ -86,7 +86,7 @@ libglbleapi.c
 LIB_SRC += \
 libglbleapi.c
 
-DAEMONDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json -lglutil
+DAEMONDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json -luci 
 UTILDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json
 LIBDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json
 

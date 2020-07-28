@@ -64,13 +64,14 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio62/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio62/value'
   elif [ $model == b2200 ]; then
-    echo 43 > /sys/class/gpio/export
+    echo 42 > /sys/class/gpio/export
+	echo out > /sys/class/gpio/gpio42/direction
     uci set ble.b2200='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyHS0'
     uci set ble.@bleserial[0].baudrate=115200
     uci set ble.@bleserial[0].flowcontrol=0
-    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio43/value'
-    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio43/value'
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio42/value'
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio42/value'
   fi
   uci commit ble
 

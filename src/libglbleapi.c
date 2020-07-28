@@ -492,7 +492,7 @@ int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_hand
 	}
 
 	json_object* o = json_tokener_parse(str);
-	char* parameters[] = {"connection","characteristic_list"};
+	char* parameters[] = {"characteristic_list"};
 	int ret = json_parameter_check(o,parameters,sizeof(parameters)/sizeof(parameters[0]));
 	if(ret)
 	{
