@@ -23,7 +23,6 @@
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
 
-#include <gl/debug.h>
 #include "gl_methods.h"
 #include "uart.h"
 #include "hal.h"
