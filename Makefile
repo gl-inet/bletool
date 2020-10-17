@@ -16,7 +16,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gl-bletool
-PKG_VERSION:=3.2.3
+PKG_VERSION:=3.2.5
 
 
 include $(INCLUDE_DIR)/package.mk
@@ -47,9 +47,9 @@ define Package/gl-bletool/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/bletool $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/include/gl
 	$(CP) $(PKG_BUILD_DIR)/libglbleapi.h $(1)/usr/include/gl
-	$(INSTALL_DIR) $(1)/usr/lib/gl
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/libglbleapi.so $(1)/usr/lib/gl
-	$(LN) /usr/lib/gl/libglbleapi.so $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/libglbleapi.so $(1)/usr/lib
+	#$(LN) /usr/lib/gl/libglbleapi.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/gl-bletool.init $(1)/etc/init.d/bledaemon
 endef
