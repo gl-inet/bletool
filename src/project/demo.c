@@ -22,6 +22,9 @@
 #include <libubus.h>
 #include <json-c/json.h>
 #include <gl/libglbleapi.h>
+#include "ble_dev_mgr.h"
+#include "infra_log.h"
+
 int main()
 {
 	gl_ble_get_mac_rsp_t mac_rsp;

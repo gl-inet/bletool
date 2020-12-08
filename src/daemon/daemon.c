@@ -24,9 +24,12 @@
 #include <libubus.h>
 
 #include <gl/debug.h>
-#include "gl_methods.h"
+
 #include "uart.h"
 #include "hal.h"
+#include "infra_log.h"
+#include "gl_methods.h"
+#include "ble_dev_mgr.h"
  
 static struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;

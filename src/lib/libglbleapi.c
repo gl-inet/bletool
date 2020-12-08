@@ -21,8 +21,11 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
-#include "libglbleapi.h"
 #include <gl/debug.h>
+
+#include "libglbleapi.h"
+#include "ble_dev_mgr.h"
+#include "infra_log.h"
 
 static struct ubus_subscriber subscriber;
 static struct uloop_timeout listen_timeout;

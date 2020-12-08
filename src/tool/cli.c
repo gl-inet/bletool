@@ -26,6 +26,8 @@
 #include <json-c/json.h>
 
 #include "libglbleapi.h"
+#include "ble_dev_mgr.h"
+#include "infra_log.h"
 
 #define PARA_MISSING "parameter missing\n"
 
@@ -166,16 +168,6 @@ int cmd_local_address(int argc, char **argv)
 
 	return 0;
 }
-// int cmd_listen(int argc, char **argv)
-// {
-// 	// ubus_subscriber_cb_t callback;
-// 	// callback.cb = sub_cb;
-// 	// callback.remove_cb = sub_remove_cb;
-
-// 	// gl_ble_subscribe(&callback);
-
-// 	return 0;
-// }
 
 int cmd_listen(int argc, char **argv)
 {
@@ -183,9 +175,7 @@ int cmd_listen(int argc, char **argv)
 	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
 
 	ble_cb.ble_gap_event = ble_gap_cb;
-
 	ble_cb.ble_gatt_event = ble_gatt_cb;
-
 	ble_cb.ble_module_event = ble_module_cb;
 
 	gl_ble_subscribe(&ble_cb);
