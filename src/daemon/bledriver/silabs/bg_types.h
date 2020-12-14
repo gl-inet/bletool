@@ -23,6 +23,17 @@
 #include <stdint.h>
 #include <stddef.h>
 
+
+#define UNKNOW_MSG              "unknow_msg"
+#define SYSTEM_BOOT             "system_boot"
+#define CONN_CLOSE              "conn_close"
+#define CONN_OPEN               "conn_open"
+#define REMOTE_MOTIFY           "remote_notify"
+#define REMOTE_WRITE            "remote_write"
+#define REMOTE_SET              "remote_set"
+#define ADV_PKG                 "adv_packet"
+#define CONN_UPDATE             "conn_update"
+
 typedef uint8_t   uint8;
 typedef uint16_t  uint16;
 typedef uint32_t  uint32;

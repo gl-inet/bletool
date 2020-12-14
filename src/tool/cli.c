@@ -28,6 +28,8 @@
 #include "libglbleapi.h"
 #include "ble_dev_mgr.h"
 #include "infra_log.h"
+#include "glble_errno.h"
+#include "glble_type.h"
 
 #define PARA_MISSING "parameter missing\n"
 
@@ -100,21 +102,31 @@ int cmd_enable(int argc, char **argv)
 	{
 		enable = atoi(argv[2]);
 	}
-	char *str = NULL;
-	static struct blob_buf b;
 
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "enable", enable);
-
-	ble_ubus_call("ble", "enable", &b, 1, &str);
-	if (NULL == str)
-	{
-		printf("Invoke Error\n");
-		return -1;
-	}
+	GL_RET ret  = gl_ble_enable(enable);
+	
+	json_object* obj = json_object_new_object();
+	json_object_object_add(obj, "code", json_object_new_int(ret));
+	char *str = json_object_to_json_string(obj);
 	printf("%s\n", str);
-
+	json_object_put(obj);
 	free(str);
+
+	// char *str = NULL;
+	// static struct blob_buf b;
+
+	// blob_buf_init(&b, 0);
+	// blobmsg_add_u32(&b, "enable", enable);
+
+	// ble_ubus_call("ble", "enable", &b, 1, &str);
+	// if (NULL == str)
+	// {
+	// 	printf("Invoke Error\n");
+	// 	return -1;
+	// }
+	// printf("%s\n", str);
+
+	// free(str);
 
 	return 0;
 }
@@ -149,22 +161,47 @@ int cmd_set_power(int argc, char **argv)
 
 	return 0;
 }
+
+static int addr2str(ble_addr *adr, char* str)
+{
+    sprintf(str,"%02x:%02x:%02x:%02x:%02x:%02x",
+    adr->addr[5],adr->addr[4],adr->addr[3],adr->addr[2],adr->addr[1],adr->addr[0]);
+    return 0;
+}
+
+static int str2addr(char* str, ble_addr *address)
+{
+    int mac[6];
+    sscanf(str,"%02x:%02x:%02x:%02x:%02x:%02x",
+            &mac[5],&mac[4],&mac[3],&mac[2],&mac[1],&mac[0]);
+    int i = 0;
+    while(i < 6)
+    {
+        address->addr[i] = mac[i];
+        i++;
+    }
+    return 0;
+}
+
+
 int cmd_local_address(int argc, char **argv)
 {
 	char *str = NULL;
-	static struct blob_buf b;
+	char addr[18] = {0};
+	gl_ble_get_mac_rsp_t rsp;
+	memset(&rsp, 0, sizeof(gl_ble_get_mac_rsp_t));
+	GL_RET ret = gl_ble_get_mac(&rsp);
+	
+	json_object* obj = json_object_new_object();
+	json_object_object_add(obj, "code", json_object_new_int(ret));
+	
+	addr2str(&rsp.addr, addr);
+    json_object_object_add(obj, "address", json_object_new_string(addr));
 
-	blob_buf_init(&b, 0);
-
-	ble_ubus_call("ble", "local_mac", &b, 1, &str);
-	if (NULL == str)
-	{
-		printf("Invoke Error\n");
-		return -1;
-	}
+	str = json_object_to_json_string(obj);
 	printf("%s\n", str);
-
-	free(str);
+	json_object_put(obj);
+	free(str);	
 
 	return 0;
 }
@@ -485,23 +522,50 @@ int cmd_connect(int argc, char **argv)
 	}
 
 	char *str = NULL;
-	static struct blob_buf b;
+	// static struct blob_buf b;
 
-	blob_buf_init(&b, 0);
-	blobmsg_add_string(&b, "conn_address", address);
-	blobmsg_add_u32(&b, "conn_address_type", address_type);
-	blobmsg_add_u32(&b, "conn_phy", phy);
+	gl_ble_connect_rsp_t rsp;
+	memset(&rsp, 0, sizeof(gl_ble_connect_rsp_t));
 
-	ble_ubus_call("ble", "connect", &b, 5, &str);
+	GL_RET ret =  gl_ble_connect(&rsp, address, address_type, phy);
+	
+	json_object* obj = json_object_new_object();
+	json_object_object_add(obj, "code", json_object_new_int(ret));
 
-	if (NULL == str)
-	{
+	if ( !ret ) {
+		json_object_object_add(obj, "connection", json_object_new_int(rsp.connection));
+		addr2str(&rsp.addr, address);
+		json_object_object_add(obj, "address", json_object_new_string(address));
+		json_object_object_add(obj, "address_type", json_object_new_int(rsp.address_type));
+		json_object_object_add(obj, "master", json_object_new_int(rsp.master));
+		json_object_object_add(obj, "bonding", json_object_new_int(rsp.bonding));
+		json_object_object_add(obj, "advertiser", json_object_new_int(rsp.advertiser));	
+	} else {
 		printf("Invoke Error\n");
 		return -1;
 	}
-	printf("%s\n", str);
 
-	free(str);
+	str = json_object_to_json_string(obj);
+	printf("%s\n", str);
+	json_object_put(obj);
+	// free(str);
+	printf("cmd connect end!!!\n\n");
+
+	// blob_buf_init(&b, 0);
+	// blobmsg_add_string(&b, "conn_address", address);
+	// blobmsg_add_u32(&b, "conn_address_type", address_type);
+	// blobmsg_add_u32(&b, "conn_phy", phy);
+
+	// ble_ubus_call("ble", "connect", &b, 5, &str);
+
+	// if (NULL == str)
+	// {
+	// 	printf("Invoke Error\n");
+	// 	return -1;
+	// }
+	// printf("%s\n", str);
+
+	// free(str);
 
 	return 0;
 }
@@ -547,40 +611,41 @@ int cmd_disconnect(int argc, char **argv)
 }
 int cmd_get_rssi(int argc, char **argv)
 {
-	int connection = -1;
-
+	char *str = NULL;
+	char address[BLE_MAC_LEN] = {0};
+	
 	if (argc < 3)
 	{
 		printf(PARA_MISSING);
-		return -1;
+		return GL_ERR_PARAM_MISSING;
 	}
 	else
 	{
-		connection = atoi(argv[2]);
+		strcpy(address, argv[2]);
 	}
 
-	if (connection < 0)
+	uint8_t addr_len = strlen(address);
+	if (addr_len < BLE_MAC_LEN - 1)
 	{
 		printf(PARA_MISSING);
-
-		return -1;
+		return GL_ERR_PARAM_MISSING;
 	}
+	
+	gl_ble_get_rssi_rsp_t rsp;
+	memset(&rsp, 0, sizeof(gl_ble_get_rssi_rsp_t));
 
-	char *str = NULL;
-	static struct blob_buf b;
+	GL_RET ret = gl_ble_get_rssi(&rsp, address);
 
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "rssi_connection", connection);
+	json_object* obj = json_object_new_object();
+	json_object_object_add(obj, "code", json_object_new_int(ret));
 
-	ble_ubus_call("ble", "get_rssi", &b, 1, &str);
-
-	if (NULL == str)
-	{
-		printf("Invoke Error\n");
-		return -1;
+	if ( !ret ) {
+		json_object_object_add(obj, "address", json_object_new_string(rsp.address));
+		json_object_object_add(obj, "rssi", json_object_new_int(rsp.rssi));
 	}
+	str = json_object_to_json_string(obj);
 	printf("%s\n", str);
-
+	json_object_put(obj);
 	free(str);
 
 	return 0;

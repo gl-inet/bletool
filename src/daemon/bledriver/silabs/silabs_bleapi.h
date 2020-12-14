@@ -22,9 +22,7 @@
 
 #include <json-c/json.h>
 
-
 json_object* silabs_get_notify(void);
-
 json_object* silabs_ble_enable(int);
 json_object* silabs_ble_local_mac(void);
 json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int mode);

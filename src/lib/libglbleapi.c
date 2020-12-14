@@ -68,8 +68,13 @@ static int sub_handler(struct ubus_context *ctx, struct ubus_object *obj, struct
 		return -1;
 	}
 
-	json_object *tmp_type = json_object_object_get(o, "type");
-	char *type = json_object_get_string(tmp_type);
+	json_object *val_obj = NULL;
+	char *type = NULL;
+
+	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
+		type = json_object_get_string(val_obj);
+	}
+
 	if (0 == strcmp(type, "unknow_msg"))
 	{
 		LOG(LOG_DEBUG, "ble ubus unknow_msg\n");
@@ -217,6 +222,7 @@ int json_parameter_check(json_object *obj, char **parameters, int para_num)
 	int i;
 	if (!obj)
 		return -1;
+	
 	o = json_object_object_get(obj, "code");
 	if (!o)
 	{
@@ -277,6 +283,7 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	}
 
 	char *str = NULL;
+	json_object *val_obj = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
@@ -294,8 +301,13 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	{
 		return ret;
 	}
-	char *address = json_object_get_string(json_object_object_get(o, "mac"));
-	int mac[6];
+
+	char *address = NULL;
+	if ( json_object_object_get_ex(o, "mac",  &val_obj) ) {
+		address = json_object_get_string(val_obj);
+	}
+
+	int mac[6];	
 	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x",
 		   &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
 	int i = 0;
@@ -321,7 +333,7 @@ int gl_ble_enable(int enable)
 	gl_ble_call("ble", "enable", &b, 1, &str);
 	if (NULL == str)
 	{
-		return -1;
+		return GL_ERR_RESP_MISSING;
 	}
 
 	json_object *o = json_tokener_parse(str);
@@ -334,7 +346,7 @@ int gl_ble_enable(int enable)
 
 	free(str);
 	json_object_put(o);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Set system tx power*/
 int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
@@ -364,7 +376,11 @@ int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
 		return ret;
 	}
 
-	rsp->current_power = json_object_get_int(json_object_object_get(o, "power"));
+	json_object *val_obj = NULL;
+
+	if ( json_object_object_get_ex(o, "power",  &val_obj) ) {
+		rsp->current_power = json_object_get_int(val_obj);
+	}
 
 	free(str);
 	json_object_put(o);
@@ -435,6 +451,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 {
 	if (!rsp)
 	{
+		printf("rsp error\n");
 		return -2;
 	}
 
@@ -452,6 +469,8 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 		return -1;
 	}
 
+	printf("connect str = %s\n", str);
+
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"connection", "address", "address_type", "master", "bonding", "advertiser"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
@@ -460,15 +479,30 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 		return ret;
 	}
 
-	rsp->connection = json_object_get_int(json_object_object_get(o, "connection"));
-	rsp->address_type = json_object_get_int(json_object_object_get(o, "address_type"));
-	rsp->master = json_object_get_int(json_object_object_get(o, "master"));
-	rsp->bonding = json_object_get_int(json_object_object_get(o, "bonding"));
-	rsp->advertiser = json_object_get_int(json_object_object_get(o, "advertiser"));
-	//char* address = json_object_get_string(json_object_object_get(o,"address"));
+	json_object *val_obj = NULL;
+
+	if ( json_object_object_get_ex(o, "connection",  &val_obj) ) {
+		rsp->connection = json_object_get_int(val_obj);
+	}
+
+	if ( json_object_object_get_ex(o, "address_type",  &val_obj) ) {
+		rsp->address_type = json_object_get_int(val_obj);
+	}
+
+	if ( json_object_object_get_ex(o, "master",  &val_obj) ) {
+		rsp->master = json_object_get_int(val_obj);
+	}
+
+	if ( json_object_object_get_ex(o, "bonding",  &val_obj) ) {
+		rsp->bonding = json_object_get_int(val_obj);
+	}
+
+	if ( json_object_object_get_ex(o, "advertiser",  &val_obj) ) {
+		rsp->advertiser = json_object_get_int(val_obj);
+	}
+
 	int mac[6];
-	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x",
-		   &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
+	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
 	int i = 0;
 	while (i < 6)
 	{
@@ -508,39 +542,42 @@ int gl_ble_disconnect(int connection)
 	return 0;
 }
 /*Act as master, Get rssi of connection with remote device*/
-int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, int connection)
+int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)  
 {
-	if (!rsp)
-	{
-		return -2;
+	if (!rsp) {
+		return GL_ERR_PARAM;
 	}
 
 	char *str = NULL;
+	int connection = 0;
 	static struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "rssi_connection", connection);
+	
+	blob_buf_init(&b, 0);	
+	blobmsg_add_string(&b, "rssi_address", address);
 
 	gl_ble_call("ble", "get_rssi", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
+
+	if (NULL == str) {
+		return GL_ERR_RESP_MISSING;
 	}
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection", "rssi"};
+	char *parameters[] = {"rssi"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
+	if (ret) {
 		return ret;
 	}
 
-	rsp->connection = json_object_get_int(json_object_object_get(o, "connection"));
-	rsp->rssi = json_object_get_int(json_object_object_get(o, "rssi"));
+	json_object *val_obj = NULL;
+	strcpy(rsp->address , address);	
+
+	if ( json_object_object_get_ex(o, "rssi",  &val_obj) ) {
+		rsp->rssi = json_object_get_int(val_obj);
+	}
 
 	free(str);
 	json_object_put(o);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, Get service list of a remote GATT server*/
 int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection)
@@ -1179,38 +1216,48 @@ static void call_remote_set_cb(json_object *msg)
 
 static void call_system_boot_cb(json_object *msg)
 {
+	json_object *val_obj = NULL;
+
 	gl_ble_module_data_t data;
 	memset(&data, 0, sizeof(gl_ble_module_data_t));
 
 	//major
-	json_object *json_major = json_object_object_get(msg, "major");
-	data.system_boot_data.major = json_object_get_int(json_major);
-
+	if ( json_object_object_get_ex(msg, "major",  &val_obj) ) {
+		data.system_boot_data.major = json_object_get_int(val_obj);
+	}
+	
 	//minor
-	json_object *json_minor = json_object_object_get(msg, "minor");
-	data.system_boot_data.minor = json_object_get_int(json_minor);
+	if ( json_object_object_get_ex(msg, "minor",  &val_obj) ) {
+		data.system_boot_data.minor = json_object_get_int(val_obj);
+	}
 
 	//patch
-	json_object *json_patch = json_object_object_get(msg, "patch");
-	data.system_boot_data.patch = json_object_get_int(json_patch);
+	if ( json_object_object_get_ex(msg, "patch",  &val_obj) ) {
+		data.system_boot_data.patch = json_object_get_int(val_obj);
+	}
 
 	//build
-	json_object *json_build = json_object_object_get(msg, "build");
-	data.system_boot_data.build = json_object_get_int(json_build);
-
+	if ( json_object_object_get_ex(msg, "build",  &val_obj) ) {
+		data.system_boot_data.build = json_object_get_int(val_obj);
+	}
+	
 	//bootloader
-	json_object *json_bootloader = json_object_object_get(msg, "bootloader");
-	data.system_boot_data.bootloader = json_object_get_int(json_bootloader);
-
+	if ( json_object_object_get_ex(msg, "bootloader",  &val_obj) )  {
+		data.system_boot_data.bootloader = json_object_get_int(val_obj);
+	}
+	
 	//hw
-	json_object *json_hw = json_object_object_get(msg, "hw");
-	data.system_boot_data.hw = json_object_get_int(json_hw);
+	if ( json_object_object_get_ex(msg, "hw", &val_obj) )  {
+		data.system_boot_data.hw = json_object_get_int(val_obj);
+	}
 
 	//ble_hash
-	json_object *json_hash = json_object_object_get(msg, "hash");
-	strcpy(data.system_boot_data.ble_hash, json_object_get_string(json_hash));
+	if ( json_object_object_get_ex(msg, "hash", &val_obj) )  {
+		strcpy(data.system_boot_data.ble_hash, json_object_get_string(val_obj));
+	}
 	
 	ble_msg_cb.ble_module_event(MODULE_BLE_SYSTEM_BOOT_EVT, &data);
 
 	return;
 }
+

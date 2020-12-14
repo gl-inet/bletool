@@ -19,7 +19,7 @@
 #include <libubox/list.h>
 #include <stdint.h>
 
-#define DEVICE_MAC_LEN 32
+#define DEVICE_MAC_LEN 18
 
 typedef struct _silabs_dev_desc_t
 {
@@ -39,13 +39,18 @@ typedef struct
     struct list_head dev_list;
 } ble_dev_mgr_ctx_t;
 
+void delete_device_from_list(json_object *o);
+void add_device_to_list(json_object *o);
+void update_device_list(json_object *o);
+
 void ble_dev_mgr_print(void);
 int ble_dev_mgr_init(void);
 int ble_dev_mgr_add(char *dev_addr, uint16_t connection);
 int ble_dev_mgr_del(uint16_t connection);
-// int ble_dev_mgr_update(char *dev_addr, uint16_t short_id);
+int ble_dev_mgr_update(uint16_t connection);
 uint16_t ble_dev_mgr_get_connection(char *dev_addr);
 char *ble_dev_mgr_get_address(uint16_t connection);
 int ble_dev_mgr_get_list_size(void);
+
 
 #endif // !_BLE_DEV_MGR_H_

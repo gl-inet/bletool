@@ -17,11 +17,12 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-
+#include <json-c/json.h>
 #include "ble_dev_mgr.h"
 #include "infra_log.h"
+// #include "glble_type.h"
 
-static ble_dev_mgr_ctx_t g_ble_dev_mgr = {0};
+ble_dev_mgr_ctx_t g_ble_dev_mgr = {0};
 
 uint32_t HAL_TimeStamp(void)
 {
@@ -30,27 +31,35 @@ uint32_t HAL_TimeStamp(void)
     return tv.tv_sec;
 }
 
-static ble_dev_mgr_ctx_t *_ble_dev_mgr_get_ctx(void)
+ ble_dev_mgr_ctx_t *_ble_dev_mgr_get_ctx(void)
 {
     return &g_ble_dev_mgr;
 }
 
 void ble_dev_mgr_print(void)
 {
-    ble_dev_mgr_ctx_t* ctx = _ble_dev_mgr_get_ctx();
+    ble_dev_mgr_ctx_t* mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t* node = NULL, *next_node = NULL;
 
-    list_for_each_entry_safe( node, next_node, &ctx->dev_list, linked_list )
+    // int ret_dev_list = list_empty(&mgr_ctx->dev_list);
+    // printf("ret4_dev_list = %d\n", ret_dev_list);
+
+    printf("\nConnected devices: \n");
+
+    list_for_each_entry_safe( node, next_node, &mgr_ctx->dev_list, linked_list )
     {
         if ( node != NULL ) 
         {
-            printf("\nConnected devices: \n");
-            printf("dev_addr = %s, connection = %d, timestamp = %d \n", 
-                    node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection, node->timestamp );
+            
+            printf("dev_addr = %s, connection = %d \n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection );
         }
         else
             printf("No device connection\n");
     }
+
+    // char address[18] = "16:16:16:16:10:16";
+    // int connection = ble_dev_mgr_get_connection(address);
+    // printf("connection = %d\n", connection);
 }
 
 static int search_ble_dev_by_addr(char *dev_addr, ble_dev_mgr_node_t **node)
@@ -74,12 +83,13 @@ static int search_ble_dev_by_addr(char *dev_addr, ble_dev_mgr_node_t **node)
 
 int ble_dev_mgr_init(void)
 {
-    ble_dev_mgr_ctx_t *ctx = _ble_dev_mgr_get_ctx();
+    printf("ble_dev_mgr_init!!!\n");
+    ble_dev_mgr_ctx_t * mgr_ctx = _ble_dev_mgr_get_ctx();
 
-    memset(ctx, 0, sizeof(ble_dev_mgr_ctx_t));
+    memset(mgr_ctx, 0, sizeof(ble_dev_mgr_ctx_t));
 
     /* Init Device List */
-    INIT_LIST_HEAD(&ctx->dev_list);
+    INIT_LIST_HEAD(&mgr_ctx->dev_list);
 
     return 0;
 }
@@ -92,7 +102,7 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
     //     return 0;
     // }
 
-    ble_dev_mgr_ctx_t *ctx = _ble_dev_mgr_get_ctx();
+    ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
 
     node = malloc(sizeof(ble_dev_mgr_node_t));
@@ -100,15 +110,23 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
 
     memcpy(node->ble_dev_desc.dev_addr, dev_addr, DEVICE_MAC_LEN);
     node->ble_dev_desc.connection = connection;
-    node->timestamp = HAL_TimeStamp();
 
-    INIT_LIST_HEAD(&node->linked_list);
-    list_add_tail(&node->linked_list, &ctx->dev_list);      // Q1：添加设备，每次都需要创建一个头节点？不需要维护之前的头节点吗？
+    INIT_LIST_HEAD(&node->linked_list);         //初始化双向链表为空链表
+    
+    // int ret_linked = list_empty(&node->linked_list);
+    // printf("ret_linked = %d\n", ret_linked);
 
-    printf("Device Join: dev_addr=%s, connection=%d, timestamp = %d\n", 
-            node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection, node->timestamp);
+    // ble_dev_mgr_init();
 
-    ble_dev_mgr_print();
+    int ret_dev_list = list_empty(&mgr_ctx->dev_list);
+    // printf("ret2_dev_list = %d\n", ret_dev_list);
+    
+    list_add_tail(&node->linked_list, &mgr_ctx->dev_list);      // Q1：添加设备，每次都需要创建一个头节点？不需要维护之前的头节点吗？
+    // printf("ret3_dev_list = %d\n", ret_dev_list);
+
+    // ble_dev_mgr_print();
+
+    printf("Device Join: dev_addr=%s, connection=%d.\n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
         
     return 0;
 }
@@ -147,7 +165,7 @@ int ble_dev_mgr_del(uint16_t connection)
 
     printf("Device Leave: dev_addr=%s, connection=%d\n",node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
 
-    ble_dev_mgr_print();
+    // ble_dev_mgr_print();
 
     free(node);
 
@@ -172,6 +190,7 @@ char *ble_dev_mgr_get_address(uint16_t connection)
 
 uint16_t ble_dev_mgr_get_connection(char *dev_addr)
 {
+    printf("get connection!!!\n");
     ble_dev_mgr_node_t* node = NULL;
 
     if (dev_addr == NULL)
@@ -199,4 +218,110 @@ int ble_dev_mgr_get_list_size(void)
     }
 
     return index;
+}
+
+int ble_dev_mgr_update(uint16_t connection)
+{
+    ble_dev_mgr_node_t* node = NULL;
+
+    if (search_ble_dev_by_connection(connection, &node) != 0) {
+        return -1;
+    }
+
+    node->ble_dev_desc.connection = connection;
+    // node->timestamp = HAL_TimeStamp();
+
+    return 0;
+}
+
+/* Device Management.*/
+void add_device_to_list(json_object *o)
+{
+    // printf("add_device_to_list\n");
+	/* get mac */
+	char *str_mac = NULL;
+	json_object *json_mac = json_object_object_get(o, "address");
+	if (json_mac)
+	{
+		str_mac = json_object_get_string(json_mac);
+	}
+	else
+	{
+		strcpy(str_mac, "mac is missing");
+	}
+
+    // printf("add device: mac = %s\n", str_mac);
+
+	/* get connection */
+	uint16_t connection;
+	json_object *json_connection = json_object_object_get(o, "connection");
+	if (json_connection)
+	{
+		connection = json_object_get_int(json_connection);
+	}
+	else
+	{
+		connection = 0;
+	}
+
+    // printf("add device: connection = %d\n", connection);
+
+	if (str_mac && (connection != 0))
+	{
+		ble_dev_mgr_add(str_mac, connection);
+	} else {
+		printf("Failed to add device\n");
+	}
+    // ble_dev_mgr_print();
+
+	return;
+}
+
+void delete_device_from_list(json_object *o)
+{
+	uint16_t connection;
+	json_object *json_connection = json_object_object_get(o, "connection");
+
+	
+	if (json_connection)
+	{
+		connection = json_object_get_int(json_connection);
+	}
+	else
+	{
+		return;
+	}
+
+	if (connection)
+	{
+		ble_dev_mgr_del(connection);
+	}
+
+	return;
+}
+
+void update_device_list(json_object* o)
+{
+    printf("update_device_list\n");
+    uint16_t connection = 0;
+    json_object* json_connection = json_object_object_get(o, "connection");
+    if (json_connection) {
+        connection = (uint16_t)json_object_get_int(json_connection);
+    } else {
+        json_object_put(o);
+        o = NULL;
+        return;
+    }
+
+    // char mac[18] = {0};
+    // strcpy(mac, ble_dev_mgr_get_address(connection));
+
+    if (connection == 0)  {
+        json_object_put(o);
+        o = NULL;
+        return;
+    }
+
+    ble_dev_mgr_update(connection);
+    log_debug("device list update!!!!\n");
 }

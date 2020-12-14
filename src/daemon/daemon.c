@@ -30,6 +30,7 @@
 #include "infra_log.h"
 #include "gl_methods.h"
 #include "ble_dev_mgr.h"
+#include "bg_types.h"
  
 static struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;
@@ -191,6 +192,9 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	add_device_to_list(output);
+
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
@@ -227,11 +231,11 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 /*Act as master, Get rssi of connection with remote device*/
 enum
 {
-	RSSI_CONNECTION,
+	RSSI_ADDRESS,
 	RSSI_MAX,
 };
 static const struct blobmsg_policy get_rssi_policy[RSSI_MAX] = {
-	[RSSI_CONNECTION] = {.name = "rssi_connection", .type = BLOBMSG_TYPE_INT32},
+	[RSSI_ADDRESS] = {.name = "rssi_address", .type = BLOBMSG_TYPE_STRING},
 };
 static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
@@ -239,11 +243,17 @@ static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
 	struct blob_attr *tb[RSSI_MAX];
 	blobmsg_parse(get_rssi_policy, RSSI_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[RSSI_CONNECTION]);
+	// int connection = blobmsg_get_u32(tb[RSSI_CONNECTION]);
+
+	char* address = blobmsg_get_string(tb[RSSI_ADDRESS]);
+	int connection = ble_dev_mgr_get_connection(address);
+	
+	printf("get_rssi: connection = %d\n", connection);
 	json_object* output = ble_get_rssi(connection);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
@@ -657,11 +667,37 @@ static void ubus_connection_lost(struct ubus_context *ctx)
 {
 	ubus_reconn_timer(NULL);
 }
+
+static void manage_device(json_object* o)
+{
+    json_object* tmp_type = json_object_object_get(o, "type");
+	char *type = json_object_get_string(tmp_type);
+
+	printf("type: %s\n", type);
+
+	if ( !strcmp(type, CONN_OPEN))
+	{
+		add_device_to_list(o);
+	}
+	else if ( !strcmp(type, CONN_CLOSE))
+	{
+		delete_device_from_list(o);
+	}	
+	// else if ( !strcmp(type, CONN_UPDATE))
+	// {
+	// 	update_device_list(o);
+	// }
+
+    return;
+}
+
 void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 {
     json_object* output = serial_msg_callback();
 	if(output)
 	{
+		manage_device(output);
+
 		blob_buf_init(&b, 0);
 		blobmsg_add_object(&b, output);
 		ubus_notify(ctx,  &ble_obj, "Notify", b.head, -1);
@@ -672,6 +708,9 @@ void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 int main(int argc, char * argv[])
 {	
 	ble_enable(1);	//enable ble module
+
+	/* Init */
+	ble_dev_mgr_init();
 
 	uloop_init();
 

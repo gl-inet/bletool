@@ -30,7 +30,8 @@ DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
 					daemon/bledriver/util/uart \
 					daemon/bledriver/util/hal \
 					components/dev_mgr \
-					components/log	
+					components/log \
+					include/
 
 DAEMON_SRCDIRS	:=  daemon  \
 					daemon/bledriver/util/hal  \
@@ -41,7 +42,8 @@ DAEMON_SRCDIRS	:=  daemon  \
 
 LIB_INCDIRS		:= 	lib \
 					components/dev_mgr \
-					components/log	
+					components/log \
+					include
 
 LIB_SRCDIRS		:=  lib  \
 					components/dev_mgr \
@@ -50,7 +52,8 @@ LIB_SRCDIRS		:=  lib  \
 UTIL_INCDIRS	:= 	lib \
 					tool \
 					components/dev_mgr \
-					components/log	
+					components/log	\
+					include
 
 UTIL_SRCDIRS	:=  lib  \
 					tool \
