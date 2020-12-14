@@ -62,6 +62,11 @@ int str2array(uint8* dst, char* src, int len)
 static int hex2str(uint8* head, int len, char* value)
 {
     int i = 0;
+
+    if(len >= 256/2)
+    {
+        len = 128;
+    }
     while(i < len)
     {
         sprintf(value+i*2,"%02x",head[i]);
