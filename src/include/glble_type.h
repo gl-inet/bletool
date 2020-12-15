@@ -20,8 +20,6 @@
 #include <stdint.h>
 #include <json-c/json.h>
 
-
-
 #define UUID_MAX                    32
 #define LIST_LENGTHE_MAX            16
 #define CHAR_VALUE_MAX              256
@@ -60,7 +58,6 @@ typedef struct {
 } gl_ble_set_power_rsp_t;
 
 typedef struct {
-    uint8_t connection;
     uint8_t addr[DEVICE_MAC_LEN];
     uint8_t address_type;
     uint8_t master;
@@ -75,19 +72,22 @@ typedef struct {
 } gl_ble_get_rssi_rsp_t;
 
 typedef struct {
-    uint8_t connection;
+    // uint8_t connection;
+    uint8_t addr[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_service_list_t list[LIST_LENGTHE_MAX];
 } gl_ble_get_service_rsp_t;
 
 typedef struct {
-    uint8_t connection;
+    // uint8_t connection;
+    uint8_t addr[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_characteristic_list_t list[LIST_LENGTHE_MAX];
 } gl_ble_get_char_rsp_t;
 
 typedef struct {
-    uint8_t connection;
+    // uint8_t connection;
+    uint8_t addr[DEVICE_MAC_LEN];
     int handle;
     uint8_t att_opcode;
     int offset;

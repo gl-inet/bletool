@@ -26,15 +26,16 @@
 
 
 int gl_ble_subscribe(gl_ble_cbs *callback);
+
 int gl_ble_unsubscribe(void);
 
 /* BLE System functions */
 
-/*Get local bluetooth MAC*/
-int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
-
 /*Enable or disable the BLE module*/
 int gl_ble_enable(int enable);
+
+/*Get local bluetooth MAC*/
+int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
 
 /*Set the global power level*/
 int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
@@ -51,30 +52,30 @@ int gl_ble_stop(void);
 int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy);
 
 /*Act as master, disconnect with remote device*/
-int gl_ble_disconnect(int connection);
+int gl_ble_disconnect(char *addr);
 
 /*Act as master, Get rssi of connection with remote device*/
-int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address);
+int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *addr);
 
 /*Act as master, Get service list of a remote GATT server*/
-int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection);
+int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *addr);
 
 /*Act as master, Get characteristic list of a remote GATT server*/
-int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_handle);
+int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle);
 
 /*Act as master, Read value of specified characteristic in a remote gatt server*/
-int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, int connection, int char_handle);
+int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle);
 
 /*Act as master, Write value to specified characteristic in a remote gatt server*/
-int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_handle, char *value, int res);
+int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res);
 
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
-int gl_ble_set_notify(int connection, int char_handle, int flag);
+int gl_ble_set_notify(char *address, int char_handle, int flag);
 
 /* BLE slave functions */
 
 /*Act as BLE slave, Set and Start Avertising*/
-int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int connect);
+int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, char *address);
 
 /*Act as BLE slave, Set customized advertising data*/
 int gl_ble_adv_data(int flag, char *data);
@@ -83,7 +84,7 @@ int gl_ble_adv_data(int flag, char *data);
 int gl_ble_stop_adv(void);
 
 /*Act as BLE slave, Send Notification*/
-int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, int connection, int char_handle, char *value);
+int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value);
 
 /*DTM test, tx*/
 int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);

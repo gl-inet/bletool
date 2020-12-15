@@ -188,12 +188,22 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	char* address = blobmsg_get_string(tb[CONN_ADDRESS]);
 	int address_type = blobmsg_get_u32(tb[CONN_ADDRESS_TYPE]);
 	int conn_phy = blobmsg_get_u32(tb[CONN_PHY]);
-	json_object* output = ble_connect(address,address_type,conn_phy);
+	json_object* output = ble_connect(address, address_type, conn_phy);
+	
+	int ret = -1;
+
+	json_object *val_obj = NULL;
+	if ( json_object_object_get_ex(output, "code",  &val_obj) ) {
+		ret = json_object_get_int(val_obj);
+	}
+
+	if ( !ret )
+		add_device_to_list(output);
+	else 
+		printf("output is null\n");
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
-
-	add_device_to_list(output);
 
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
@@ -205,11 +215,11 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 /*Act as master, disconnect with remote device*/
 enum
 {
-	DISCONN_CONNECTION,
+	DISCONN_ADDRESS,
 	DISCONNECT_MAX,
 };
 static const struct blobmsg_policy disconnect_policy[DISCONNECT_MAX] = {
-	[DISCONN_CONNECTION] = {.name = "disconn_connection", .type = BLOBMSG_TYPE_INT32},
+	[DISCONN_ADDRESS] = {.name = "disconn_address", .type = BLOBMSG_TYPE_STRING},
 };
 static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
@@ -217,7 +227,9 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 
 	struct blob_attr *tb[DISCONNECT_MAX];
 	blobmsg_parse(disconnect_policy, DISCONNECT_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[DISCONN_CONNECTION]);
+
+	char* address = blobmsg_get_string(tb[DISCONN_ADDRESS]);
+	int connection = ble_dev_mgr_get_connection(address);
 	json_object* output = ble_disconnect(connection);
 
 	blob_buf_init(&b, 0);
@@ -263,11 +275,11 @@ static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 /*Act as master, Get service list of a remote GATT server*/
 enum
 {
-	SERVICE_CONNECTION,
+	SERVICE_ADDRESS,
 	SERVICE_MAX,
 };
 static const struct blobmsg_policy get_service_policy[SERVICE_MAX] = {
-	[SERVICE_CONNECTION] = {.name = "get_service_connection", .type = BLOBMSG_TYPE_INT32},
+	[SERVICE_ADDRESS] = {.name = "get_service_address", .type = BLOBMSG_TYPE_STRING},
 };
 static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
@@ -275,7 +287,9 @@ static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct
 
 	struct blob_attr *tb[SERVICE_MAX];
 	blobmsg_parse(get_service_policy, SERVICE_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[SERVICE_CONNECTION]);
+
+	char *address = blobmsg_get_string(tb[SERVICE_ADDRESS]);
+	int connection = ble_dev_mgr_get_connection(address);
 	json_object* output = ble_get_service(connection);
 
 	blob_buf_init(&b, 0);
@@ -289,12 +303,12 @@ static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct
 /*Act as master, Get characteristic list of a remote GATT server*/
 enum
 {
-	CHAR_CONNECTION,
+	CHAR_CONN_ADDRESS,
 	CHAR_SERVICE_HANDLE,
 	CHAR_MAX,
 };
 static const struct blobmsg_policy get_char_policy[CHAR_MAX] = {
-	[CHAR_CONNECTION] = {.name = "get_service_connection", .type = BLOBMSG_TYPE_INT32},
+	[CHAR_CONN_ADDRESS] = {.name = "char_conn_address", .type = BLOBMSG_TYPE_STRING},
 	[CHAR_SERVICE_HANDLE] = {.name = "char_service_handle", .type = BLOBMSG_TYPE_INT32},
 };
 static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
@@ -303,7 +317,10 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
 	struct blob_attr *tb[CHAR_MAX];
 	blobmsg_parse(get_char_policy, CHAR_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[CHAR_CONNECTION]);
+	
+	char *address = blobmsg_get_string(tb[CHAR_CONN_ADDRESS]);
+	int connection = ble_dev_mgr_get_connection(address);
+	
 	int service_handle = blobmsg_get_u32(tb[CHAR_SERVICE_HANDLE]);
 	json_object* output = ble_get_char(connection,service_handle);
 
@@ -315,24 +332,30 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return 0;
 }
+
 /*Act as master, Read value of specified characteristic in a remote gatt server*/
 enum
 {
-	GATT_READ_CHAR_CONNECTION,
+	GATT_READ_CHAR_CONN_ADDR,
 	GATT_READ_CHAR_CHAR_HANDLE,
 	GATT_READ_CHAR_MAX,
 };
+
 static const struct blobmsg_policy read_char_policy[GATT_READ_CHAR_MAX] = {
-	[GATT_READ_CHAR_CONNECTION] = {.name = "char_connection", .type = BLOBMSG_TYPE_INT32},
+	[GATT_READ_CHAR_CONN_ADDR] = {.name = "char_conn_addr", .type = BLOBMSG_TYPE_STRING},
 	[GATT_READ_CHAR_CHAR_HANDLE] = {.name = "char_handle", .type = BLOBMSG_TYPE_INT32},
 };
+
 static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
     uloop_fd_delete(&serial_fd);
 
 	struct blob_attr *tb[GATT_READ_CHAR_MAX];
 	blobmsg_parse(read_char_policy, GATT_READ_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[GATT_READ_CHAR_CONNECTION]);
+	
+	char *address = blobmsg_get_string(tb[GATT_READ_CHAR_CONN_ADDR]);
+	int connection = ble_dev_mgr_get_connection(address);
+
 	int char_handle = blobmsg_get_u32(tb[GATT_READ_CHAR_CHAR_HANDLE]);
 	json_object* output = ble_read_char(connection,char_handle);
 
@@ -344,17 +367,18 @@ static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return 0;
 }
+
 /*Act as master, Write value to specified characteristic in a remote gatt server*/
 enum
 {
-	GATT_WRITE_CHAR_CONNECTION,
+	GATT_WRITE_CHAR_CONN_ADDR,
 	GATT_WRITE_CHAR_CHAR_HANDLE,
 	GATT_WRITE_CHAR_VALUE,
 	GATT_WRITE_CHAR_RES,
 	GATT_WRITE_CHAR_MAX,
 };
 static const struct blobmsg_policy write_char_policy[GATT_WRITE_CHAR_MAX] = {
-	[GATT_WRITE_CHAR_CONNECTION] = {.name = "char_connection", .type = BLOBMSG_TYPE_INT32},
+	[GATT_WRITE_CHAR_CONN_ADDR] = {.name = "char_conn_addrsss", .type = BLOBMSG_TYPE_STRING},
 	[GATT_WRITE_CHAR_CHAR_HANDLE] = {.name = "char_handle", .type = BLOBMSG_TYPE_INT32},
 	[GATT_WRITE_CHAR_VALUE] = {.name = "char_value", .type = BLOBMSG_TYPE_STRING},
 	[GATT_WRITE_CHAR_RES] = {.name = "write_res", .type = BLOBMSG_TYPE_INT32},
@@ -365,43 +389,49 @@ static int write_char(struct ubus_context *ctx, struct ubus_object *obj, struct 
 
 	struct blob_attr *tb[GATT_WRITE_CHAR_MAX];
 	blobmsg_parse(write_char_policy, GATT_WRITE_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[GATT_WRITE_CHAR_CONNECTION]);
+	
+	char *address = blobmsg_get_string(tb[GATT_WRITE_CHAR_CONN_ADDR]);
+	int connection = ble_dev_mgr_get_connection(address);
 	int char_handle = blobmsg_get_u32(tb[GATT_WRITE_CHAR_CHAR_HANDLE]);
 	char* value = blobmsg_get_string(tb[GATT_WRITE_CHAR_VALUE]);
 	int write_res = blobmsg_get_u32(tb[GATT_WRITE_CHAR_RES]);
-	json_object* output = ble_write_char(connection,char_handle,value,write_res);
+	
+	json_object* output = ble_write_char(connection, char_handle, value, write_res);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
-
+	free(address);
 	uloop_fd_add(&serial_fd, ULOOP_READ);
+
 	return 0;
 }
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
 enum
 {
-	GATT_SET_NOTIFY_CONNECTION,
+	GATT_SET_NOTIFY_CONN_ADDR,
 	GATT_SET_NOTIFY_CHAR_HANDLE,
 	GATT_SET_NOTIFY_FLAG,
 	GATT_SET_NOTIFY_MAX,
 };
 static const struct blobmsg_policy set_notify_policy[GATT_SET_NOTIFY_MAX] = {
-	[GATT_SET_NOTIFY_CONNECTION] = {.name = "connection", .type = BLOBMSG_TYPE_INT32},
+	[GATT_SET_NOTIFY_CONN_ADDR] = {.name = "conn_addr", .type = BLOBMSG_TYPE_STRING},
 	[GATT_SET_NOTIFY_CHAR_HANDLE] = {.name = "char_handle", .type = BLOBMSG_TYPE_INT32},
 	[GATT_SET_NOTIFY_FLAG] = {.name = "notify_flag", .type = BLOBMSG_TYPE_INT32},
 };
 static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
     uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[GATT_SET_NOTIFY_MAX];
 	blobmsg_parse(set_notify_policy, GATT_SET_NOTIFY_MAX, tb, blob_data(msg), blob_len(msg));
-	int connection = blobmsg_get_u32(tb[GATT_SET_NOTIFY_CONNECTION]);
+	
+	char *address = blobmsg_get_string(tb[GATT_SET_NOTIFY_CONN_ADDR]);
+	int connection = ble_dev_mgr_get_connection(address);
 	int char_handle = blobmsg_get_u32(tb[GATT_SET_NOTIFY_CHAR_HANDLE]);
 	int flag = blobmsg_get_u32(tb[GATT_SET_NOTIFY_FLAG]);
-	json_object* output = ble_set_notify(connection,char_handle,flag);
+
+	json_object* output = ble_set_notify(connection, char_handle, flag);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -499,13 +529,13 @@ int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_requ
 /*Act as BLE slave, Send Notification*/
 enum
 {
-	SEND_NOTI_CONN,
+	SEND_NOTI_CONN_ADDR,
 	SEND_NOTI_CHAR,
 	SEND_NOTI_VALUE,
 	SEND_NOTI_MAX,
 };
 static const struct blobmsg_policy send_noti_policy[SEND_NOTI_MAX] = {
-	[SEND_NOTI_CONN] = {.name = "send_noti_conn", .type = BLOBMSG_TYPE_INT32},
+	[SEND_NOTI_CONN_ADDR] = {.name = "send_noti_conn_addr", .type = BLOBMSG_TYPE_STRING},
 	[SEND_NOTI_CHAR] = {.name = "send_noti_char", .type = BLOBMSG_TYPE_INT32},
 	[SEND_NOTI_VALUE] = {.name = "send_noti_value", .type = BLOBMSG_TYPE_STRING},
 };
@@ -515,15 +545,19 @@ static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct
 
 	struct blob_attr *tb[SEND_NOTI_MAX];
 	blobmsg_parse(send_noti_policy, SEND_NOTI_MAX, tb, blob_data(msg), blob_len(msg));
-	int send_noti_conn = blobmsg_get_u32(tb[SEND_NOTI_CONN]);
+	
+	char *address = blobmsg_get_string(tb[SEND_NOTI_CONN_ADDR]);
+	int connection = ble_dev_mgr_get_connection(address);
+
 	int send_noti_char = blobmsg_get_u32(tb[SEND_NOTI_CHAR]);
 	char* send_noti_value = blobmsg_get_string(tb[SEND_NOTI_VALUE]);
-	json_object* output = ble_send_notify(send_noti_conn,send_noti_char,send_noti_value);
+	json_object* output = ble_send_notify(connection,send_noti_char,send_noti_value);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
+	free(address);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return 0;

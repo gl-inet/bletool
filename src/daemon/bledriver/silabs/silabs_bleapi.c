@@ -22,6 +22,7 @@
 #include "host_gecko.h"
 #include "uart.h"
 #include "bg_types.h"
+#include "glble_errno.h"
 
 
 #define SUCCESS                  0   
@@ -520,7 +521,7 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 
     if(!address)
     {
-        json_object_object_add(obj,"code",json_object_new_int(PARAMETER_ERROR));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_PARAM));
         return obj;
     }
 
@@ -533,7 +534,7 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;       
     }
     if(p->data.rsp_le_gap_connect.result)
@@ -549,10 +550,10 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
     if(!p)
     {
         gecko_cmd_le_connection_close(connection);
-        json_object_object_add(obj,"code",json_object_new_int(EVENT_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
         return obj;
     }
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"connection",json_object_new_int(p->data.evt_le_connection_opened.connection));
     char str[18] = {0};
     addr2str(&pck.data.evt_le_connection_opened.address,str);

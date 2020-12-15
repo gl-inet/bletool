@@ -277,10 +277,7 @@ int gl_ble_call(const char *path, const char *method, struct blob_buf *b, int ti
 /*Get local bluetooth MAC*/
 int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	json_object *val_obj = NULL;
@@ -289,18 +286,12 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	blob_buf_init(&b, 0);
 
 	gl_ble_call("ble", "local_mac", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"mac"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	char *address = NULL;
 	if ( json_object_object_get_ex(o, "mac",  &val_obj) ) {
@@ -331,30 +322,22 @@ int gl_ble_enable(int enable)
 	blobmsg_add_u32(&b, "enable", enable);
 
 	gl_ble_call("ble", "enable", &b, 1, &str);
-	if (NULL == str)
-	{
-		return GL_ERR_RESP_MISSING;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
 	return GL_SUCCESS;
 }
+
 /*Set system tx power*/
 int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
@@ -363,18 +346,12 @@ int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
 	blobmsg_add_u32(&b, "system_power_level", power);
 
 	gl_ble_call("ble", "set_power", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"power"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	json_object *val_obj = NULL;
 
@@ -403,18 +380,12 @@ int gl_ble_discovery(int phys, int interval, int window, int type, int mode)
 	blobmsg_add_u32(&b, "mode", mode);
 
 	gl_ble_call("ble", "discovery", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -429,18 +400,12 @@ int gl_ble_stop(void)
 	blob_buf_init(&b, 0);
 
 	gl_ble_call("ble", "stop", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -449,11 +414,7 @@ int gl_ble_stop(void)
 /*Act as master, Start connect to a remote BLE device*/
 int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy)
 {
-	if (!rsp)
-	{
-		printf("rsp error\n");
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
@@ -464,26 +425,14 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 	blobmsg_add_u32(&b, "conn_phy", phy);
 
 	gl_ble_call("ble", "connect", &b, 5, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
-
-	printf("connect str = %s\n", str);
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection", "address", "address_type", "master", "bonding", "advertiser"};
+	char *parameters[] = {"address", "address_type", "master", "bonding", "advertiser"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	json_object *val_obj = NULL;
-
-	if ( json_object_object_get_ex(o, "connection",  &val_obj) ) {
-		rsp->connection = json_object_get_int(val_obj);
-	}
 
 	if ( json_object_object_get_ex(o, "address_type",  &val_obj) ) {
 		rsp->address_type = json_object_get_int(val_obj);
@@ -502,7 +451,8 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 	}
 
 	int mac[6];
-	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
+	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", 
+			&mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
 	int i = 0;
 	while (i < 6)
 	{
@@ -512,30 +462,27 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 
 	free(str);
 	json_object_put(o);
+
 	return 0;
 }
+
 /*Act as master, disconnect with remote device*/
-int gl_ble_disconnect(int connection)
+int gl_ble_disconnect(char * addr)
 {
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "disconn_connection", connection);
+	
+	blobmsg_add_string(&b, "disconn_address", addr);
 
 	gl_ble_call("ble", "disconnect", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -544,9 +491,7 @@ int gl_ble_disconnect(int connection)
 /*Act as master, Get rssi of connection with remote device*/
 int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)  
 {
-	if (!rsp) {
-		return GL_ERR_PARAM;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	int connection = 0;
@@ -556,17 +501,12 @@ int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)
 	blobmsg_add_string(&b, "rssi_address", address);
 
 	gl_ble_call("ble", "get_rssi", &b, 1, &str);
-
-	if (NULL == str) {
-		return GL_ERR_RESP_MISSING;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"rssi"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret) {
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	json_object *val_obj = NULL;
 	strcpy(rsp->address , address);	
@@ -580,41 +520,39 @@ int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)
 	return GL_SUCCESS;
 }
 /*Act as master, Get service list of a remote GATT server*/
-int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection)
+int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "get_service_connection", connection);
+	blobmsg_add_string(&b, "get_service_address", address);
 
 	gl_ble_call("ble", "get_service", &b, 2, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection", "service_list"};
+	char *parameters[] = {"service_list"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
-	rsp->connection = json_object_get_int(json_object_object_get(o, "connection"));
+	int mac[6];
+	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
+	int i = 0;
+	while (i < 6)
+	{
+		rsp->addr[i] = mac[i];
+		i++;
+	}
 
 	json_object *list = json_object_object_get(o, "service_list");
 	int len = json_object_array_length(list);
 	rsp->list_len = len;
 	json_object *obj;
 
-	int i = 0;
+	i = 0;
 	while (i < len)
 	{
 		obj = json_object_array_get_idx(list, i);
@@ -628,35 +566,24 @@ int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, int connection)
 	return 0;
 }
 /*Act as master, Get characteristic list of a remote GATT server*/
-int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_handle)
+int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "get_service_connection", connection);
+	blobmsg_add_string(&b, "char_conn_address", address);
 	blobmsg_add_u32(&b, "char_service_handle", service_handle);
 
 	gl_ble_call("ble", "get_char", &b, 2, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection", "characteristic_list"};
+	char *parameters[] = {"characteristic_list"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
-
-	rsp->connection = json_object_get_int(json_object_object_get(o, "connection"));
+	if (ret) { return ret; }
 
 	json_object *list = json_object_object_get(o, "characteristic_list");
 	int len = json_object_array_length(list);
@@ -678,35 +605,25 @@ int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, int connection, int service_hand
 	return 0;
 }
 /*Act as master, Read value of specified characteristic in a remote gatt server*/
-int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, int connection, int char_handle)
+int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "char_connection", connection);
+	blobmsg_add_string(&b, "char_conn_addr", address);
 	blobmsg_add_u32(&b, "char_handle", char_handle);
 
 	gl_ble_call("ble", "read_char", &b, 2, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection", "characteristic_handle", "att_opcode", "offset", "value"};
+	char *parameters[] = {"characteristic_handle", "att_opcode", "offset", "value"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
-	rsp->connection = json_object_get_int(json_object_object_get(o, "connection"));
 	rsp->handle = json_object_get_int(json_object_object_get(o, "characteristic_handle"));
 	rsp->att_opcode = json_object_get_int(json_object_object_get(o, "att_opcode"));
 	rsp->offset = json_object_get_int(json_object_object_get(o, "offset"));
@@ -717,70 +634,54 @@ int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, int connection, int char_handl
 	return 0;
 }
 /*Act as master, Write value to specified characteristic in a remote gatt server*/
-int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, int connection, int char_handle, char *value, int res)
+int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "char_connection", connection);
+	blobmsg_add_string(&b, "char_conn_addrsss", address);
 	blobmsg_add_u32(&b, "char_handle", char_handle);
 	blobmsg_add_string(&b, "char_value", value);
 	blobmsg_add_u32(&b, "write_res", res);
 
 	gl_ble_call("ble", "write_char", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
+
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	json_object *obj = json_object_object_get(o, "sent_len");
-	if (obj)
-	{
-		rsp->sent_len = json_object_get_int(obj);
-	}
+	if (obj) { rsp->sent_len = json_object_get_int(obj); }
 
 	free(str);
 	json_object_put(o);
 	return 0;
 }
+
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
-int gl_ble_set_notify(int connection, int char_handle, int flag)
+int gl_ble_set_notify(char *address, int char_handle, int flag)
 {
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "connection", connection);
+	blobmsg_add_string(&b, "conn_addrsss", address);
 	blobmsg_add_u32(&b, "char_handle", char_handle);
 	blobmsg_add_u32(&b, "notify_flag", flag);
 
 	gl_ble_call("ble", "set_notify", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -790,7 +691,7 @@ int gl_ble_set_notify(int connection, int char_handle, int flag)
 /* BLE slave functions */
 
 /*Act as BLE slave, Set and Start Avertising*/
-int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int connect)
+int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, char *address)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -800,21 +701,15 @@ int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int c
 	blobmsg_add_u32(&b, "adv_interval_min", interval_min);
 	blobmsg_add_u32(&b, "adv_interval_max", interval_max);
 	blobmsg_add_u32(&b, "adv_discover", discover);
-	blobmsg_add_u32(&b, "adv_conn", connect);
+	blobmsg_add_string(&b, "adv_conn_addr", address);
 
 	gl_ble_call("ble", "adv", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -831,18 +726,12 @@ int gl_ble_adv_data(int flag, char *data)
 	blobmsg_add_string(&b, "adv_data", data);
 
 	gl_ble_call("ble", "adv_data", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
@@ -857,52 +746,38 @@ int gl_ble_stop_adv(void)
 	blob_buf_init(&b, 0);
 
 	gl_ble_call("ble", "stop_adv", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
 
 	free(str);
 	json_object_put(o);
 	return 0;
 }
 /*Act as BLE slave, Send Notification*/
-int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, int connection, int char_handle, char *value)
+int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "send_noti_conn", connection);
+	blobmsg_add_string(&b, "send_noti_conn_addr", address);
 	blobmsg_add_u32(&b, "send_noti_char", char_handle);
 	blobmsg_add_string(&b, "send_noti_value", value);
 
 	gl_ble_call("ble", "send_notify", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"sent_len"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
+
 	rsp->sent_len = json_object_get_int(json_object_object_get(o, "sent_len"));
 
 	free(str);
@@ -912,10 +787,7 @@ int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, int connection, int char_h
 /*DTM test, tx*/
 int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
@@ -927,18 +799,13 @@ int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int c
 	blobmsg_add_u32(&b, "dtm_tx_phy", phy);
 
 	gl_ble_call("ble", "dtm_tx", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"number_of_packets"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
+
 	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
 
 	free(str);
@@ -948,10 +815,7 @@ int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int c
 /*DTM test, rx*/
 int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
@@ -961,18 +825,13 @@ int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 	blobmsg_add_u32(&b, "dtm_rx_phy", phy);
 
 	gl_ble_call("ble", "dtm_rx", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"number_of_packets"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
+
 	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
 
 	free(str);
@@ -982,10 +841,7 @@ int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 /*DTM test, end*/
 int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
 {
-	if (!rsp)
-	{
-		return -2;
-	}
+	if (!rsp) { return GL_ERR_PARAM; }
 
 	char *str = NULL;
 	static struct blob_buf b;
@@ -993,18 +849,13 @@ int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
 	blob_buf_init(&b, 0);
 
 	gl_ble_call("ble", "dtm_end", &b, 1, &str);
-	if (NULL == str)
-	{
-		return -1;
-	}
+	if (NULL == str) { return GL_ERR_RESP_MISSING; }
 
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {"number_of_packets"};
 	int ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret)
-	{
-		return ret;
-	}
+	if (ret) { return ret; }
+
 	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
 
 	free(str);

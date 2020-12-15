@@ -20,7 +20,6 @@
 #include <json-c/json.h>
 #include "ble_dev_mgr.h"
 #include "infra_log.h"
-// #include "glble_type.h"
 
 ble_dev_mgr_ctx_t g_ble_dev_mgr = {0};
 
@@ -41,9 +40,6 @@ void ble_dev_mgr_print(void)
     ble_dev_mgr_ctx_t* mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t* node = NULL, *next_node = NULL;
 
-    // int ret_dev_list = list_empty(&mgr_ctx->dev_list);
-    // printf("ret4_dev_list = %d\n", ret_dev_list);
-
     printf("\nConnected devices: \n");
 
     list_for_each_entry_safe( node, next_node, &mgr_ctx->dev_list, linked_list )
@@ -56,10 +52,6 @@ void ble_dev_mgr_print(void)
         else
             printf("No device connection\n");
     }
-
-    // char address[18] = "16:16:16:16:10:16";
-    // int connection = ble_dev_mgr_get_connection(address);
-    // printf("connection = %d\n", connection);
 }
 
 static int search_ble_dev_by_addr(char *dev_addr, ble_dev_mgr_node_t **node)
@@ -83,9 +75,7 @@ static int search_ble_dev_by_addr(char *dev_addr, ble_dev_mgr_node_t **node)
 
 int ble_dev_mgr_init(void)
 {
-    printf("ble_dev_mgr_init!!!\n");
     ble_dev_mgr_ctx_t * mgr_ctx = _ble_dev_mgr_get_ctx();
-
     memset(mgr_ctx, 0, sizeof(ble_dev_mgr_ctx_t));
 
     /* Init Device List */
@@ -96,12 +86,6 @@ int ble_dev_mgr_init(void)
 
 int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
 {
-    // if (search_ble_dev_by_addr(dev_addr, NULL) == 0)
-    // {
-    //     ble_dev_mgr_update(dev_addr, connection);
-    //     return 0;
-    // }
-
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
 
@@ -111,21 +95,11 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
     memcpy(node->ble_dev_desc.dev_addr, dev_addr, DEVICE_MAC_LEN);
     node->ble_dev_desc.connection = connection;
 
-    INIT_LIST_HEAD(&node->linked_list);         //初始化双向链表为空链表
-    
-    // int ret_linked = list_empty(&node->linked_list);
-    // printf("ret_linked = %d\n", ret_linked);
-
-    // ble_dev_mgr_init();
+    INIT_LIST_HEAD(&node->linked_list);
 
     int ret_dev_list = list_empty(&mgr_ctx->dev_list);
-    // printf("ret2_dev_list = %d\n", ret_dev_list);
     
-    list_add_tail(&node->linked_list, &mgr_ctx->dev_list);      // Q1：添加设备，每次都需要创建一个头节点？不需要维护之前的头节点吗？
-    // printf("ret3_dev_list = %d\n", ret_dev_list);
-
-    // ble_dev_mgr_print();
-
+    list_add_tail(&node->linked_list, &mgr_ctx->dev_list);
     printf("Device Join: dev_addr=%s, connection=%d.\n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
         
     return 0;
@@ -195,13 +169,18 @@ uint16_t ble_dev_mgr_get_connection(char *dev_addr)
 
     if (dev_addr == NULL)
     {
+        printf("452\n");
         return -1;
     }
 
+    printf("dev_addr: %s\n", dev_addr);
+
     if(search_ble_dev_by_addr(dev_addr, &node) != 0)
     {
+        printf("55\n");
         return -1;
     }
+    printf("connection is %d\n", node->ble_dev_desc.connection);
 
     return node->ble_dev_desc.connection;
 }
@@ -227,9 +206,7 @@ int ble_dev_mgr_update(uint16_t connection)
     if (search_ble_dev_by_connection(connection, &node) != 0) {
         return -1;
     }
-
     node->ble_dev_desc.connection = connection;
-    // node->timestamp = HAL_TimeStamp();
 
     return 0;
 }
@@ -250,8 +227,6 @@ void add_device_to_list(json_object *o)
 		strcpy(str_mac, "mac is missing");
 	}
 
-    // printf("add device: mac = %s\n", str_mac);
-
 	/* get connection */
 	uint16_t connection;
 	json_object *json_connection = json_object_object_get(o, "connection");
@@ -264,15 +239,12 @@ void add_device_to_list(json_object *o)
 		connection = 0;
 	}
 
-    // printf("add device: connection = %d\n", connection);
-
 	if (str_mac && (connection != 0))
 	{
 		ble_dev_mgr_add(str_mac, connection);
 	} else {
 		printf("Failed to add device\n");
 	}
-    // ble_dev_mgr_print();
 
 	return;
 }
@@ -312,10 +284,7 @@ void update_device_list(json_object* o)
         o = NULL;
         return;
     }
-
-    // char mac[18] = {0};
-    // strcpy(mac, ble_dev_mgr_get_address(connection));
-
+    
     if (connection == 0)  {
         json_object_put(o);
         o = NULL;

@@ -46,6 +46,6 @@ typedef enum gl_error {
 	GL_ERR_UBUS_REGISTER			= GL_ERRSPC_UBUS	+ 5,			// UBUS register error
 	GL_ERR_UBUS_CALL_STR			= GL_ERRSPC_UBUS	+ 6,            // UBUS CALL return error
 	GL_ERR_UBUS_JSON_PARSE			= GL_ERRSPC_UBUS	+ 7,			// UBUS return json parse error
-}errorcode_t;
+}errcode_t;
 
 #endif
