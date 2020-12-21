@@ -23,7 +23,7 @@
  * 
 */
 
-typedef int16_t GL_RET;
+typedef int32_t GL_RET;
 #define MANUFACTURER_CODE_BASE						  0x0100
 
 enum gl_error_spaces {

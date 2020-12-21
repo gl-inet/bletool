@@ -21,8 +21,9 @@
 #define GL_METHODS_H
 
 #define SILABS_EFR32
-
 #ifdef SILABS_EFR32
+
+#include "silabs_bleapi.h"
 
 #define serial_msg_callback             silabs_get_notify
 #define ble_enable                      silabs_ble_enable
@@ -48,7 +49,7 @@
 
 #endif
 
-#ifdef TELINK_8051
+#ifdef TELINK_8251
 #endif
 
 

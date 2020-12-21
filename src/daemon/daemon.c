@@ -31,6 +31,7 @@
 #include "gl_methods.h"
 #include "ble_dev_mgr.h"
 #include "bg_types.h"
+#include "common.h"
  
 static struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;
@@ -189,6 +190,9 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	int address_type = blobmsg_get_u32(tb[CONN_ADDRESS_TYPE]);
 	int conn_phy = blobmsg_get_u32(tb[CONN_PHY]);
 	json_object* output = ble_connect(address, address_type, conn_phy);
+
+	char *str = json_object_to_json_string(output);
+	printf("daemon connect, str = %s\n", str);
 	
 	int ret = -1;
 
@@ -231,6 +235,15 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	char* address = blobmsg_get_string(tb[DISCONN_ADDRESS]);
 	int connection = ble_dev_mgr_get_connection(address);
 	json_object* output = ble_disconnect(connection);
+
+	// char *str = json_object_print(output);
+	char *str = json_object_to_json_string(output);
+	printf("daemon disconnect, str = %s\n", str);
+	
+	json_object_object_add(output, "address",json_object_new_string(address));
+
+	char *str1 = json_object_to_json_string(output);
+	printf("str1 = %s\n", str1);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -318,11 +331,16 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	struct blob_attr *tb[CHAR_MAX];
 	blobmsg_parse(get_char_policy, CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	
+	int connection = 0;
+	printf("connection1 = %d\n", connection);
+
 	char *address = blobmsg_get_string(tb[CHAR_CONN_ADDRESS]);
-	int connection = ble_dev_mgr_get_connection(address);
+	connection = ble_dev_mgr_get_connection(address);
+
+	printf("connection = %d\n", connection);
 	
 	int service_handle = blobmsg_get_u32(tb[CHAR_SERVICE_HANDLE]);
-	json_object* output = ble_get_char(connection,service_handle);
+	json_object* output = ble_get_char(connection, service_handle);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -416,7 +434,7 @@ enum
 	GATT_SET_NOTIFY_MAX,
 };
 static const struct blobmsg_policy set_notify_policy[GATT_SET_NOTIFY_MAX] = {
-	[GATT_SET_NOTIFY_CONN_ADDR] = {.name = "conn_addr", .type = BLOBMSG_TYPE_STRING},
+	[GATT_SET_NOTIFY_CONN_ADDR] = {.name = "conn_addrsss", .type = BLOBMSG_TYPE_STRING},
 	[GATT_SET_NOTIFY_CHAR_HANDLE] = {.name = "char_handle", .type = BLOBMSG_TYPE_INT32},
 	[GATT_SET_NOTIFY_FLAG] = {.name = "notify_flag", .type = BLOBMSG_TYPE_INT32},
 };
@@ -427,9 +445,15 @@ static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	blobmsg_parse(set_notify_policy, GATT_SET_NOTIFY_MAX, tb, blob_data(msg), blob_len(msg));
 	
 	char *address = blobmsg_get_string(tb[GATT_SET_NOTIFY_CONN_ADDR]);
+
+	printf("addrss = %s\n", address);
 	int connection = ble_dev_mgr_get_connection(address);
 	int char_handle = blobmsg_get_u32(tb[GATT_SET_NOTIFY_CHAR_HANDLE]);
 	int flag = blobmsg_get_u32(tb[GATT_SET_NOTIFY_FLAG]);
+
+
+	printf("connect = %d\n", connection);
+	printf("flag = %d\n", flag);
 
 	json_object* output = ble_set_notify(connection, char_handle, flag);
 
@@ -472,7 +496,7 @@ static int adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_re
 	int adv_interval_max = blobmsg_get_u32(tb[ADV_INTERVAL_MAX]);
 	int adv_discover = blobmsg_get_u32(tb[ADV_DISCOVER]);
 	int adv_conn = blobmsg_get_u32(tb[ADV_CONN]);
-	json_object* output = ble_adv(adv_phys,adv_interval_min,adv_interval_max,adv_discover,adv_conn);
+	json_object* output = ble_adv(adv_phys, adv_interval_min, adv_interval_max, adv_discover, adv_conn);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -704,8 +728,14 @@ static void ubus_connection_lost(struct ubus_context *ctx)
 
 static void manage_device(json_object* o)
 {
-    json_object* tmp_type = json_object_object_get(o, "type");
-	char *type = json_object_get_string(tmp_type);
+	json_object *val_obj = NULL;
+    // json_object* tmp_type = json_object_object_get(o, "type");
+	// char *type = json_object_get_string(tmp_type);
+	
+	char *type = NULL;
+	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
+		type = json_object_get_string(val_obj);
+	}
 
 	printf("type: %s\n", type);
 

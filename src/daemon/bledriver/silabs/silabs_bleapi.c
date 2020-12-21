@@ -23,13 +23,7 @@
 #include "uart.h"
 #include "bg_types.h"
 #include "glble_errno.h"
-
-
-#define SUCCESS                  0   
-#define RESPONSE_MISSING        -1
-#define EVENT_MISSING           -2
-#define MSG_ERROR               -3
-#define PARAMETER_ERROR         -4
+#include "common.h"
 
 char rston[64] = {0};
 char rstoff[64] = {0};
@@ -37,60 +31,6 @@ struct gecko_cmd_packet pck;
 
 static void reverse_rev_payload(struct gecko_cmd_packet* pck);
 
-int str2array(uint8* dst, char* src, int len)
-{
-    int i = 0;
-    int tmp;
-    while(i < len)
-    {
-        sscanf(src+i*2,"%02x",&tmp);
-        dst[i] = tmp;
-        i++;
-    }
-    return 0;
-}
-static int hex2str(uint8* head, int len, char* value)
-{
-    int i = 0;
-    while(i < len)
-    {
-        sprintf(value+i*2,"%02x",head[i]);
-        i++;
-    }
-    return 0;
-}
-int addr2str(bd_addr *adr, char* str)
-{
-    sprintf(str,"%02x:%02x:%02x:%02x:%02x:%02x",
-    adr->addr[5],adr->addr[4],adr->addr[3],adr->addr[2],adr->addr[1],adr->addr[0]);
-    return 0;
-}
-int str2addr(char* str,bd_addr *address)
-{
-    int mac[6];
-    sscanf(str,"%02x:%02x:%02x:%02x:%02x:%02x",
-            &mac[5],&mac[4],&mac[3],&mac[2],&mac[1],&mac[0]);
-    int i = 0;
-    while(i < 6)
-    {
-        address->addr[i] = mac[i];
-        i++;
-    }
-    return 0;
-}
-void reverse_endian(uint8_t* header,uint8_t length)
-{
-  uint8_t* tmp = (uint8_t*)malloc(length);
-  memcpy(tmp,header,length);
-  int i = length-1;
-  int j = 0;
-  for(;i>=0;i--,j++)
-  {
-    *(header+j) = *(tmp+i);
-  }
-  free(tmp);
-  return;
-}
 struct gecko_cmd_packet* silabs_read_pkt(void)
 {
     uint32_t msg_length;
@@ -279,7 +219,7 @@ json_object* silabs_ble_enable(int enable)
     else{
         system(rstoff);
     }
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
 
@@ -294,14 +234,14 @@ json_object* silabs_ble_local_mac(void)
 
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
 
     char addr[18];
     addr2str(&p->data.rsp_system_get_bt_address.address,addr);
     json_object_object_add(obj,"mac",json_object_new_string(addr)); 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
 json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int mode)
@@ -316,7 +256,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
 
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
     }
     if(p->data.rsp_le_gap_set_discovery_timing.result)
     {
@@ -329,7 +269,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
     }
     if(p->data.rsp_le_gap_set_discovery_type.result)
     {
@@ -342,7 +282,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
     }
     if(p->data.rsp_le_gap_start_discovery.result)
     {
@@ -350,7 +290,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
 json_object* silabs_ble_stop(void)
@@ -364,7 +304,7 @@ json_object* silabs_ble_stop(void)
 
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
 
@@ -381,7 +321,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_gap_set_advertise_phy.result)
@@ -396,7 +336,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_gap_set_advertise_timing.result)
@@ -410,7 +350,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_gap_start_advertising.result)
@@ -419,7 +359,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
 
     return obj;
 
@@ -432,7 +372,7 @@ json_object* silabs_ble_adv_data(int adv_data_flag,char* adv_data)
 
     if(!adv_data)
     {
-        json_object_object_add(obj,"code",json_object_new_int(PARAMETER_ERROR));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_PARAM));
         return obj;
     }
     int len = strlen(adv_data)/2;
@@ -444,7 +384,7 @@ json_object* silabs_ble_adv_data(int adv_data_flag,char* adv_data)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_gap_bt5_set_adv_data.result)
@@ -453,7 +393,7 @@ json_object* silabs_ble_adv_data(int adv_data_flag,char* adv_data)
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
 
@@ -467,7 +407,7 @@ json_object* silabs_ble_stop_adv(void)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_gap_stop_advertising.result)
@@ -476,7 +416,7 @@ json_object* silabs_ble_stop_adv(void)
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
 
@@ -487,7 +427,7 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
     
     if(!send_noti_value)
     {
-        json_object_object_add(obj,"code",json_object_new_int(PARAMETER_ERROR));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_PARAM));
         return obj;
     }
 
@@ -500,7 +440,7 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_gatt_server_send_characteristic_notification.result)
@@ -510,9 +450,10 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
     }
 
     json_object_object_add(obj,"sent_len",json_object_new_int(p->data.rsp_gatt_server_send_characteristic_notification.sent_len));
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
+
 
 json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
 {
@@ -576,7 +517,7 @@ json_object* silabs_ble_disconnect(int connection)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_close.result));
@@ -593,7 +534,7 @@ json_object* silabs_ble_get_rssi(int connection)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_le_connection_get_rssi.result)
@@ -606,10 +547,10 @@ json_object* silabs_ble_get_rssi(int connection)
     p = silabs_wait_pkt(id_list,300);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(EVENT_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
         return obj;
     }
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"connection",json_object_new_int(p->data.evt_le_connection_rssi.connection));
     json_object_object_add(obj,"status",json_object_new_int(p->data.evt_le_connection_rssi.status));
     json_object_object_add(obj,"rssi",json_object_new_int(p->data.evt_le_connection_rssi.rssi));
@@ -627,7 +568,7 @@ json_object* silabs_ble_get_service(int connection)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_gatt_discover_primary_services.result)
@@ -636,7 +577,7 @@ json_object* silabs_ble_get_service(int connection)
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"connection",json_object_new_int(connection));
     char value[256] = {0};
     json_object* array = json_object_new_array();
@@ -648,7 +589,7 @@ json_object* silabs_ble_get_service(int connection)
         p = silabs_wait_pkt(id_list_service,500);
         if(!p)
         {
-            json_object_object_add(obj,"code",json_object_new_int(EVENT_MISSING));
+            json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
             return obj;
         }
         if(BGLIB_MSG_ID(p->header) == gecko_evt_gatt_service_id && p->data.evt_gatt_service.connection == connection)
@@ -669,6 +610,7 @@ json_object* silabs_ble_get_service(int connection)
     }
 }
 
+
 json_object* silabs_ble_get_char(int connection,int service_handle)
 {
     struct gecko_cmd_packet* p = NULL;
@@ -679,7 +621,7 @@ json_object* silabs_ble_get_char(int connection,int service_handle)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_gatt_discover_characteristics.result)
@@ -688,7 +630,7 @@ json_object* silabs_ble_get_char(int connection,int service_handle)
         return obj;       
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     char value[256] = {0};
     json_object* array = json_object_new_array();
     json_object_object_add(obj,"characteristic_list",array);
@@ -699,7 +641,7 @@ json_object* silabs_ble_get_char(int connection,int service_handle)
         p = silabs_wait_pkt(id_list_char,500);
         if(!p)
         {
-            json_object_object_add(obj,"code",json_object_new_int(EVENT_MISSING));
+            json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
             return obj;
         }
         if(BGLIB_MSG_ID(p->header) == gecko_evt_gatt_characteristic_id && p->data.evt_gatt_characteristic.connection == connection)
@@ -731,10 +673,10 @@ json_object* silabs_ble_set_power(int power)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"power",json_object_new_int(p->data.rsp_system_set_tx_power.set_power));
     return obj;
 }
@@ -749,7 +691,7 @@ json_object* silabs_ble_read_char(int connection,int char_handle)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_gatt_read_characteristic_value.result)
@@ -763,11 +705,11 @@ json_object* silabs_ble_read_char(int connection,int char_handle)
     p = silabs_wait_pkt(id_list,500);
     if(!p || p->data.evt_gatt_characteristic_value.connection != connection)
     {
-        json_object_object_add(obj,"code",json_object_new_int(EVENT_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
         return obj;       
     }
     char value[256] = {0};
-    json_object_object_add(obj,"code",json_object_new_int(SUCCESS));
+    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"characteristic_handle",json_object_new_int(pck.data.evt_gatt_characteristic_value.characteristic));
     json_object_object_add(obj,"att_opcode",json_object_new_int(pck.data.evt_gatt_characteristic_value.att_opcode));
     json_object_object_add(obj,"offset",json_object_new_int(pck.data.evt_gatt_characteristic_value.offset));
@@ -793,7 +735,7 @@ json_object* silabs_ble_write_char(int connection,int char_handle,char* value,in
         p = silabs_wait_pkt(id_list,200);
         if(!p)
         {
-            json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+            json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
             return obj;
         }
         json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_write_characteristic_value.result));
@@ -803,7 +745,7 @@ json_object* silabs_ble_write_char(int connection,int char_handle,char* value,in
         p = silabs_wait_pkt(id_list,200);
         if(!p)
         {
-            json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+            json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
             return obj;
         }
         json_object_object_add(obj,"sent_len",json_object_new_int(p->data.rsp_gatt_write_characteristic_value_without_response.sent_len));
@@ -822,7 +764,7 @@ json_object* silabs_ble_set_notify(int connection,int char_handle,int flag)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_set_characteristic_notification.result));
@@ -839,7 +781,7 @@ json_object* silabs_ble_dtm_tx(int packet_type,int length, int channel, int phy)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_test_dtm_tx.result)
@@ -852,7 +794,7 @@ json_object* silabs_ble_dtm_tx(int packet_type,int length, int channel, int phy)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.evt_test_dtm_completed.result));
@@ -870,7 +812,7 @@ json_object* silabs_ble_dtm_rx(int channel, int phy)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_test_dtm_rx.result)
@@ -883,7 +825,7 @@ json_object* silabs_ble_dtm_rx(int channel, int phy)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.evt_test_dtm_completed.result));
@@ -901,7 +843,7 @@ json_object* silabs_ble_dtm_end(void)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     if(p->data.rsp_test_dtm_end.result)
@@ -914,7 +856,7 @@ json_object* silabs_ble_dtm_end(void)
     p = silabs_wait_pkt(id_list,200);
     if(!p)
     {
-        json_object_object_add(obj,"code",json_object_new_int(RESPONSE_MISSING));
+        json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
     json_object_object_add(obj,"code",json_object_new_int(p->data.evt_test_dtm_completed.result));

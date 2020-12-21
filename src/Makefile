@@ -26,16 +26,17 @@ CFLAG			:=  -g -Wall
 
 # Directories and files
 DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
-					daemon/bledriver/util	\
 					daemon/bledriver/util/uart \
 					daemon/bledriver/util/hal \
+					daemon/bledriver/util	\
 					components/dev_mgr \
 					components/log \
-					include/
+					include
 
 DAEMON_SRCDIRS	:=  daemon  \
 					daemon/bledriver/util/hal  \
 					daemon/bledriver/util/uart  \
+					daemon/bledriver/util	\
 					daemon/bledriver/silabs  \
 					components/dev_mgr  \
 					components/log	
@@ -53,12 +54,14 @@ UTIL_INCDIRS	:= 	lib \
 					tool \
 					components/dev_mgr \
 					components/log	\
-					include
+					include \
+					daemon/bledriver/util
 
 UTIL_SRCDIRS	:=  lib  \
 					tool \
 					components/dev_mgr  \
-					components/log	
+					components/log	\
+					daemon/bledriver/util
 
 # Objects directories 
 DAEMON_DIR 		=	daemonbuild

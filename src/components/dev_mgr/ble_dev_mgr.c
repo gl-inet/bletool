@@ -109,7 +109,7 @@ int search_ble_dev_by_connection( uint16_t connection, ble_dev_mgr_node_t** node
 {
     ble_dev_mgr_ctx_t* ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t* search_node = NULL;
-
+    // printf("45\n");
     list_for_each_entry(search_node, &ctx->dev_list, linked_list)
     {
         if (search_node->ble_dev_desc.connection == connection)
@@ -154,7 +154,7 @@ char *ble_dev_mgr_get_address(uint16_t connection)
     {
         return NULL;
     }
-
+    // printf("1454\n");
     if ( search_ble_dev_by_connection(connection, &node) != 0)
     {
         return NULL;
@@ -169,7 +169,7 @@ uint16_t ble_dev_mgr_get_connection(char *dev_addr)
 
     if (dev_addr == NULL)
     {
-        printf("452\n");
+        printf("address is null\n");
         return -1;
     }
 

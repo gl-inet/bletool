@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <json-c/json.h>
 
-#define UUID_MAX                    32
+#define UUID_MAX                    128
 #define LIST_LENGTHE_MAX            16
 #define CHAR_VALUE_MAX              256
 #define DEVICE_MAC_LEN              6
@@ -50,10 +50,6 @@ typedef struct {
 } gl_ble_get_mac_rsp_t;
 
 typedef struct {
-    uint8_t addr[DEVICE_MAC_LEN];
-} ble_addr;
-
-typedef struct {
     int current_power;
 } gl_ble_set_power_rsp_t;
 
@@ -66,13 +62,11 @@ typedef struct {
 } gl_ble_connect_rsp_t;
 
 typedef struct {
-    // uint8_t connection;
-    char address[BLE_MAC_LEN];
+    uint8_t addr[DEVICE_MAC_LEN];
     int rssi;
 } gl_ble_get_rssi_rsp_t;
 
 typedef struct {
-    // uint8_t connection;
     uint8_t addr[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_service_list_t list[LIST_LENGTHE_MAX];
@@ -138,7 +132,7 @@ typedef enum {
     GAP_BLE_CONNECT_EVT,
     GAP_BLE_DISCONNECT_EVT,
     GAP_BLE_EVT_MAX,
-} gl_ble_gap_evrnt_t;
+} gl_ble_gap_event_t;
 
 /// BLE device address type
 typedef enum {
@@ -177,7 +171,7 @@ typedef union {
     } connect_open_data;
 
     struct ble_disconnect_evt_data {
-        int connection;
+        uint8_t address[DEVICE_MAC_LEN];
         int reason;
     } disconnect_data;
 } gl_ble_gap_data_t;
@@ -218,7 +212,7 @@ typedef union {
 
 typedef struct {
     int (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
-    int (*ble_gap_event)(gl_ble_gap_evrnt_t event, gl_ble_gap_data_t *data);
+    int (*ble_gap_event)(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
     int (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
 } gl_ble_cbs;
