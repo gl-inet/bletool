@@ -46,7 +46,6 @@ static int sub_cb(struct ubus_context *ctx, struct ubus_object *obj,
 	char *str;
 
 	str = blobmsg_format_json(msg, true);
-	printf("%s\n", str);
 	free(str);
 
 	return GL_SUCCESS;
@@ -813,45 +812,52 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	case GATT_BLE_REMOTE_NOTIFY_EVT:
 	{
 		gl_ble_gatt_data_t *remote_notify = (gl_ble_gatt_data_t *)data;
+		char address[BLE_MAC_LEN] = {0};
+		addr2str(&data->remote_notify.address, address);
 		
-		printf("\nble remote notify event: \n");
-		printf("{");
-		printf(" \"connection\": \"%d\", ", data->remote_notify.connection);
-		printf("\"characteristic\": %d, ",data->remote_notify.characteristic);
-		printf("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
-		printf("\"offset\": %d, ", data->remote_notify.offset);
-		printf("\"value\": \"%s\" ", data->remote_notify.value);
-		printf("}\n");
+		log_info("\nble remote notify event: \n");
+
+		log_info("{");		
+		log_info(" \"address\": \"%s\", ", address);
+		log_info("\"characteristic\": %d, ",data->remote_notify.characteristic);
+		log_info("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
+		log_info("\"offset\": %d, ", data->remote_notify.offset);
+		log_info("\"value\": \"%s\" ", data->remote_notify.value);
+		log_info("}\n");
 		break;
 	}
 	case GATT_BLE_REMOTE_WRITE_EVT:
 	{
-		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;
+		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;		
+		char address[BLE_MAC_LEN] = {0};
+		addr2str(&data->remote_write.address, address);
 		
-		printf("\nble remote write event: \n");
+		log_info("\nble remote write event: \n");
 
-		printf("{");
-		printf(" \"connection\": \"%d\", ", data->remote_write.connection);
-		printf("\"attribute\": %d, ", data->remote_write.attribute);
-		printf("\"att_opcode\": %d, ", data->remote_write.att_opcode);
-		printf("\"offset\": %d, ", data->remote_write.offset);
-		printf("\"value\": \"%s\" ", data->remote_write.value);
-		printf("}\n");
+		log_info("{");
+		log_info(" \"address\": \"%s\", ", address);
+		log_info("\"attribute\": %d, ", data->remote_write.attribute);
+		log_info("\"att_opcode\": %d, ", data->remote_write.att_opcode);
+		log_info("\"offset\": %d, ", data->remote_write.offset);
+		log_info("\"value\": \"%s\" ", data->remote_write.value);
+		log_info("}\n");
 
 		break;
 	}
 	case GATT_BLE_REMOTE_SET_EVT:
 	{
 		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;
+		char address[BLE_MAC_LEN] = {0};
+		addr2str(&data->remote_set.address, address);
 		
-		printf("\nble remote set event: \n");
+		log_info("\nble remote set event: \n");
 
-		printf("{");
-		printf(" \"connection\": \"%d\", ", data->remote_set.connection);
-		printf("\"characteristic\": %d, ", data->remote_set.characteristic);
-		printf("\"status_flags\": %d, ", data->remote_set.status_flags);
-		printf("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
-		printf("}\n");
+		log_info("{");
+		log_info(" \"address\": \"%s\", ", address);
+		log_info("\"characteristic\": %d, ", data->remote_set.characteristic);
+		log_info("\"status_flags\": %d, ", data->remote_set.status_flags);
+		log_info("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
+		log_info("}\n");
 
 		break;
 	}
@@ -869,20 +875,19 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 	{
 		gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
 		
-		printf("\nble system boot event: \n");
-		printf("{");
-		printf(" \"major\": \"%d\", ", data->system_boot_data.major);
-		printf("\"minor\": %d, ",data->system_boot_data.minor);
-		printf("\"patch\": %d, ",data->system_boot_data.patch);
-		printf("\"build\": %d, ", data->system_boot_data.build);
-		printf("\"bootloader\": %d, ", data->system_boot_data.bootloader);
-		printf("\"hw\": %d, ", data->system_boot_data.hw);
-		printf("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
-		printf("}\n");
+		log_info("\nble system boot event: \n");
+		log_info("{");
+		log_info(" \"major\": \"%d\", ", data->system_boot_data.major);
+		log_info("\"minor\": %d, ",data->system_boot_data.minor);
+		log_info("\"patch\": %d, ",data->system_boot_data.patch);
+		log_info("\"build\": %d, ", data->system_boot_data.build);
+		log_info("\"bootloader\": %d, ", data->system_boot_data.bootloader);
+		log_info("\"hw\": %d, ", data->system_boot_data.hw);
+		log_info("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
+		log_info("}\n");
 
 		break;
 	}
-
 	default:
 		break;
 	}
@@ -895,31 +900,34 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_SCAN_RESULT_EVT:
 	{
 		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
-		// printf("***************** ble adv data *********************");
-		printf("{");
-		printf(" \"address\": \"%s\", ", data->scan_rst.addr);
-		printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
-		printf("\"rssi\": %d, ", data->scan_rst.rssi);
-		printf("\"packet type\": %d, ", data->scan_rst.packet_type);
-		printf("\"bonding\": %d, ", data->scan_rst.bonding);
-		printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
-		printf("}\n");
+
+		log_info("{");
+		log_info(" \"address\": \"%s\", ", data->scan_rst.address);
+		log_info("\"address type\": %d, ", data->scan_rst.ble_addr_type);
+		log_info("\"rssi\": %d, ", data->scan_rst.rssi);
+		log_info("\"packet type\": %d, ", data->scan_rst.packet_type);
+		log_info("\"bonding\": %d, ", data->scan_rst.bonding);
+		log_info("\"data\": \"%s\" ", data->scan_rst.ble_adv);
+		log_info("}\n");
 		break;
 	}
 
 	case GAP_BLE_UPDATE_CONN_EVT:
 	{
 		gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
-		printf("\nble update connect event: \n");
+		log_info("\nble update connect event: \n");
 
-		printf("{");
-		printf(" \"connection\": \"%d\", ", data->update_conn_data.connection);
-		printf("\"interval\": %d, ", data->update_conn_data.interval);
-		printf("\"latency\": %d, ", data->update_conn_data.latency);
-		printf("\"timeout\": %d, ", data->update_conn_data.timeout);
-		printf("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
-		printf("\"txsize\": %d ", data->update_conn_data.txsize);
-		printf("}\n");
+		log_info("{");
+
+		char address[BLE_MAC_LEN] = {0};
+		addr2str(&data->update_conn_data.address, address);
+		log_info(" \"address\": \"%s\", ", address);
+		log_info("\"interval\": %d, ", data->update_conn_data.interval);
+		log_info("\"latency\": %d, ", data->update_conn_data.latency);
+		log_info("\"timeout\": %d, ", data->update_conn_data.timeout);
+		log_info("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
+		log_info("\"txsize\": %d ", data->update_conn_data.txsize);
+		log_info("}\n");
 
 		break;
 	}
@@ -927,15 +935,15 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_CONNECT_EVT:
 	{
 		gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
-		printf("\nble connect event: \n");
+		log_info("\nble connect event: \n");
 
-		printf("{");
-		printf(" \"address\": \"%s\", ", data->connect_open_data.addr);
-		printf("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
-		printf("\"connect role\": %d, ", data->connect_open_data.conn_role);
-		printf("\"bonding\": %d, ", data->connect_open_data.bonding);
-		printf("\"advertiser\": %d ", data->connect_open_data.advertiser);
-		printf("}\n");
+		log_info("{");
+		log_info(" \"address\": \"%s\", ", data->connect_open_data.addr);
+		log_info("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
+		log_info("\"connect role\": %d, ", data->connect_open_data.conn_role);
+		log_info("\"bonding\": %d, ", data->connect_open_data.bonding);
+		log_info("\"advertiser\": %d ", data->connect_open_data.advertiser);
+		log_info("}\n");
 
 		break;
 	}
@@ -943,15 +951,15 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_DISCONNECT_EVT:
 	{
 		gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
+		log_info("\nble disconnect event: \n");
 
-		printf("{ ");
-		char * address = NULL;
-		addr2str(data->disconnect_data.address, address);
-		printf("123 address = %s\n", address);
-		// printf("\"connection\": %d\n ", data->disconnect_data.connection);
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"reason\": %d ", data->disconnect_data.reason);
-		printf("}\n");
+		log_info("{ ");
+		char address[BLE_MAC_LEN] = {0};
+		addr2str(&data->disconnect_data.address, address);
+
+		log_info(" \"address\": \"%s\", ", address);
+		log_info("\"reason\": %d ", data->disconnect_data.reason);
+		log_info("}\n");
 
 		break;
 	}

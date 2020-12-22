@@ -28,7 +28,7 @@
 #define SYSTEM_BOOT             "system_boot"
 #define CONN_CLOSE              "conn_close"
 #define CONN_OPEN               "conn_open"
-#define REMOTE_MOTIFY           "remote_notify"
+#define REMOTE_NOTIFY           "remote_notify"
 #define REMOTE_WRITE            "remote_write"
 #define REMOTE_SET              "remote_set"
 #define ADV_PKG                 "adv_packet"

@@ -26,6 +26,7 @@
 #include "libglbleapi.h"
 #include "ble_dev_mgr.h"
 #include "infra_log.h"
+// #include "common.h"
 
 static struct ubus_subscriber subscriber;
 static struct uloop_timeout listen_timeout;
@@ -871,7 +872,7 @@ static void call_adv_packet_cb(json_object *msg)
 
 	//get packet_type
 	json_object *json_address = json_object_object_get(msg, "address");
-	strcpy(data.scan_rst.addr, json_object_get_string(json_address));
+	strcpy(data.scan_rst.address, json_object_get_string(json_address));
 
 	//get address_type
 	json_object *json_address_type = json_object_object_get(msg, "address_type");
@@ -895,9 +896,10 @@ static void call_conn_update_cb(json_object *msg)
 	gl_ble_gap_data_t data;
 	memset(&data, 0, sizeof(gl_ble_gap_data_t));
 
-	//connection
-	json_object *json_connection = json_object_object_get(msg, "connection");
-	data.update_conn_data.connection = json_object_get_int(json_connection);
+	//address
+	json_object *json_address = json_object_object_get(msg, "address");
+	char *address = json_object_get_string(json_address);
+	str2addr(address, &data.update_conn_data.address);
 
 	//interval
 	json_object *json_interval = json_object_object_get(msg, "interval");
@@ -963,15 +965,16 @@ static void call_conn_close_cb(json_object *msg)
 	gl_ble_gap_data_t data;
 	memset(&data, 0, sizeof(gl_ble_gap_data_t));
 
+	char *str = json_object_to_json_string(msg);
+
 	//reason
 	json_object *json_reason = json_object_object_get(msg, "reason");
 	data.disconnect_data.reason = json_object_get_int(json_reason);
 
-	//connection
+	//address
 	json_object *json_address = json_object_object_get(msg, "address");
 	char *address = json_object_get_string(json_address);
-	printf("call close: address = %s\n", address);
-	str2addr(address, data.disconnect_data.address);
+	str2addr(address, &data.disconnect_data.address);
 
 	ble_msg_cb.ble_gap_event(GAP_BLE_DISCONNECT_EVT, &data);
 
@@ -983,9 +986,10 @@ static void call_remote_notify_cb(json_object *msg)
 	gl_ble_gatt_data_t data;
 	memset(&data, 0, sizeof(gl_ble_gatt_data_t));
 
-	//connection
-	json_object *json_connection = json_object_object_get(msg, "connection");
-	data.remote_notify.connection = json_object_get_int(json_connection);
+	//address
+	json_object *json_address = json_object_object_get(msg, "address");
+	char *address = json_object_get_string(json_address);
+	str2addr(address, &data.remote_notify.address);
 
 	//characteristic
 	json_object *json_characteristic = json_object_object_get(msg, "characteristic");
@@ -1013,9 +1017,10 @@ static void call_remote_write_cb(json_object *msg)
 	gl_ble_gatt_data_t data;
 	memset(&data, 0, sizeof(gl_ble_gatt_data_t));
 
-	//connection
-	json_object *json_connection = json_object_object_get(msg, "connection");
-	data.remote_write.connection = json_object_get_int(json_connection);
+	//address
+	json_object *json_address = json_object_object_get(msg, "address");
+	char *address = json_object_get_string(json_address);
+	str2addr(address, &data.remote_write.address);
 
 	//attribute
 	json_object *json_attribute = json_object_object_get(msg, "attribute");
@@ -1039,9 +1044,10 @@ static void call_remote_set_cb(json_object *msg)
 	gl_ble_gatt_data_t data;
 	memset(&data, 0, sizeof(gl_ble_gatt_data_t));
 
-	//connection
-	json_object *json_connection = json_object_object_get(msg, "connection");
-	data.remote_set.connection = json_object_get_int(json_connection);
+	//address
+	json_object *json_address = json_object_object_get(msg, "address");
+	char *address = json_object_get_string(json_address);
+	str2addr(address, &data.remote_set.address);
 
 	//characteristic
 	json_object *json_characteristic = json_object_object_get(msg, "characteristic");

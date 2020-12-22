@@ -144,7 +144,7 @@ typedef enum {
 
 typedef union {
     struct ble_scan_result_evt_data {
-        char addr[BLE_MAC_LEN]; /*!< Bluetooth device address which has been searched */
+        char address[BLE_MAC_LEN]; /*!< Bluetooth device address which has been searched */
         gl_ble_addr_type_t ble_addr_type; /*!< Ble device address type */
         int packet_type;                  /*!< Ble scan result packet type */
         int rssi;                         /*!< Searched device's RSSI */
@@ -153,7 +153,8 @@ typedef union {
     } scan_rst; /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
 
     struct ble_update_conn_evt_data {
-        int connection; /*!< Bluetooth device address */
+        // int connection; /*!< Bluetooth device address */
+        uint8_t address[DEVICE_MAC_LEN];
         int interval;   /*!< Min connection interval */
         int latency;    /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
         int timeout;
@@ -172,6 +173,7 @@ typedef union {
 
     struct ble_disconnect_evt_data {
         uint8_t address[DEVICE_MAC_LEN];
+        // int connection; 
         int reason;
     } disconnect_data;
 } gl_ble_gap_data_t;
@@ -186,7 +188,8 @@ typedef enum {
 
 typedef union {
     struct ble_remote_notify_evt_data {
-        int connection;
+        // int connection;
+        uint8_t address[DEVICE_MAC_LEN];
         int characteristic;
         int att_opcode;
         int offset;
@@ -194,7 +197,8 @@ typedef union {
 
     } remote_notify;
     struct ble_remote_wirte_evt_data {
-        int connection;
+        // int connection;
+        uint8_t address[DEVICE_MAC_LEN];
         int attribute;
         int att_opcode;
         int offset;
@@ -202,7 +206,8 @@ typedef union {
 
     } remote_write;
     struct ble_remote_set_evt_data {
-        int connection;
+        // int connection;
+        uint8_t address[DEVICE_MAC_LEN];
         int characteristic;
         int status_flags;
         int client_config_flags;

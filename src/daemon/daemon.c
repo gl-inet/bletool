@@ -182,8 +182,8 @@ static const struct blobmsg_policy conn_policy[CONN_MAX] = {
 };
 static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	log_debug("leave fd listen");
     uloop_fd_delete(&serial_fd);
-	printf("leave fd listen\n");
 	struct blob_attr *tb[CONN_MAX];
 	blobmsg_parse(conn_policy, CONN_MAX, tb, blob_data(msg), blob_len(msg));
 	char* address = blobmsg_get_string(tb[CONN_ADDRESS]);
@@ -192,7 +192,6 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	json_object* output = ble_connect(address, address_type, conn_phy);
 
 	char *str = json_object_to_json_string(output);
-	printf("daemon connect, str = %s\n", str);
 	
 	int ret = -1;
 
@@ -204,7 +203,7 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	if ( !ret )
 		add_device_to_list(output);
 	else 
-		printf("output is null\n");
+		log_err("Connect output is null\n");
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -212,7 +211,7 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	printf("start fd listen\n");
+	log_debug("start fd listen");
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return 0;
 }
@@ -235,15 +234,13 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	char* address = blobmsg_get_string(tb[DISCONN_ADDRESS]);
 	int connection = ble_dev_mgr_get_connection(address);
 	json_object* output = ble_disconnect(connection);
-
-	// char *str = json_object_print(output);
 	char *str = json_object_to_json_string(output);
-	printf("daemon disconnect, str = %s\n", str);
 	
-	json_object_object_add(output, "address",json_object_new_string(address));
+	char *addr = ble_dev_mgr_get_address(connection);
+
+	json_object_object_add(output, "address",json_object_new_string(addr));
 
 	char *str1 = json_object_to_json_string(output);
-	printf("str1 = %s\n", str1);
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -272,8 +269,6 @@ static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 
 	char* address = blobmsg_get_string(tb[RSSI_ADDRESS]);
 	int connection = ble_dev_mgr_get_connection(address);
-	
-	printf("get_rssi: connection = %d\n", connection);
 	json_object* output = ble_get_rssi(connection);
 
 	blob_buf_init(&b, 0);
@@ -332,12 +327,9 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	blobmsg_parse(get_char_policy, CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	
 	int connection = 0;
-	printf("connection1 = %d\n", connection);
 
 	char *address = blobmsg_get_string(tb[CHAR_CONN_ADDRESS]);
 	connection = ble_dev_mgr_get_connection(address);
-
-	printf("connection = %d\n", connection);
 	
 	int service_handle = blobmsg_get_u32(tb[CHAR_SERVICE_HANDLE]);
 	json_object* output = ble_get_char(connection, service_handle);
@@ -445,15 +437,9 @@ static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	blobmsg_parse(set_notify_policy, GATT_SET_NOTIFY_MAX, tb, blob_data(msg), blob_len(msg));
 	
 	char *address = blobmsg_get_string(tb[GATT_SET_NOTIFY_CONN_ADDR]);
-
-	printf("addrss = %s\n", address);
 	int connection = ble_dev_mgr_get_connection(address);
 	int char_handle = blobmsg_get_u32(tb[GATT_SET_NOTIFY_CHAR_HANDLE]);
 	int flag = blobmsg_get_u32(tb[GATT_SET_NOTIFY_FLAG]);
-
-
-	printf("connect = %d\n", connection);
-	printf("flag = %d\n", flag);
 
 	json_object* output = ble_set_notify(connection, char_handle, flag);
 
@@ -729,15 +715,14 @@ static void ubus_connection_lost(struct ubus_context *ctx)
 static void manage_device(json_object* o)
 {
 	json_object *val_obj = NULL;
-    // json_object* tmp_type = json_object_object_get(o, "type");
-	// char *type = json_object_get_string(tmp_type);
-	
-	char *type = NULL;
+	uint16_t connection;
+
+	char *type = NULL, *addr = NULL;
 	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
 		type = json_object_get_string(val_obj);
 	}
 
-	printf("type: %s\n", type);
+	log_info("notification type: %s", type);
 
 	if ( !strcmp(type, CONN_OPEN))
 	{
@@ -745,12 +730,62 @@ static void manage_device(json_object* o)
 	}
 	else if ( !strcmp(type, CONN_CLOSE))
 	{
+		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
+			connection = json_object_get_int(val_obj);
+		}
+
+		addr = ble_dev_mgr_get_address(connection);
+
+		json_object_object_del(o, "connection");
+		json_object_object_add(o, "address", json_object_new_string(addr));
 		delete_device_from_list(o);
 	}	
-	// else if ( !strcmp(type, CONN_UPDATE))
-	// {
-	// 	update_device_list(o);
-	// }
+	else if ( !strcmp(type, CONN_UPDATE))
+	{
+		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
+			connection = json_object_get_int(val_obj);
+		}
+
+		addr = ble_dev_mgr_get_address(connection);
+
+		json_object_object_del(o, "connection");
+		json_object_object_add(o, "address", json_object_new_string(addr));		
+	}
+	else if ( !strcmp(type, REMOTE_NOTIFY))
+	{
+		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
+			connection = json_object_get_int(val_obj);
+		}		
+		
+		addr = ble_dev_mgr_get_address(connection);
+		
+		json_object_object_del(o, "connection");
+		json_object_object_add(o, "address", json_object_new_string(addr));
+		
+	}
+	else if ( !strcmp(type, REMOTE_WRITE))
+	{
+		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
+			connection = json_object_get_int(val_obj);
+		}		
+		
+		addr = ble_dev_mgr_get_address(connection);
+		
+		json_object_object_del(o, "connection");
+		json_object_object_add(o, "address", json_object_new_string(addr));		
+		
+	}
+	else if ( !strcmp(type, REMOTE_SET))
+	{
+		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
+			connection = json_object_get_int(val_obj);
+		}		
+		
+		addr = ble_dev_mgr_get_address(connection);
+		
+		json_object_object_del(o, "connection");
+		json_object_object_add(o, "address", json_object_new_string(addr));		
+	}
 
     return;
 }
@@ -758,10 +793,9 @@ static void manage_device(json_object* o)
 void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 {
     json_object* output = serial_msg_callback();
-	if(output)
-	{
-		manage_device(output);
 
+	if(output) {
+		manage_device(output);
 		blob_buf_init(&b, 0);
 		blobmsg_add_object(&b, output);
 		ubus_notify(ctx,  &ble_obj, "Notify", b.head, -1);
