@@ -118,7 +118,7 @@ int cmd_local_address(int argc, char **argv)
 	
 	printf("{ \"code\": %d", ret);
 	if ( !ret ) {
-		addr2str(rsp.addr, addr);
+		addr2str(rsp.address, addr);
 		printf(", \"address\": \"%s\" ", addr);
 	}
 	printf(" }\n");	
@@ -938,7 +938,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		log_info("\nble connect event: \n");
 
 		log_info("{");
-		log_info(" \"address\": \"%s\", ", data->connect_open_data.addr);
+		log_info(" \"address\": \"%s\", ", data->connect_open_data.address);
 		log_info("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
 		log_info("\"connect role\": %d, ", data->connect_open_data.conn_role);
 		log_info("\"bonding\": %d, ", data->connect_open_data.bonding);

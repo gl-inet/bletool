@@ -48,7 +48,7 @@ static void call_remote_notify_cb(json_object *msg);
 static void call_remote_write_cb(json_object *msg);
 static void call_remote_set_cb(json_object *msg);
 
-static void sub_remove_callback(struct ubus_context *ctx, struct ubus_subscriber *obj, uint32_t id)
+static void sub_remove_callback(struct ubus_context *ctx, struct ubus_subscriber *obj, int32_t id)
 {
 	fprintf(stderr, "Removed by server\n");
 }
@@ -152,7 +152,7 @@ static void ble_register_cb(gl_ble_cbs *cb)
 	}
 }
 
-int gl_ble_subscribe(gl_ble_cbs *callback)
+int32_t gl_ble_subscribe(gl_ble_cbs *callback)
 {
 	int ret;
 	unsigned int id = 0;
@@ -198,7 +198,7 @@ int gl_ble_subscribe(gl_ble_cbs *callback)
 	return GL_SUCCESS;
 }
 
-int gl_ble_unsubscribe(void) {
+int32_t gl_ble_unsubscribe(void) {
 	listen = 0;
 	return GL_SUCCESS;
 }
@@ -265,7 +265,7 @@ int gl_ble_call(const char *path, const char *method, struct blob_buf *b, int ti
 	return GL_SUCCESS;
 }
 
-int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
+int32_t gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -294,7 +294,7 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	int i = 0;
 	while (i < 6)
 	{
-		rsp->addr[i] = mac[i];
+		rsp->address[i] = mac[i];
 		i++;
 	}
 
@@ -303,7 +303,7 @@ int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	return GL_SUCCESS;
 }
 
-int gl_ble_enable(int enable)
+int32_t gl_ble_enable(int enable)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -324,7 +324,7 @@ int gl_ble_enable(int enable)
 	return GL_SUCCESS;
 }
 
-int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
+int32_t gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -353,7 +353,7 @@ int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power)
 	return GL_SUCCESS;
 }
 
-int gl_ble_discovery(int phys, int interval, int window, int type, int mode)
+int32_t gl_ble_discovery(int phys, int interval, int window, int type, int mode)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -378,7 +378,7 @@ int gl_ble_discovery(int phys, int interval, int window, int type, int mode)
 	return GL_SUCCESS;
 }
 
-int gl_ble_stop(void)
+int32_t gl_ble_stop(void)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -398,7 +398,7 @@ int gl_ble_stop(void)
 	return GL_SUCCESS;
 }
 
-int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy)
+int32_t gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -442,7 +442,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 	int i = 0;
 	while (i < 6)
 	{
-		rsp->addr[i] = mac[i];
+		rsp->address[i] = mac[i];
 		i++;
 	}
 
@@ -452,7 +452,7 @@ int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, i
 	return GL_SUCCESS;
 }
 
-int gl_ble_disconnect(char * addr)
+int32_t gl_ble_disconnect(char * addr)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -474,7 +474,7 @@ int gl_ble_disconnect(char * addr)
 	return GL_SUCCESS;
 }
 
-int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)  
+int32_t gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)  
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -505,7 +505,7 @@ int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address)
 	return GL_SUCCESS;
 }
 
-int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address)
+int32_t gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -528,7 +528,7 @@ int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address)
 	int i = 0;
 	while (i < 6)
 	{
-		rsp->addr[i] = mac[i];
+		rsp->address[i] = mac[i];
 		i++;
 	}
 
@@ -551,7 +551,7 @@ int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address)
 	return GL_SUCCESS;
 }
 
-int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle)
+int32_t gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -589,7 +589,7 @@ int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handl
 	return GL_SUCCESS;
 }
 
-int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle)
+int32_t gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -631,7 +631,7 @@ int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle
 	return GL_SUCCESS;
 }
 
-int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res)
+int32_t gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -661,7 +661,7 @@ int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_hand
 	return GL_SUCCESS;
 }
 
-int gl_ble_set_notify(char *address, int char_handle, int flag)
+int32_t gl_ble_set_notify(char *address, int char_handle, int flag)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -685,7 +685,7 @@ int gl_ble_set_notify(char *address, int char_handle, int flag)
 	return GL_SUCCESS;
 }
 
-int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn)
+int32_t gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -710,7 +710,7 @@ int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int a
 	return GL_SUCCESS;
 }
 
-int gl_ble_adv_data(int flag, char *data)
+int32_t gl_ble_adv_data(int flag, char *data)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -732,7 +732,7 @@ int gl_ble_adv_data(int flag, char *data)
 	return GL_SUCCESS;
 }
 
-int gl_ble_stop_adv(void)
+int32_t gl_ble_stop_adv(void)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -752,7 +752,7 @@ int gl_ble_stop_adv(void)
 	return GL_SUCCESS;
 }
 
-int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value)
+int32_t gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -779,7 +779,7 @@ int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_ha
 	return GL_SUCCESS;
 }
 
-int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy)
+int32_t gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -807,7 +807,7 @@ int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int c
 	return GL_SUCCESS;
 }
 
-int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
+int32_t gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -833,7 +833,7 @@ int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy)
 	return GL_SUCCESS;
 }
 
-int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
+int32_t gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
 {
 	if (!rsp) { log_err("Parameter error!\n"); return GL_ERR_PARAM; }
 
@@ -933,7 +933,7 @@ static void call_conn_open_cb(json_object *msg)
 
 	//address
 	json_object *json_address = json_object_object_get(msg, "address");
-	strcpy(data.connect_open_data.addr, json_object_get_string(json_address));
+	strcpy(data.connect_open_data.address, json_object_get_string(json_address));
 
 	//address_type
 	json_object *json_address_type = json_object_object_get(msg, "address_type");

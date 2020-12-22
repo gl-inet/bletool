@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ******************************************************************************/
+
 #ifndef _GLBLE_TYPE_H_
 #define _GLBLE_TYPE_H_
 
@@ -29,32 +30,32 @@
 #define MAX_ADV_DATA_LEN            255
 #define MAX_HASH_DATA_LEN           255
 
-// typedef enum {
-//     DISABLE = 0,
-//     ENABLE,
-// }gl_ble;
-
 typedef struct {
-    int handle;
+    int32_t handle;
     char uuid[UUID_MAX];
 } ble_service_list_t;
 
 typedef struct {
-    int handle;
+    int32_t handle;
     char uuid[UUID_MAX];
     uint8_t properties;
 } ble_characteristic_list_t;
 
+// typedef enum {
+//     DISABLE = 0,
+//     ENABLE,
+// }gl_ble_e;
+
 typedef struct {
-    uint8_t addr[DEVICE_MAC_LEN];
+    uint8_t address[DEVICE_MAC_LEN];
 } gl_ble_get_mac_rsp_t;
 
 typedef struct {
-    int current_power;
+    int32_t current_power;
 } gl_ble_set_power_rsp_t;
 
 typedef struct {
-    uint8_t addr[DEVICE_MAC_LEN];
+    uint8_t address[DEVICE_MAC_LEN];
     uint8_t address_type;
     uint8_t master;
     uint8_t bonding;
@@ -62,42 +63,40 @@ typedef struct {
 } gl_ble_connect_rsp_t;
 
 typedef struct {
-    uint8_t addr[DEVICE_MAC_LEN];
-    int rssi;
+    uint8_t address[DEVICE_MAC_LEN];
+    int32_t rssi;
 } gl_ble_get_rssi_rsp_t;
 
 typedef struct {
-    uint8_t addr[DEVICE_MAC_LEN];
+    uint8_t address[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_service_list_t list[LIST_LENGTHE_MAX];
 } gl_ble_get_service_rsp_t;
 
 typedef struct {
-    // uint8_t connection;
-    uint8_t addr[DEVICE_MAC_LEN];
+    uint8_t address[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_characteristic_list_t list[LIST_LENGTHE_MAX];
 } gl_ble_get_char_rsp_t;
 
 typedef struct {
-    // uint8_t connection;
-    uint8_t addr[DEVICE_MAC_LEN];
-    int handle;
+    uint8_t address[DEVICE_MAC_LEN];
+    int32_t handle;
     uint8_t att_opcode;
-    int offset;
+    int32_t offset;
     uint8_t value[CHAR_VALUE_MAX];
 } gl_ble_char_read_rsp_t;
 
 typedef struct {
-    int sent_len;
+    int32_t sent_len;
 } gl_ble_write_char_rsp_t;
 
 typedef struct {
-    int sent_len;
+    int32_t sent_len;
 } gl_ble_send_notify_rsp_t;
 
 typedef struct {
-    int number_of_packets;
+    int32_t number_of_packets;
 } gl_ble_dtm_test_rsp_t;
 
 typedef struct {
@@ -114,12 +113,12 @@ typedef enum {
 
 typedef union {
     struct ble_system_boot_data {
-        int major;
-        int minor;
-        int patch;
-        int build;
-        int bootloader;
-        int hw;
+        int32_t major;
+        int32_t minor;
+        int32_t patch;
+        int32_t build;
+        int32_t bootloader;
+        int32_t hw;
         char ble_hash[MAX_HASH_DATA_LEN];
     } system_boot_data;
 
@@ -144,37 +143,35 @@ typedef enum {
 
 typedef union {
     struct ble_scan_result_evt_data {
-        char address[BLE_MAC_LEN]; /*!< Bluetooth device address which has been searched */
-        gl_ble_addr_type_t ble_addr_type; /*!< Ble device address type */
-        int packet_type;                  /*!< Ble scan result packet type */
-        int rssi;                         /*!< Searched device's RSSI */
-        char ble_adv[MAX_ADV_DATA_LEN];   /*!< Received EIR */
-        int bonding;
-    } scan_rst; /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
+        char address[BLE_MAC_LEN]; 
+        gl_ble_addr_type_t ble_addr_type; 
+        int32_t packet_type;  
+        int32_t rssi;  
+        char ble_adv[MAX_ADV_DATA_LEN];
+        int32_t bonding;
+    } scan_rst;
 
     struct ble_update_conn_evt_data {
-        // int connection; /*!< Bluetooth device address */
         uint8_t address[DEVICE_MAC_LEN];
-        int interval;   /*!< Min connection interval */
-        int latency;    /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
-        int timeout;
-        int security_mode;
-        int txsize;
+        int32_t interval; 
+        int32_t latency;
+        int32_t timeout;
+        int32_t security_mode;
+        int32_t txsize;
     } update_conn_data;
 
     struct ble_connect_open_evt_data {
-        char addr[BLE_MAC_LEN];
+        char address[BLE_MAC_LEN];
         gl_ble_addr_type_t ble_addr_type;
-        int conn_role;
-        int connection;
-        int bonding;
-        int advertiser;
+        int32_t conn_role;
+        int32_t connection;
+        int32_t bonding;
+        int32_t advertiser;
     } connect_open_data;
 
     struct ble_disconnect_evt_data {
         uint8_t address[DEVICE_MAC_LEN];
-        // int connection; 
-        int reason;
+        int32_t reason;
     } disconnect_data;
 } gl_ble_gap_data_t;
 
@@ -188,37 +185,34 @@ typedef enum {
 
 typedef union {
     struct ble_remote_notify_evt_data {
-        // int connection;
         uint8_t address[DEVICE_MAC_LEN];
-        int characteristic;
-        int att_opcode;
-        int offset;
+        int32_t characteristic;
+        int32_t att_opcode;
+        int32_t offset;
         char value[MAX_VALUE_DATA_LEN];
 
     } remote_notify;
-    struct ble_remote_wirte_evt_data {
-        // int connection;
+    struct ble_remote_write_evt_data {
         uint8_t address[DEVICE_MAC_LEN];
-        int attribute;
-        int att_opcode;
-        int offset;
+        int32_t attribute;
+        int32_t att_opcode;
+        int32_t offset;
         char value[MAX_VALUE_DATA_LEN];
 
     } remote_write;
     struct ble_remote_set_evt_data {
-        // int connection;
         uint8_t address[DEVICE_MAC_LEN];
-        int characteristic;
-        int status_flags;
-        int client_config_flags;
+        int32_t characteristic;
+        int32_t status_flags;
+        int32_t client_config_flags;
     } remote_set;
 
 } gl_ble_gatt_data_t;
 
 typedef struct {
-    int (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
-    int (*ble_gap_event)(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
-    int (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
+    int32_t (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
+    int32_t (*ble_gap_event)(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
+    int32_t (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
 } gl_ble_cbs;
 

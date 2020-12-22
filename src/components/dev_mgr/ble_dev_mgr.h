@@ -18,6 +18,7 @@
 
 #include <libubox/list.h>
 #include <stdint.h>
+#include <json-c/json.h>
 
 #define DEVICE_MAC_LEN 18
 

@@ -24,75 +24,219 @@
 #include "glble_errno.h"
 #include <json-c/json.h>
 
+/***********************************************************************************************//**
+ *  \brief  This function will subscribe events generate from BLE module. 
+ *          Note that it must be followed by uloop_run(), it will continuously pass events to 
+ *          function callback.
+ *  \param[in]  callback This callback will be called when module receive a system boot, GAP and GATT event. 
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_subscribe(gl_ble_cbs *callback);
 
-int gl_ble_subscribe(gl_ble_cbs *callback);
+/***********************************************************************************************//**
+ *  \brief  This function will unsubscribe events generate from BLE module. 
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_unsubscribe(void);
 
-int gl_ble_unsubscribe(void);
+/***********************************************************************************************//**
+ *  \brief  Enable or disable the BLE module.
+ *  \note   When you need to use the BLE module, you should call this API.
+ *  \param[in]   enable The value to enable or disable the BLE module.
+ *  \return 0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_enable(int enable);
 
-/* BLE System functions */
+/***********************************************************************************************//**
+ *  \brief  Get local bluetooth MAC address.
+ *  \param[out]  rsp  A response structure used for storing the MAC address.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
 
-/*Enable or disable the BLE module*/
-int gl_ble_enable(int enable);
+/***********************************************************************************************//**
+ *  \brief  Set the global power level.
+ *  \note   
+ *  \param[in]   power TX power in 0.1 dBm steps, for example the value of 10 is 1dBm
+ *                     and 55 is 5.5 dBm.
+ *  \param[out]  rsp   A response structure used for storing the the current global power.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
 
-/*Get local bluetooth MAC*/
-int gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
+/***********************************************************************************************//**
+ *  \brief  Act as BLE slave, Set customized advertising data.
+ *  \note
+ *  \param[in]  flag  Adv data flag. This value selects if the data is intended for advertising 
+ *                    packets, scan response packets or advertising packet in OTA.
+ *                    0: Advertising packets, 1: Scan response packets
+ *                    2: OTA advertising packets, 4: OTA scan response packets
+ *  \param[out]  data Customized advertising data. Must be hexadecimal ASCII. Like “020106” 
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_adv_data(int flag, char *data);
 
-/*Set the global power level*/
-int gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
+/***********************************************************************************************//**
+ *  \brief  Act as BLE slave, Set and Start Avertising.
+ *  \note   interval_max should be bigger than interval_min.
+ *  \param[in]   phys  The PHY on which the advertising packets are transmitted on.
+ *                     1: LE 1M PHY, 4: LE Coded PHY
+ *  \param[in]   interval_min Minimum advertising interval. Value in units of 0.625 ms
+ *                     Range: 0x20 to 0xFFFF, Time range: 20 ms to 40.96 s
+ *  \param[in]   interval_max Maximum advertising interval. Value in units of 0.625 ms
+ *                     Range: 0x20 to 0xFFFF, Time range: 20 ms to 40.96 s
+ *  \param[in]   discover Define the discoverable mode.
+ *                     0: Not discoverable,
+ *                     1: Discoverable using both limited and general discovery procedures
+ *                     2: Discoverable using general discovery procedure
+ *                     3: Device is not discoverable in either limited or generic discovery
+ *                        procedure, but may be discovered by using the Observation procedure
+ *                     4: Send advertising and/or scan response data defined by the user.
+ *                        The limited/general discoverable flags are defined by the user.
+ *  \param[in]   adv_conn Connectable mode.
+ *                     0: Non-connectable non-scannable
+ *                     1: Directed connectable (RESERVED, DO NOT USE)
+ *                     2: Undirected connectable scannable (This mode can only be used
+ *                        in legacy advertising PDUs)
+ *                     3: Undirected scannable (Non-connectable but responds to
+ *                        scan requests)
+ *                     4: Undirected connectable non-scannable. This mode can
+ *                        only be used in extended advertising PDUs
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
 
-/* BLE slave functions */
+/***********************************************************************************************//**
+ *  \brief  Act as BLE slave, Stop advertising.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_stop_adv(void);
 
-/*Act as BLE slave, Set and Start Avertising*/
-int gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
+/***********************************************************************************************//**
+ *  \brief  Act as BLE slave, send Notification to remote device.
+ *  \note
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  char_handle  GATT characteristic handle. 
+ *  \param[in]  value  Data value to be sent.
+ *  \param[out]  rsp   A response structure used for storing the length of the Notification.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value);
 
-/*Act as BLE slave, Set customized advertising data*/
-int gl_ble_adv_data(int flag, char *data);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Set and start the BLE discovery.
+ *  \param[in]  phys  The PHY on which the advertising packets are transmitted on.
+ *                    1: LE 1M PHY, 4: LE Coded PHY.
+ *  \param[in]  interval  Scan interval. Time = Value x 0.625 ms.
+ *                        Range: 0x0004 to 0xFFFF, Time Range: 2.5 ms to 40.96 s.
+ *  \param[in]  window    Scan window. Time = Value x 0.625 ms.
+ *                        Range: 0x0004 to 0xFFFF, Time Range: 2.5 ms to 40.96 s.
+ *  \param[in]  type  Scan type. Values:
+ *                        0: Passive scanning, 1: Active scanning.
+ *                        In passive scanning mode, the device only listens to advertising 
+ *                        packets and does not transmit packets.
+ *                        In active scanning mode, the device sends out a scan request packet upon 
+ *                        receiving an advertising packet from a remote device. Then, 
+ *                        it listens to the scan response packet from the remote device.
+ *  \param[in]  mode  Bluetooth discovery Mode.
+ *                    0: Discover only limited discoverable devices
+ *                    1: Discover limited and generic discoverable devices
+ *                    2: Discover all devices
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_discovery(int phys, int interval, int window, int type, int mode);
 
-/*Act as BLE slave, Stop advertising*/
-int gl_ble_stop_adv(void);
+/***********************************************************************************************//**
+ *  \brief  Act as master, End the current GAP discovery procedure.
+ *  \return 0 on success, -1 on failure.
+ **************************************************************************************************/
+int32_t gl_ble_stop(void);
 
-/*Act as BLE slave, Send Notification*/
-int gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Start connect to a remote BLE device.
+ *  \param[in]  address  Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  address_type  Advertiser address type. Values:
+ *                            0: Public address, 1: Random address
+ *                            2: Public identity address resolved by stack
+ *                            3: Random identity address resolved by stack
+ *  \param[in]  phys  The PHY on which the advertising packets are transmitted on.
+ *                    1: LE 1M PHY, 4: LE Coded PHY.
+ *  \param[out]  rsp  A response structure used for storing the connect parameters of the remote device.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy);
 
-/* BLE master functions */
+/***********************************************************************************************//**
+ *  \brief  Act as master, disconnect with remote device.
+ *  \param[in]  address  Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_disconnect(char *address);
 
-/*Act as master, Set and start the BLE discovery*/
-int gl_ble_discovery(int phys, int interval, int window, int type, int mode);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Get rssi of connection with remote device.
+ *  \note
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[out] rsp  A response structure used for storing the connection with remote device.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address);
 
-/*Act as master, End the current GAP discovery procedure*/
-int gl_ble_stop(void);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Get service list of a remote GATT server.
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[out] rsp  A response structure used for storing the  service list of a remote GATT server.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address);
 
-/*Act as master, Start connect to a remote BLE device*/
-int gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Get characteristic list of a remote GATT server.
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  service_handle  The service handle of connection with remote device.
+ *  \param[out] rsp  A response structure used for storing the characteristic 
+ *                   list of a remote GATT server.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle);
 
-/*Act as master, disconnect with remote device*/
-int gl_ble_disconnect(char *address);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Read value of specified characteristic in a remote gatt server.
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  char_handle  The characteristic handle of connection with remote device.
+ *  \param[out] rsp  A response structure used for storing the value of specified characteristic.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle);
 
-/*Act as master, Get rssi of connection with remote device*/
-int gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Write value to specified characteristic in a remote gatt server.
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  char_handle  The characteristic handle of connection with remote device.
+ *  \param[in]  value  Data value to be wrote.
+ *  \param[in]  res  Response flag. 0: Write with no response, 1: Write with response.
+ *  \param[out] rsp  A response structure used for storing the length of value to be wrote.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res);
 
-/*Act as master, Get service list of a remote GATT server*/
-int gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address);
-
-/*Act as master, Get characteristic list of a remote GATT server*/
-int gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle);
-
-/*Act as master, Read value of specified characteristic in a remote gatt server*/
-int gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle);
-
-/*Act as master, Write value to specified characteristic in a remote gatt server*/
-int gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res);
-
-/*Act as master, Enable or disable the notification or indication of a remote gatt server*/
-int gl_ble_set_notify(char *address, int char_handle, int flag);
+/***********************************************************************************************//**
+ *  \brief  Act as master, Enable or disable the notification or indication of a remote gatt server.
+ *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  char_handle  The characteristic handle of connection with remote device.
+ *  \param[in]  flag    Notification flag.
+ *                      0: disable, 1: notification, 2: indication.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
+int32_t gl_ble_set_notify(char *address, int char_handle, int flag);
 
 /*DTM test, tx*/
-int gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
+int32_t gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
 
 /*DTM test, rx*/
-int gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
+int32_t gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
 
 /*DTM test, end*/
-int gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
+int32_t gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
 
 #endif
