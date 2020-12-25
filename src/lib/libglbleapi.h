@@ -31,13 +31,13 @@
  *  \param[in]  callback This callback will be called when module receive a system boot, GAP and GATT event. 
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_subscribe(gl_ble_cbs *callback);
+GL_RET gl_ble_subscribe(gl_ble_cbs *callback);
 
 /***********************************************************************************************//**
  *  \brief  This function will unsubscribe events generate from BLE module. 
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_unsubscribe(void);
+GL_RET gl_ble_unsubscribe(void);
 
 /***********************************************************************************************//**
  *  \brief  Enable or disable the BLE module.
@@ -45,14 +45,14 @@ int32_t gl_ble_unsubscribe(void);
  *  \param[in]   enable The value to enable or disable the BLE module.
  *  \return 0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_enable(int enable);
+GL_RET gl_ble_enable(int enable);
 
 /***********************************************************************************************//**
  *  \brief  Get local bluetooth MAC address.
  *  \param[out]  rsp  A response structure used for storing the MAC address.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
+GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
 
 /***********************************************************************************************//**
  *  \brief  Set the global power level.
@@ -62,7 +62,7 @@ int32_t gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
  *  \param[out]  rsp   A response structure used for storing the the current global power.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
+GL_RET gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
 
 /***********************************************************************************************//**
  *  \brief  Act as BLE slave, Set customized advertising data.
@@ -74,7 +74,7 @@ int32_t gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
  *  \param[out]  data Customized advertising data. Must be hexadecimal ASCII. Like “020106” 
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_adv_data(int flag, char *data);
+GL_RET gl_ble_adv_data(int flag, char *data);
 
 /***********************************************************************************************//**
  *  \brief  Act as BLE slave, Set and Start Avertising.
@@ -104,13 +104,13 @@ int32_t gl_ble_adv_data(int flag, char *data);
  *                        only be used in extended advertising PDUs
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
+GL_RET gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
 
 /***********************************************************************************************//**
  *  \brief  Act as BLE slave, Stop advertising.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_stop_adv(void);
+GL_RET gl_ble_stop_adv(void);
 
 /***********************************************************************************************//**
  *  \brief  Act as BLE slave, send Notification to remote device.
@@ -121,7 +121,7 @@ int32_t gl_ble_stop_adv(void);
  *  \param[out]  rsp   A response structure used for storing the length of the Notification.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int char_handle, char *value);
+GL_RET gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, uint8_t *address, int char_handle, char *value);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Set and start the BLE discovery.
@@ -144,13 +144,13 @@ int32_t gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, char *address, int cha
  *                    2: Discover all devices
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_discovery(int phys, int interval, int window, int type, int mode);
+GL_RET gl_ble_discovery(int phys, int interval, int window, int type, int mode);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, End the current GAP discovery procedure.
  *  \return 0 on success, -1 on failure.
  **************************************************************************************************/
-int32_t gl_ble_stop(void);
+GL_RET gl_ble_stop(void);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Start connect to a remote BLE device.
@@ -164,14 +164,14 @@ int32_t gl_ble_stop(void);
  *  \param[out]  rsp  A response structure used for storing the connect parameters of the remote device.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_connect(gl_ble_connect_rsp_t *rsp, char *address, int address_type, int phy);
+GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int address_type, int phy);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, disconnect with remote device.
  *  \param[in]  address  Remote BLE device MAC address. Like “11:22:33:44:55:66”.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_disconnect(char *address);
+GL_RET gl_ble_disconnect(uint8_t *address);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Get rssi of connection with remote device.
@@ -180,7 +180,7 @@ int32_t gl_ble_disconnect(char *address);
  *  \param[out] rsp  A response structure used for storing the connection with remote device.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address);
+GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Get service list of a remote GATT server.
@@ -188,7 +188,7 @@ int32_t gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, char *address);
  *  \param[out] rsp  A response structure used for storing the  service list of a remote GATT server.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address);
+GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Get characteristic list of a remote GATT server.
@@ -198,7 +198,7 @@ int32_t gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, char *address);
  *                   list of a remote GATT server.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_handle);
+GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int service_handle);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Read value of specified characteristic in a remote gatt server.
@@ -207,7 +207,7 @@ int32_t gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, char *address, int service_h
  *  \param[out] rsp  A response structure used for storing the value of specified characteristic.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_handle);
+GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int char_handle);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Write value to specified characteristic in a remote gatt server.
@@ -218,7 +218,7 @@ int32_t gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, char *address, int char_ha
  *  \param[out] rsp  A response structure used for storing the length of value to be wrote.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_handle, char *value, int res);
+GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int char_handle, char *value, int res);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Enable or disable the notification or indication of a remote gatt server.
@@ -228,15 +228,15 @@ int32_t gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, char *address, int char_
  *                      0: disable, 1: notification, 2: indication.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-int32_t gl_ble_set_notify(char *address, int char_handle, int flag);
+GL_RET gl_ble_set_notify(uint8_t *address, int char_handle, int flag);
 
 /*DTM test, tx*/
-int32_t gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
+GL_RET gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
 
 /*DTM test, rx*/
-int32_t gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
+GL_RET gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
 
 /*DTM test, end*/
-int32_t gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
+GL_RET gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
 
 #endif

@@ -20,11 +20,11 @@
 #include <stdint.h>
 #include <json-c/json.h>
 
-#define DEVICE_MAC_LEN 18
+#define MAC_STR_LEN 18
 
 typedef struct _silabs_dev_desc_t
 {
-  char dev_addr[DEVICE_MAC_LEN];
+  char dev_addr[MAC_STR_LEN];
   uint16_t connection;
 } ble_dev_desc_t;
 

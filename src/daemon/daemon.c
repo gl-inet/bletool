@@ -830,6 +830,7 @@ int main(int argc, char * argv[])
 	if (ubus_add_object(ctx, &ble_obj) != 0)
 	{
 		fprintf(stderr,"ubus add obj failed\n");
+		ubus_free(ctx);
 		return -1;
 	}
 

@@ -44,11 +44,13 @@ DAEMON_SRCDIRS	:=  daemon  \
 LIB_INCDIRS		:= 	lib \
 					components/dev_mgr \
 					components/log \
-					include
+					include \
+					daemon/bledriver/util						
 
 LIB_SRCDIRS		:=  lib  \
 					components/dev_mgr \
-					components/log	
+					components/log	\
+					daemon/bledriver/util					
 
 UTIL_INCDIRS	:= 	lib \
 					tool \
@@ -93,7 +95,7 @@ $(info DAEMON_OBJS = $(DAEMON_OBJS))
 VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 
 # Dependences               
-DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -lglutil
+DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
 LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
 

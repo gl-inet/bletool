@@ -97,7 +97,7 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection) {
     node = malloc(sizeof(ble_dev_mgr_node_t));
     memset(node, 0, sizeof(ble_dev_mgr_node_t));
 
-    memcpy(node->ble_dev_desc.dev_addr, dev_addr, DEVICE_MAC_LEN);
+    memcpy(node->ble_dev_desc.dev_addr, dev_addr, MAC_STR_LEN);
     node->ble_dev_desc.connection = connection;
 
     INIT_LIST_HEAD(&node->linked_list);

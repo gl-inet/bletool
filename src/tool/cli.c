@@ -25,6 +25,9 @@
 #include <libubus.h>
 #include <json-c/json.h>
 
+#include <unistd.h>
+#include <signal.h>
+
 #include "libglbleapi.h"
 #include "ble_dev_mgr.h"
 #include "infra_log.h"
@@ -37,61 +40,11 @@
 
 static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data);
 static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
+static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
-static int sub_cb(struct ubus_context *ctx, struct ubus_object *obj,
-				  struct ubus_request_data *req,
-				  const char *method, struct blob_attr *msg)
-{
-	char *str;
-
-	str = blobmsg_format_json(msg, true);
-	free(str);
-
-	return GL_SUCCESS;
-}
-static void sub_remove_cb(struct ubus_context *ctx, struct ubus_subscriber *obj, uint32_t id)
-{
-	fprintf(stderr, "Removed by server\n");
-}
-
-static void ubus_invoke_complete(struct ubus_request *req, int type, struct blob_attr *msg)
-{
-	char **str = (char **)req->priv;
-
-	if (msg && str)
-		*str = blobmsg_format_json(msg, true);
-}
-int ble_ubus_call(char *path, const char *method, struct blob_buf *b, int timeout, char **str)
-{
-	unsigned int id = 0;
-	struct ubus_context *ctx = NULL;
-
-	ctx = ubus_connect(NULL);
-	if (!ctx) {
-		fprintf(stderr,"Ubus connect failed\n");
-		return -1;
-	}
-
-	if (ubus_lookup_id(ctx, path, &id))	{
-		fprintf(stderr,"Ubus lookup id failed.\n");
-		if (ctx)
-		{
-			ubus_free(ctx);
-		}
-		return -1;
-	}
-
-	ubus_invoke(ctx, id, method, b->head, ubus_invoke_complete, (void *)str, timeout * 1000);
-
-	if (ctx)
-		ubus_free(ctx);
-
-	return GL_SUCCESS;
-}
-
 /* System functions */
-int cmd_enable(int argc, char **argv)
+GL_RET cmd_enable(int argc, char **argv)
 {
 	int enable = 0;
 	if (argc < 3) {
@@ -109,7 +62,7 @@ int cmd_enable(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_local_address(int argc, char **argv)
+GL_RET cmd_local_address(int argc, char **argv)
 {
 	char addr[BLE_MAC_LEN] = {0};
 	gl_ble_get_mac_rsp_t rsp;
@@ -121,12 +74,12 @@ int cmd_local_address(int argc, char **argv)
 		addr2str(rsp.address, addr);
 		printf(", \"address\": \"%s\" ", addr);
 	}
-	printf(" }\n");	
+	printf("}\n");	
 
 	return GL_SUCCESS;
 }
 
-int cmd_set_power(int argc, char **argv)
+GL_RET cmd_set_power(int argc, char **argv)
 {
 	int power = 0;
 	if (argc < 3) {
@@ -151,7 +104,7 @@ int cmd_set_power(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_listen(int argc, char **argv)
+GL_RET cmd_listen(int argc, char **argv)
 {
 	gl_ble_cbs ble_cb;
 	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
@@ -165,7 +118,7 @@ int cmd_listen(int argc, char **argv)
 
 /*BLE slave functions */
 
-int cmd_adv(int argc, char **argv)
+GL_RET cmd_adv(int argc, char **argv)
 {
 	int ch, phys = 1, interval_min = 160, interval_max = 160, discover = 2, adv_conn = 2;
 
@@ -214,7 +167,7 @@ int cmd_adv(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_adv_data(int argc, char **argv)
+GL_RET cmd_adv_data(int argc, char **argv)
 {
 	int ch, flag = -1;
 	char *value = NULL;
@@ -251,7 +204,7 @@ int cmd_adv_data(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_adv_stop(int argc, char **argv)
+GL_RET cmd_adv_stop(int argc, char **argv)
 {
 	GL_RET ret = gl_ble_stop_adv();
 
@@ -261,7 +214,7 @@ int cmd_adv_stop(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_send_notify(int argc, char **argv)
+GL_RET cmd_send_notify(int argc, char **argv)
 {
 	int ch = 0, char_handle = -1;
 	char *value = NULL, *str = NULL;
@@ -297,9 +250,12 @@ int cmd_send_notify(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
 	gl_ble_send_notify_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_send_notify_rsp_t));
-	GL_RET ret = gl_ble_send_notify(&rsp, address, char_handle, value);
+	GL_RET ret = gl_ble_send_notify(&rsp, address_u8, char_handle, value);
 
 	printf("{ \"code\": %d ", ret);
 	if ( !ret ) {
@@ -310,7 +266,7 @@ int cmd_send_notify(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_discovery(int argc, char **argv)
+GL_RET cmd_discovery(int argc, char **argv)
 {
 	int ch, phys = 1, interval = 16, window = 16, type = 0, mode = 1;
 	struct option long_options[] = {
@@ -352,7 +308,7 @@ int cmd_discovery(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_stop(int argc, char **argv)
+GL_RET cmd_stop(int argc, char **argv)
 {
 	GL_RET ret = gl_ble_stop();
 
@@ -362,7 +318,7 @@ int cmd_stop(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_connect(int argc, char **argv)
+GL_RET cmd_connect(int argc, char **argv)
 {
 	int ch, phy = 1, address_type = -1, option_index;
 	char *address = NULL;
@@ -396,10 +352,13 @@ int cmd_connect(int argc, char **argv)
 		return GL_ERR_PARAM_MISSING;
 	}
 
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
 	gl_ble_connect_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_connect_rsp_t));
 
-	GL_RET ret =  gl_ble_connect(&rsp, address, address_type, phy);
+	GL_RET ret =  gl_ble_connect(&rsp, address_u8, address_type, phy);
 
 	printf("{ \"code\": %d", ret);
 	if ( !ret ) {
@@ -414,7 +373,7 @@ int cmd_connect(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_disconnect(int argc, char **argv)
+GL_RET cmd_disconnect(int argc, char **argv)
 {
 	char address[BLE_MAC_LEN] = {0};
 
@@ -434,8 +393,11 @@ int cmd_disconnect(int argc, char **argv)
 		printf(PARA_ERROR);
 		return GL_ERR_PARAM;
 	}
-	
-	GL_RET ret = gl_ble_disconnect(address);
+
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
+	GL_RET ret = gl_ble_disconnect(address_u8);
 
 	printf("{ \"code\": %d", ret);
 	printf(" }\n");
@@ -443,18 +405,22 @@ int cmd_disconnect(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_get_rssi(int argc, char **argv)
+GL_RET cmd_get_rssi(int argc, char **argv)
 {
 	char address[BLE_MAC_LEN] = {0};
+
+	struct option long_options[] = {
+	{"address", required_argument, NULL, 'a'},
+	{0}};
 	
-	if (argc < 3)
+	if (argc < 4)
 	{
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
 	else
 	{
-		strcpy(address, argv[2]);
+		strcpy(address, argv[3]);
 	}
 
 	uint8_t addr_len = strlen(address);
@@ -467,7 +433,10 @@ int cmd_get_rssi(int argc, char **argv)
 	gl_ble_get_rssi_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_get_rssi_rsp_t));
 
-	GL_RET ret = gl_ble_get_rssi(&rsp, address);
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
+	GL_RET ret = gl_ble_get_rssi(&rsp, address_u8);
 
 	printf("{ \"code\": %d", ret);
 	if ( !ret ) {
@@ -479,18 +448,22 @@ int cmd_get_rssi(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_get_service(int argc, char **argv)
+GL_RET cmd_get_service(int argc, char **argv)
 {
 	char address[BLE_MAC_LEN] = {0};
+
+	struct option long_options[] = {
+	{"address", required_argument, NULL, 'a'},
+	{0}};
 	
-	if (argc < 3)
+	if (argc < 4)
 	{
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
 	else
 	{
-		strcpy(address, argv[2]);
+		strcpy(address, argv[3]);
 	}
 
 	uint8_t addr_len = strlen(address);
@@ -501,7 +474,11 @@ int cmd_get_service(int argc, char **argv)
 	}
 
 	gl_ble_get_service_rsp_t rsp;
-	int ret = gl_ble_get_service(&rsp, address);
+
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
+	int ret = gl_ble_get_service(&rsp, address_u8);
 
 	printf("{ \"code\": %d", ret);
 	int len = rsp.list_len;
@@ -516,7 +493,7 @@ int cmd_get_service(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_get_char(int argc, char **argv)
+GL_RET cmd_get_char(int argc, char **argv)
 {
 	int ch, service_handle = -1;
 	int option_index;
@@ -549,9 +526,12 @@ int cmd_get_char(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
 	gl_ble_get_char_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_get_char_rsp_t));
-	GL_RET ret = gl_ble_get_char(&rsp, address, service_handle);
+	GL_RET ret = gl_ble_get_char(&rsp, address_u8, service_handle);
 
 	printf("{ \"code\": %d, ", ret);
 	int len = rsp.list_len;
@@ -566,7 +546,7 @@ int cmd_get_char(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
-int cmd_set_notify(int argc, char **argv)
+GL_RET cmd_set_notify(int argc, char **argv)
 {
 	int ch, char_handle = -1, flag = -1;
 	char *str = NULL;
@@ -603,7 +583,10 @@ int cmd_set_notify(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
-	GL_RET ret = gl_ble_set_notify(address, char_handle, flag);
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
+	GL_RET ret = gl_ble_set_notify(address_u8, char_handle, flag);
 	
 	printf("{ \"code\": %d ", ret);
 	printf("} \n");	
@@ -611,7 +594,7 @@ int cmd_set_notify(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_read_value(int argc, char **argv)
+GL_RET cmd_read_value(int argc, char **argv)
 {
 	int ch, char_handle = -1;
 	char *str = NULL;
@@ -643,9 +626,13 @@ int cmd_read_value(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
 	gl_ble_char_read_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_char_read_rsp_t));
-	GL_RET ret = gl_ble_read_char(&rsp, address, char_handle);
+
+	GL_RET ret = gl_ble_read_char(&rsp, address_u8, char_handle);
 
 	printf("{ \"code\": %d, ", ret);
 	if ( !ret ) {
@@ -658,7 +645,7 @@ int cmd_read_value(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
-int cmd_write_value(int argc, char **argv)
+GL_RET cmd_write_value(int argc, char **argv)
 {
 	int ch, char_handle = -1, res = 0;
 	char *value = NULL, *str = NULL;
@@ -697,9 +684,12 @@ int cmd_write_value(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
+	uint8_t address_u8[DEVICE_MAC_LEN] = {0};
+	str2addr(address, &address_u8);
+
 	gl_ble_write_char_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_write_char_rsp_t));
-	GL_RET ret = gl_ble_write_char(&rsp, address, char_handle, value, res);
+	GL_RET ret = gl_ble_write_char(&rsp, address_u8, char_handle, value, res);
 
 	printf("{ \"code\": %d", ret);
 	if ( !ret ) {
@@ -709,7 +699,7 @@ int cmd_write_value(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
-int cmd_dtm_tx(int argc, char **argv)
+GL_RET cmd_dtm_tx(int argc, char **argv)
 {
 	/* Default setting, PRBS9 packet payload, length 20, channel 0, phy 1M PHY*/
 	int ch, packet_type = 0, length = 20, channel = 0, phy = 1;
@@ -753,7 +743,7 @@ int cmd_dtm_tx(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
-int cmd_dtm_rx(int argc, char **argv)
+GL_RET cmd_dtm_rx(int argc, char **argv)
 {
 	/* Default setting, channel 0, phy 1M PHY*/
 	int ch, channel = 0, phy = 1;
@@ -790,7 +780,7 @@ int cmd_dtm_rx(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-int cmd_dtm_end(int argc, char **argv)
+GL_RET cmd_dtm_end(int argc, char **argv)
 {
 	gl_ble_dtm_test_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_dtm_test_rsp_t));
@@ -805,60 +795,124 @@ int cmd_dtm_end(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
+char *address_test = NULL;
+int rssi_sum = 0;
+int adv_cnt = 0;
+
+void handler()
+{
+	printf("\nadv_cnt:	%d\n", adv_cnt);
+	printf("rssi_sum:	%d\n", rssi_sum);
+	printf("rssi_average:	%.1f\n\n", (float)rssi_sum/adv_cnt);
+	adv_cnt = 0;
+	rssi_sum = 0;
+	alarm(0);
+	GL_RET ret = gl_ble_stop();
+	exit(0);
+}
+
+GL_RET cmd_adv_pack_test(int argc, char **argv) 
+{
+	int ch = 0, timeout = -1;
+	char  *str = NULL;
+
+	uint8_t addr_len;
+
+	struct option long_options[] = {
+		{"address", required_argument, NULL, 'a'},
+		{"timeout", required_argument, NULL, 't'},
+		{0, 0, 0, 0}};
+	
+	int option_index;
+
+	while ((ch = getopt_long(argc, argv, "a:t:", long_options, &option_index)) != -1)
+	{
+		switch (ch)
+		{
+		case 'a':
+			address_test = optarg;
+			printf("\nAddress is %s\n", address_test);
+			break;
+		case 't':
+			timeout = atoi(optarg);
+			printf("The timeout is %d seconds.\n\n", timeout);
+			break;
+		}
+	}
+
+	addr_len = strlen(address_test);
+	if (addr_len < BLE_MAC_LEN - 1 || timeout <= 0 )
+	{
+		printf(PARA_ERROR);
+		return GL_ERR_PARAM;
+	}
+
+	int phys = 1, interval = 16, window = 16, type = 0, mode = 1;
+	GL_RET ret = gl_ble_discovery(phys, interval, window, type, mode);
+
+	printf("{ \"code\": %d ", ret);
+	printf("}\n");	
+
+	signal(SIGALRM, handler);
+	alarm(timeout);
+
+	gl_ble_cbs ble_cb;
+	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
+	ble_cb.ble_gap_event = ble_gap_test_cb;
+	ble_cb.ble_gatt_event = NULL;
+	ble_cb.ble_module_event = NULL;
+	gl_ble_subscribe(&ble_cb);
+
+	return GL_SUCCESS;
+}
+
 static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 {
+	char address[BLE_MAC_LEN] = {0};
 	switch (event)
 	{
 	case GATT_BLE_REMOTE_NOTIFY_EVT:
 	{
 		gl_ble_gatt_data_t *remote_notify = (gl_ble_gatt_data_t *)data;
-		char address[BLE_MAC_LEN] = {0};
 		addr2str(&data->remote_notify.address, address);
 		
-		log_info("\nble remote notify event: \n");
-
-		log_info("{");		
-		log_info(" \"address\": \"%s\", ", address);
-		log_info("\"characteristic\": %d, ",data->remote_notify.characteristic);
-		log_info("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
-		log_info("\"offset\": %d, ", data->remote_notify.offset);
-		log_info("\"value\": \"%s\" ", data->remote_notify.value);
-		log_info("}\n");
+		printf("\nBle remote notify event: \n");
+		printf("{");		
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"characteristic\": %d, ",data->remote_notify.characteristic);
+		printf("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
+		printf("\"offset\": %d, ", data->remote_notify.offset);
+		printf("\"value\": \"%s\" ", data->remote_notify.value);
+		printf("}\n");
 		break;
 	}
 	case GATT_BLE_REMOTE_WRITE_EVT:
 	{
-		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;		
-		char address[BLE_MAC_LEN] = {0};
+		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;
 		addr2str(&data->remote_write.address, address);
 		
-		log_info("\nble remote write event: \n");
-
-		log_info("{");
-		log_info(" \"address\": \"%s\", ", address);
-		log_info("\"attribute\": %d, ", data->remote_write.attribute);
-		log_info("\"att_opcode\": %d, ", data->remote_write.att_opcode);
-		log_info("\"offset\": %d, ", data->remote_write.offset);
-		log_info("\"value\": \"%s\" ", data->remote_write.value);
-		log_info("}\n");
-
+		printf("\nBle remote write event: \n");
+		printf("{");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"attribute\": %d, ", data->remote_write.attribute);
+		printf("\"att_opcode\": %d, ", data->remote_write.att_opcode);
+		printf("\"offset\": %d, ", data->remote_write.offset);
+		printf("\"value\": \"%s\" ", data->remote_write.value);
+		printf("}\n");
 		break;
 	}
 	case GATT_BLE_REMOTE_SET_EVT:
 	{
-		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;
-		char address[BLE_MAC_LEN] = {0};
+		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;		
 		addr2str(&data->remote_set.address, address);
 		
-		log_info("\nble remote set event: \n");
-
-		log_info("{");
-		log_info(" \"address\": \"%s\", ", address);
-		log_info("\"characteristic\": %d, ", data->remote_set.characteristic);
-		log_info("\"status_flags\": %d, ", data->remote_set.status_flags);
-		log_info("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
-		log_info("}\n");
-
+		printf("\nBle remote set event: \n");
+		printf("{");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"characteristic\": %d, ", data->remote_set.characteristic);
+		printf("\"status_flags\": %d, ", data->remote_set.status_flags);
+		printf("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
+		printf("}\n");
 		break;
 	}
 
@@ -875,17 +929,16 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 	{
 		gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
 		
-		log_info("\nble system boot event: \n");
-		log_info("{");
-		log_info(" \"major\": \"%d\", ", data->system_boot_data.major);
-		log_info("\"minor\": %d, ",data->system_boot_data.minor);
-		log_info("\"patch\": %d, ",data->system_boot_data.patch);
-		log_info("\"build\": %d, ", data->system_boot_data.build);
-		log_info("\"bootloader\": %d, ", data->system_boot_data.bootloader);
-		log_info("\"hw\": %d, ", data->system_boot_data.hw);
-		log_info("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
-		log_info("}\n");
-
+		printf("\nBle system boot event: \n");
+		printf("{");
+		printf(" \"major\": \"%d\", ", data->system_boot_data.major);
+		printf("\"minor\": %d, ",data->system_boot_data.minor);
+		printf("\"patch\": %d, ",data->system_boot_data.patch);
+		printf("\"build\": %d, ", data->system_boot_data.build);
+		printf("\"bootloader\": %d, ", data->system_boot_data.bootloader);
+		printf("\"hw\": %d, ", data->system_boot_data.hw);
+		printf("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
+		printf("}\n");
 		break;
 	}
 	default:
@@ -895,79 +948,107 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 
 static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 {
+	char address[BLE_MAC_LEN] = {0};
 	switch (event)
 	{
 	case GAP_BLE_SCAN_RESULT_EVT:
 	{
 		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
+		addr2str(&data->update_conn_data.address, address);
 
-		log_info("{");
-		log_info(" \"address\": \"%s\", ", data->scan_rst.address);
-		log_info("\"address type\": %d, ", data->scan_rst.ble_addr_type);
-		log_info("\"rssi\": %d, ", data->scan_rst.rssi);
-		log_info("\"packet type\": %d, ", data->scan_rst.packet_type);
-		log_info("\"bonding\": %d, ", data->scan_rst.bonding);
-		log_info("\"data\": \"%s\" ", data->scan_rst.ble_adv);
-		log_info("}\n");
+		printf("{");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
+		printf("\"rssi\": %d, ", data->scan_rst.rssi);
+		printf("\"packet type\": %d, ", data->scan_rst.packet_type);
+		printf("\"bonding\": %d, ", data->scan_rst.bonding);
+		printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
+		printf("}\n");
 		break;
 	}
 
 	case GAP_BLE_UPDATE_CONN_EVT:
 	{
 		gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
-		log_info("\nble update connect event: \n");
-
-		log_info("{");
-
-		char address[BLE_MAC_LEN] = {0};
 		addr2str(&data->update_conn_data.address, address);
-		log_info(" \"address\": \"%s\", ", address);
-		log_info("\"interval\": %d, ", data->update_conn_data.interval);
-		log_info("\"latency\": %d, ", data->update_conn_data.latency);
-		log_info("\"timeout\": %d, ", data->update_conn_data.timeout);
-		log_info("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
-		log_info("\"txsize\": %d ", data->update_conn_data.txsize);
-		log_info("}\n");
-
+		
+		printf("\nBle update connect event: \n");		
+		printf("{");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"interval\": %d, ", data->update_conn_data.interval);
+		printf("\"latency\": %d, ", data->update_conn_data.latency);
+		printf("\"timeout\": %d, ", data->update_conn_data.timeout);
+		printf("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
+		printf("\"txsize\": %d ", data->update_conn_data.txsize);
+		printf("}\n");
 		break;
 	}
 
 	case GAP_BLE_CONNECT_EVT:
 	{
 		gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
-		log_info("\nble connect event: \n");
-
-		log_info("{");
-		log_info(" \"address\": \"%s\", ", data->connect_open_data.address);
-		log_info("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
-		log_info("\"connect role\": %d, ", data->connect_open_data.conn_role);
-		log_info("\"bonding\": %d, ", data->connect_open_data.bonding);
-		log_info("\"advertiser\": %d ", data->connect_open_data.advertiser);
-		log_info("}\n");
-
+		addr2str(&data->disconnect_data.address, address);
+		
+		printf("\nBle connect event: \n");
+		printf("{");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
+		printf("\"connect role\": %d, ", data->connect_open_data.conn_role);
+		printf("\"bonding\": %d, ", data->connect_open_data.bonding);
+		printf("\"advertiser\": %d ", data->connect_open_data.advertiser);
+		printf("}\n");
 		break;
 	}
 
 	case GAP_BLE_DISCONNECT_EVT:
 	{
 		gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
-		log_info("\nble disconnect event: \n");
-
-		log_info("{ ");
-		char address[BLE_MAC_LEN] = {0};
 		addr2str(&data->disconnect_data.address, address);
 
-		log_info(" \"address\": \"%s\", ", address);
-		log_info("\"reason\": %d ", data->disconnect_data.reason);
-		log_info("}\n");
-
+		printf("\nBle disconnect event: \n");
+		printf("{ ");
+		printf(" \"address\": \"%s\", ", address);
+		printf("\"reason\": %d ", data->disconnect_data.reason);
+		printf("}\n");
 		break;
 	}
-
 	default:
 		break;
 	}
 }
+
+
+
+static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
+{
+	char address[BLE_MAC_LEN] = {0};
+	
+	switch (event)
+	{
+	case GAP_BLE_SCAN_RESULT_EVT:
+	{
+		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
+		addr2str(&data->update_conn_data.address, address);
+		if(!strcmp(address, address_test)) 
+		{
+			adv_cnt ++;
+			rssi_sum += data->scan_rst.rssi;
+			printf("{");
+			printf(" \"address\": \"%s\", ", address);
+			printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
+			printf("\"rssi\": %d, ", data->scan_rst.rssi);
+			printf("\"packet type\": %d, ", data->scan_rst.packet_type);
+			printf("\"bonding\": %d, ", data->scan_rst.bonding);
+			printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
+			printf("}\n");
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
 
 static struct
 {
@@ -1000,6 +1081,8 @@ static struct
 	{"dtm_tx", cmd_dtm_tx, "Start transmitter for dtm test"},
 	{"dtm_rx", cmd_dtm_rx, "Start receiver for dtm test"},
 	{"dtm_end", cmd_dtm_end, "End a dtm test"},
+	/* Adv test */
+	{"adv_pack_test", cmd_adv_pack_test, "BLE adv packet test"},	
 	{NULL, NULL, 0}};
 
 static int usage(void)

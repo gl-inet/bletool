@@ -1,3 +1,20 @@
-Ver: 3.2.5
-Build: 2020.12.08
+Version : 3.3.0
+Build   : 2020.12.25
+Changes :
+	1. feat(cli.c): add 'cmd_adv_pack_test' cmd
+    2. fix(hal.c): remove the dependency of 'gl-util'
+    3. fix(libglbleapi.c): free memory when 'gl_ble_api' error returns
+    4. fix(libglbleapi.c): when printing log information, using the 'log_err()'
+    5. fix(libglbleapi.c): API return value all use GL_RET
+    6. style(all): remove the extra log information
+    7. docs: API return value all use GL_RET
 
+
+---------------------------------------------------------------------------------
+Version : 3.2.5
+Build   : 2020.12.22
+Changes :
+	1. refactor(project): Refactor the directory structure
+    2. perf(libglbleapi.c): Change API parameters, "Connection" parameter changed to "Address" parameter
+    3. perf(cli.c): Optimization cli.c, the client is implemented by calling the API in lib
+    4. style(all): Standardize print info, add function comment info

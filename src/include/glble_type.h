@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <json-c/json.h>
 
+typedef int32_t GL_RET;
+
 #define UUID_MAX                    128
 #define LIST_LENGTHE_MAX            16
 #define CHAR_VALUE_MAX              256
@@ -143,7 +145,7 @@ typedef enum {
 
 typedef union {
     struct ble_scan_result_evt_data {
-        char address[BLE_MAC_LEN]; 
+        uint8_t address[DEVICE_MAC_LEN]; 
         gl_ble_addr_type_t ble_addr_type; 
         int32_t packet_type;  
         int32_t rssi;  
@@ -161,7 +163,7 @@ typedef union {
     } update_conn_data;
 
     struct ble_connect_open_evt_data {
-        char address[BLE_MAC_LEN];
+        uint8_t address[DEVICE_MAC_LEN]; 
         gl_ble_addr_type_t ble_addr_type;
         int32_t conn_role;
         int32_t connection;

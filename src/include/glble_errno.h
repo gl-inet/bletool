@@ -23,7 +23,6 @@
  * 
 */
 
-typedef int32_t GL_RET;
 #define MANUFACTURER_CODE_BASE						  0x0100
 
 enum gl_error_spaces {
@@ -46,6 +45,7 @@ typedef enum gl_error {
 	GL_ERR_UBUS_REGISTER			= GL_ERRSPC_UBUS	+ 5,			// UBUS register error
 	GL_ERR_UBUS_CALL_STR			= GL_ERRSPC_UBUS	+ 6,            // UBUS CALL return error
 	GL_ERR_UBUS_JSON_PARSE			= GL_ERRSPC_UBUS	+ 7,			// UBUS return json parse error
+	GL_ERR_UBUS_UNSUBSCRIBE			= GL_ERRSPC_UBUS	+ 8,			// UBUS unsubscribe error
 }errcode_t;
 
 #endif
