@@ -42,19 +42,18 @@ Look at the [Bletool manual](docs/BLETOOL%20Commands%20Manual_V0.5.pdf). It cont
 ## Directory Structure
 
 ```cpp
-|—— Makefile
-|
 |—— LICENSE
+|
+|—— Makefile
 |
 |—— VERSION_FILE
 |
-|—— README
+|—— README.md
 |
-|—— doc									        # document
-|	|—— BLETOOL Commands Manual_V0.5
+|—— docs								        # document
 |
 |—— files
-|	|—— gl-bletool.init					        # configuration file
+|	|—— gl_bletool.init					        # configuration file
 |
 |—— src
     | 	|—— components
@@ -62,25 +61,24 @@ Look at the [Bletool manual](docs/BLETOOL%20Commands%20Manual_V0.5.pdf). It cont
     |	    |—— log
     |
     |—— daemon 							        # ble daemon
-    |   |—— daemon
+    |   |—— gl_daemon.c
     |   |—— bledriver
     |       |——silabs					        # silabs SDK
-    |       |——util 					        # utilities
-    |           |—— hal
-    |           |—— uart    
+    |       |——util 					        # utilities   
     |
-    |—— include                    		        # header file 
+    |—— include                    		        # header file
+        |—— gl_errno.h
+    |   |—— gl_type.h
     |
     |—— lib                        		        # ble api lib
-    |   |—— libglbleapi.h
-    |   |—— libglbleapi.c
+    |   |—— gl_bleapi.h
+    |   |—— gl_bleapi.c
     |
     |—— project                			        # user application file
-    |   |—— demo.c	     				        # demo file
+    |   |—— gl_demo.c	     				    # demo file
     |
     |—— tool                     	
-    |   |—— cli.c						        # debug tool – bletool
+    |   |—— gl_cli.c						    # debug tool – bletool
     |
     |—— Makefile
-
 ```

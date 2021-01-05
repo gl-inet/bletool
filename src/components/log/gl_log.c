@@ -14,7 +14,7 @@
  limitations under the License.
  ******************************************************************************/
 
-#include "infra_log.h"
+#include "gl_log.h"
 #include <stdarg.h>
 #ifdef SYSLOG
 #include <syslog.h>

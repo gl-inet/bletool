@@ -20,13 +20,16 @@
 #include <string.h>
 #include "silabs_bleapi.h"
 #include "host_gecko.h"
-#include "uart.h"
+#include "gl_uart.h"
+#include "gl_hal.h"
 #include "bg_types.h"
-#include "glble_errno.h"
-#include "common.h"
+#include "gl_errno.h"
+#include "gl_common.h"
 
-char rston[64] = {0};
-char rstoff[64] = {0};
+
+extern char rston[];
+extern char rstoff[];
+
 struct gecko_cmd_packet pck;
 
 static void reverse_rev_payload(struct gecko_cmd_packet* pck);

@@ -22,14 +22,15 @@
 #include <libubus.h>
 #include <json-c/json.h>
 #include <gl/libglbleapi.h>
-#include "ble_dev_mgr.h"
-#include "infra_log.h"
+#include "gl_dev_mgr.h"
+#include "gl_log.h"
 
 int main()
 {
 	gl_ble_get_mac_rsp_t mac_rsp;
 	gl_ble_get_mac(&mac_rsp);
 	printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
-		mac_rsp.address[5],mac_rsp.address[4],mac_rsp.address[3],mac_rsp.address[2],mac_rsp.address[1],mac_rsp.address[0]);
+		mac_rsp.address[5],mac_rsp.address[4],mac_rsp.address[3],
+		mac_rsp.address[2],mac_rsp.address[1],mac_rsp.address[0]);
 	return 0;
 }

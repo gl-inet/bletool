@@ -35,7 +35,7 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/gl
-	$(CP) $(PKG_BUILD_DIR)/lib/libglbleapi.h $(1)/usr/include/gl
+	$(CP) $(PKG_BUILD_DIR)/lib/gl_bleapi.h $(1)/usr/include/gl
 	$(INSTALL_DIR) $(1)/usr/lib/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/libglbleapi.so $(1)/usr/lib/
 endef
@@ -46,11 +46,11 @@ define Package/gl-bletool/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/bletool $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/include/gl
-	$(CP) $(PKG_BUILD_DIR)/lib/libglbleapi.h $(1)/usr/include/gl
+	$(CP) $(PKG_BUILD_DIR)/lib/gl_bleapi.h $(1)/usr/include/gl
 	$(INSTALL_DIR) $(1)/usr/lib/gl
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/libglbleapi.so $(1)/usr/lib/gl
 	$(LN) /usr/lib/gl/libglbleapi.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/gl-bletool.init $(1)/etc/init.d/bledaemon
+	$(INSTALL_BIN) ./files/gl_bletool.init $(1)/etc/init.d/bledaemon
 endef
 $(eval $(call BuildPackage,gl-bletool))

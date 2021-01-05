@@ -28,12 +28,12 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "libglbleapi.h"
-#include "ble_dev_mgr.h"
-#include "infra_log.h"
-#include "glble_errno.h"
-#include "glble_type.h"
-#include "common.h"
+#include "gl_bleapi.h"
+#include "gl_dev_mgr.h"
+#include "gl_log.h"
+#include "gl_errno.h"
+#include "gl_type.h"
+#include "gl_common.h"
 
 #define PARA_MISSING 	"Parameter missing\n"
 #define PARA_ERROR 		"Parameter error\n"
@@ -100,7 +100,6 @@ GL_RET cmd_set_power(int argc, char **argv)
 	// 	printf("\"current_power\": %d dBm ", rsp.current_power);
 	// 	printf("} \n");	
 	// }
-
 	return GL_SUCCESS;
 }
 
@@ -117,7 +116,6 @@ GL_RET cmd_listen(int argc, char **argv)
 }
 
 /*BLE slave functions */
-
 GL_RET cmd_adv(int argc, char **argv)
 {
 	int ch, phys = 1, interval_min = 160, interval_max = 160, discover = 2, adv_conn = 2;
@@ -157,7 +155,6 @@ GL_RET cmd_adv(int argc, char **argv)
 	{
 		interval_max = interval_min;
 	}
-
 
 	GL_RET ret = gl_ble_adv(phys, interval_min, interval_max, discover, adv_conn);
 	
@@ -645,6 +642,7 @@ GL_RET cmd_read_value(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
+
 GL_RET cmd_write_value(int argc, char **argv)
 {
 	int ch, char_handle = -1, res = 0;
@@ -699,6 +697,7 @@ GL_RET cmd_write_value(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
+
 GL_RET cmd_dtm_tx(int argc, char **argv)
 {
 	/* Default setting, PRBS9 packet payload, length 20, channel 0, phy 1M PHY*/
@@ -743,6 +742,7 @@ GL_RET cmd_dtm_tx(int argc, char **argv)
 
 	return GL_SUCCESS;
 }
+
 GL_RET cmd_dtm_rx(int argc, char **argv)
 {
 	/* Default setting, channel 0, phy 1M PHY*/
@@ -798,22 +798,27 @@ GL_RET cmd_dtm_end(int argc, char **argv)
 char *address_test = NULL;
 int rssi_sum = 0;
 int adv_cnt = 0;
+int timeout = 0;
+int real_time = 0;
 
-void handler()
+static void signal_handler()
 {
-	printf("\nadv_cnt:	%d\n", adv_cnt);
-	printf("rssi_sum:	%d\n", rssi_sum);
-	printf("rssi_average:	%.1f\n\n", (float)rssi_sum/adv_cnt);
+	printf("\n");
+	printf("Number of broadcast packets	:	%d\n", adv_cnt);
+	printf("Packages loss probability	: 	%.2f\n", 1-(float)adv_cnt / 100.0);
+	printf("The total number of RSSI	:	%d\n", rssi_sum);
+	printf("The average of RSSI		:	%.1f\n\n", (float)rssi_sum/adv_cnt);
+	
 	adv_cnt = 0;
 	rssi_sum = 0;
 	alarm(0);
 	GL_RET ret = gl_ble_stop();
-	exit(0);
+	exit(0);	
 }
 
 GL_RET cmd_adv_pack_test(int argc, char **argv) 
 {
-	int ch = 0, timeout = -1;
+	int ch = 0;
 	char  *str = NULL;
 
 	uint8_t addr_len;
@@ -831,7 +836,7 @@ GL_RET cmd_adv_pack_test(int argc, char **argv)
 		{
 		case 'a':
 			address_test = optarg;
-			printf("\nAddress is %s\n", address_test);
+			printf("\nThe remote address is %s\n", address_test);
 			break;
 		case 't':
 			timeout = atoi(optarg);
@@ -850,10 +855,10 @@ GL_RET cmd_adv_pack_test(int argc, char **argv)
 	int phys = 1, interval = 16, window = 16, type = 0, mode = 1;
 	GL_RET ret = gl_ble_discovery(phys, interval, window, type, mode);
 
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");	
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");	
 
-	signal(SIGALRM, handler);
+	signal(SIGALRM, signal_handler);
 	alarm(timeout);
 
 	gl_ble_cbs ble_cb;
@@ -1017,8 +1022,6 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	}
 }
 
-
-
 static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 {
 	char address[BLE_MAC_LEN] = {0};
@@ -1033,14 +1036,14 @@ static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		{
 			adv_cnt ++;
 			rssi_sum += data->scan_rst.rssi;
-			printf("{");
-			printf(" \"address\": \"%s\", ", address);
-			printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
-			printf("\"rssi\": %d, ", data->scan_rst.rssi);
-			printf("\"packet type\": %d, ", data->scan_rst.packet_type);
-			printf("\"bonding\": %d, ", data->scan_rst.bonding);
-			printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
-			printf("}\n");
+			// printf("{");
+			// printf(" \"address\": \"%s\", ", address);
+			// printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
+			// printf("\"rssi\": %d, ", data->scan_rst.rssi);
+			// printf("\"packet type\": %d, ", data->scan_rst.packet_type);
+			// printf("\"bonding\": %d, ", data->scan_rst.bonding);
+			// printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
+			// printf("}\n");
 		}
 		break;
 	}
@@ -1048,7 +1051,6 @@ static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		break;
 	}
 }
-
 
 static struct
 {

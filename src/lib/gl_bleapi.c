@@ -21,12 +21,11 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
-#include <gl/debug.h>
 
-#include "libglbleapi.h"
-#include "ble_dev_mgr.h"
-#include "infra_log.h"
-#include "common.h"
+#include "gl_bleapi.h"
+#include "gl_dev_mgr.h"
+#include "gl_log.h"
+#include "gl_common.h"
 
 static struct ubus_subscriber subscriber;
 static struct uloop_timeout listen_timeout;
@@ -234,7 +233,7 @@ GL_RET json_parameter_check(json_object *obj, char **parameters, int32_t para_nu
 		log_err("Parameter error!\n"); 
 		return GL_ERR_PARAM; 
 	}
-	
+
 	o = json_object_object_get(obj, "code");
 	if (!o) { 
 		log_err("Response missing!\n"); 
@@ -242,12 +241,10 @@ GL_RET json_parameter_check(json_object *obj, char **parameters, int32_t para_nu
 	}
 
 	int32_t code = json_object_get_int(o);
-	if (code)
-	{
-		return GL_ERR_RESP_MISSING;
+	if (code) {
+		return code;
 	}
-	for (i = 0; i < para_num; i++)
-	{
+	for (i = 0; i < para_num; i++) {
 		if (!json_object_object_get_ex(obj, parameters[i], &o)) {
 			log_err("Response missing!\n");
 			return GL_ERR_RESP_MISSING;
@@ -855,6 +852,7 @@ GL_RET gl_ble_adv(int32_t phys, int32_t interval_min, int32_t interval_max, int3
 	blobmsg_add_u32(&b, "adv_conn", adv_conn);
 
 	gl_ble_call("ble", "adv", &b, 1, &str);
+
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -863,6 +861,7 @@ GL_RET gl_ble_adv(int32_t phys, int32_t interval_min, int32_t interval_max, int3
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
+
 	if (ret) { 
 		free(str);
 		json_object_put(o);

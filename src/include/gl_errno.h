@@ -13,8 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ******************************************************************************/
-#ifndef _GLBLE_ERRNO_H_
-#define _GLBLE_ERRNO_H_
+#ifndef _GL_ERRNO_H_
+#define _GL_ERRNO_H_
 
 /*
  * 0x0000 - 0x00FF    Error code defined by GL-iNet

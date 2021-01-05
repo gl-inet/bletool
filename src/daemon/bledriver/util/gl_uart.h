@@ -16,8 +16,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ******************************************************************************/
-#ifndef UART_H
-#define UART_H
+#ifndef GL_UART_H
+#define GL_UART_H
 
 #include <stdint.h>
 /***********************************************************************************************//**

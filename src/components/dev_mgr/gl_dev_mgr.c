@@ -14,15 +14,15 @@
  limitations under the License.
  ******************************************************************************/
 
-#include "ble_dev_mgr.h"
+#include "gl_dev_mgr.h"
 
 #include <json-c/json.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
 
-#include "glble_errno.h"
-#include "infra_log.h"
+#include "gl_errno.h"
+#include "gl_log.h"
 
 ble_dev_mgr_ctx_t g_ble_dev_mgr = {0};
 

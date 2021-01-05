@@ -8,6 +8,7 @@ Changes :
     5. fix(libglbleapi.c): API return value all use GL_RET
     6. style(all): remove the extra log information
     7. docs: API return value all use GL_RET
+    8. modified the file name to start with 'gl'
 
 
 ---------------------------------------------------------------------------------

@@ -17,8 +17,8 @@
  limitations under the License.
  ******************************************************************************/
 
-#ifndef HAL_H
-#define HAL_H
+#ifndef GL_HAL_H
+#define GL_HAL_H
 
 /*Initilize the hal*/
 int hal_init(void);

@@ -17,11 +17,11 @@
  limitations under the License.
  ******************************************************************************/
 
-#ifndef _LIBGLBLEAPI_H
-#define _LIBGLBLEAPI_H
+#ifndef _GLBLEAPI_H
+#define _GLBLEAPI_H
 
-#include "glble_type.h"
-#include "glble_errno.h"
+#include "gl_type.h"
+#include "gl_errno.h"
 #include <json-c/json.h>
 
 /***********************************************************************************************//**

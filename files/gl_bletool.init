@@ -23,6 +23,8 @@ start_service() {
     uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
   elif [ $model == x750 ]; then
     echo 1 > /sys/class/gpio/export
+
+    
     uci set ble.x750='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200

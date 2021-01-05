@@ -26,7 +26,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
-#include "uart.h"
+#include "gl_uart.h"
 
 /***************************************************************************************************
  * Local Variables

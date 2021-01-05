@@ -26,16 +26,12 @@ CFLAG			:=  -g -Wall
 
 # Directories and files
 DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
-					daemon/bledriver/util/uart \
-					daemon/bledriver/util/hal \
 					daemon/bledriver/util	\
 					components/dev_mgr \
 					components/log \
 					include
 
 DAEMON_SRCDIRS	:=  daemon  \
-					daemon/bledriver/util/hal  \
-					daemon/bledriver/util/uart  \
 					daemon/bledriver/util	\
 					daemon/bledriver/silabs  \
 					components/dev_mgr  \
@@ -96,7 +92,7 @@ VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 
 # Dependences               
 DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
-UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
+UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
 
 all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES)

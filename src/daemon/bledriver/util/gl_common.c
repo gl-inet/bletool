@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include "common.h"
+#include "gl_common.h"
 
 int addr2str(ble_addr* adr, char* str) {
     sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x", adr->addr[5], adr->addr[4],

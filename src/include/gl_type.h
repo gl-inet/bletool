@@ -14,8 +14,8 @@
  limitations under the License.
  ******************************************************************************/
 
-#ifndef _GLBLE_TYPE_H_
-#define _GLBLE_TYPE_H_
+#ifndef _GL_TYPE_H_
+#define _GL_TYPE_H_
 
 #include <stdbool.h>
 #include <stdint.h>

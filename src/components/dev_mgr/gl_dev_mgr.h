@@ -13,8 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ******************************************************************************/
-#ifndef _BLE_DEV_MGR_H_
-#define _BLE_DEV_MGR_H_
+#ifndef _GL_DEV_MGR_H_
+#define _GL_DEV_MGR_H_
 
 #include <libubox/list.h>
 #include <stdint.h>
@@ -53,5 +53,4 @@ uint16_t ble_dev_mgr_get_connection(char *dev_addr);
 char *ble_dev_mgr_get_address(uint16_t connection);
 int ble_dev_mgr_get_list_size(void);
 
-
-#endif // !_BLE_DEV_MGR_H_
+#endif // !_GL_DEV_MGR_H_

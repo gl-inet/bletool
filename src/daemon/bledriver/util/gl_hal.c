@@ -17,14 +17,14 @@
  limitations under the License.
  ******************************************************************************/
 
-#include "uart.h"
-#include <gl/debug.h>
+#include "gl_uart.h"
 #include <uci.h>
-#include "hal.h"
+#include "gl_hal.h"
 
 unsigned char ENDIAN;
-extern char rston[];
-extern char rstoff[];
+
+char rston[64] = {0};
+char rstoff[64] = {0};
 
 struct uci_context* guci2_init();
 int guci2_free(struct uci_context* ctx);

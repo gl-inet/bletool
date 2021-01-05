@@ -22,16 +22,13 @@
 #include <libubox/blobmsg.h>
 #include <libubox/blobmsg_json.h>
 #include <libubus.h>
-
-#include <gl/debug.h>
-
-#include "uart.h"
-#include "hal.h"
-#include "infra_log.h"
-#include "gl_methods.h"
-#include "ble_dev_mgr.h"
 #include "bg_types.h"
-#include "common.h"
+#include "gl_uart.h"
+#include "gl_hal.h"
+#include "gl_log.h"
+#include "gl_methods.h"
+#include "gl_dev_mgr.h"
+#include "gl_common.h"
  
 static struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;

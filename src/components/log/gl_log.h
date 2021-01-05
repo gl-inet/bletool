@@ -14,8 +14,8 @@
  limitations under the License.
  ******************************************************************************/
 
-#ifndef _INFRA_LOG_H_
-#define _INFRA_LOG_H_
+#ifndef _GL_LOG_H_
+#define _GL_LOG_H_
 
 #if defined(__cplusplus)
 extern "C" {
