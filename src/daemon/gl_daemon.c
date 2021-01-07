@@ -29,12 +29,12 @@
 #include "gl_methods.h"
 #include "gl_dev_mgr.h"
 #include "gl_common.h"
+#include "gl_errno.h"
  
 static struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;
 static struct blob_buf b;
 static struct uloop_fd serial_fd;
-
 
 /* BLE System functions */
 
@@ -42,27 +42,36 @@ static struct uloop_fd serial_fd;
 enum
 {
 	ENABLE_OR_DISABLE,
-	ENALBE_POLICY_MAX,
+	ENABLE_POLICY_MAX,
 };
-static const struct blobmsg_policy enable_policy[ENALBE_POLICY_MAX] = {
+static const struct blobmsg_policy enable_policy[ENABLE_POLICY_MAX] = {
 	[ENABLE_OR_DISABLE] = {.name = "enable", .type = BLOBMSG_TYPE_INT32},
 };
+
+/* A callback function for ubus methods handling */
 static int enable(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	/* delete a descriptor from the event processing loop */
     uloop_fd_delete(&serial_fd);
 
-	struct blob_attr *tb[ENALBE_POLICY_MAX];
-	blobmsg_parse(enable_policy, ENALBE_POLICY_MAX, tb, blob_data(msg), blob_len(msg));
+	/* for parsed attr */
+	struct blob_attr *tb[ENABLE_POLICY_MAX];
+	
+	/* parse blob_msg from the caller to request policy */
+	blobmsg_parse(enable_policy, ENABLE_POLICY_MAX, tb, blob_data(msg), blob_len(msg));
 	int enable = blobmsg_get_u32(tb[ENABLE_OR_DISABLE]);
 	json_object* output = ble_enable(enable);
 
+	/* send a reply msg to the caller for information */
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
+	/* register a new descriptor into the event processing loop */
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	
+	return GL_SUCCESS;
 }
 
 /*Get local bluetooth MAC*/
@@ -78,7 +87,7 @@ int local_mac(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_req
 	json_object_put(output);
     
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-    return 0;
+    return GL_SUCCESS;
 }
 /*Set the global power level*/
 enum
@@ -104,7 +113,7 @@ static int set_power(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /* BLE master functions */
@@ -146,7 +155,7 @@ static int discovery(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /*Act as master, End the current GAP discovery procedure*/
@@ -162,7 +171,7 @@ int stop(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_
 	json_object_put(output);
     
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-    return 0;
+    return GL_SUCCESS;
 }
 /*Act as master, Start connect to a remote BLE device*/
 enum
@@ -210,7 +219,7 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 
 	log_debug("start fd listen");
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, disconnect with remote device*/
 enum
@@ -245,7 +254,7 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, Get rssi of connection with remote device*/
 enum
@@ -275,7 +284,7 @@ static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, Get service list of a remote GATT server*/
 enum
@@ -303,7 +312,7 @@ static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, Get characteristic list of a remote GATT server*/
 enum
@@ -337,7 +346,7 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /*Act as master, Read value of specified characteristic in a remote gatt server*/
@@ -372,7 +381,7 @@ static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /*Act as master, Write value to specified characteristic in a remote gatt server*/
@@ -412,7 +421,7 @@ static int write_char(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	free(address);
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
 enum
@@ -446,7 +455,7 @@ static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /* BLE slave functions */
@@ -487,7 +496,7 @@ static int adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_re
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as BLE slave, Set customized advertising data*/
 enum
@@ -516,7 +525,7 @@ static int adv_data(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /*Act as BLE slave, Stop advertising*/
 int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
@@ -531,7 +540,7 @@ int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_requ
 	json_object_put(output);
     
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-    return 0;
+    return GL_SUCCESS;
 }
 /*Act as BLE slave, Send Notification*/
 enum
@@ -567,7 +576,7 @@ static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct
 	free(address);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
 /* DTM test functions, TX*/
@@ -603,7 +612,7 @@ static int dtm_tx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /* DTM test functions, RX */
 enum
@@ -632,7 +641,7 @@ static int dtm_rx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 /* DTM test functions, end */
 
@@ -648,10 +657,10 @@ static int dtm_end(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	json_object_put(output);
 
 	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return 0;
+	return GL_SUCCESS;
 }
 
-/* BLE methods */
+/* ubus methods */
 static struct ubus_method ble_methods[] = 
 {
 	/* System */
@@ -681,8 +690,10 @@ static struct ubus_method ble_methods[] =
 	UBUS_METHOD_NOARG("dtm_end", dtm_end),
 };
 
+/* ubus object type */
 static struct ubus_object_type ble_obj_type = UBUS_OBJECT_TYPE("ble", ble_methods);
 
+/* ubus object assignment */
 static struct ubus_object ble_obj = 
 {
 	.name = "ble",
@@ -721,12 +732,10 @@ static void manage_device(json_object* o)
 
 	log_info("notification type: %s", type);
 
-	if ( !strcmp(type, CONN_OPEN))
-	{
+	if ( !strcmp(type, CONN_OPEN)) {
 		add_device_to_list(o);
 	}
-	else if ( !strcmp(type, CONN_CLOSE))
-	{
+	else if ( !strcmp(type, CONN_CLOSE)) {
 		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
 			connection = json_object_get_int(val_obj);
 		}
@@ -737,8 +746,7 @@ static void manage_device(json_object* o)
 		json_object_object_add(o, "address", json_object_new_string(addr));
 		delete_device_from_list(o);
 	}	
-	else if ( !strcmp(type, CONN_UPDATE))
-	{
+	else if ( !strcmp(type, CONN_UPDATE)) {
 		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
 			connection = json_object_get_int(val_obj);
 		}
@@ -748,8 +756,7 @@ static void manage_device(json_object* o)
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));		
 	}
-	else if ( !strcmp(type, REMOTE_NOTIFY))
-	{
+	else if ( !strcmp(type, REMOTE_NOTIFY))	{
 		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
 			connection = json_object_get_int(val_obj);
 		}		
@@ -760,8 +767,7 @@ static void manage_device(json_object* o)
 		json_object_object_add(o, "address", json_object_new_string(addr));
 		
 	}
-	else if ( !strcmp(type, REMOTE_WRITE))
-	{
+	else if ( !strcmp(type, REMOTE_WRITE))	{
 		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
 			connection = json_object_get_int(val_obj);
 		}		
@@ -772,8 +778,7 @@ static void manage_device(json_object* o)
 		json_object_object_add(o, "address", json_object_new_string(addr));		
 		
 	}
-	else if ( !strcmp(type, REMOTE_SET))
-	{
+	else if ( !strcmp(type, REMOTE_SET)) {
 		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
 			connection = json_object_get_int(val_obj);
 		}		
@@ -795,6 +800,8 @@ void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 		manage_device(output);
 		blob_buf_init(&b, 0);
 		blobmsg_add_object(&b, output);
+
+		/* broadcast notification message */
 		ubus_notify(ctx,  &ble_obj, "Notify", b.head, -1);
 		json_object_put(output);
 	}
@@ -802,28 +809,34 @@ void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
 
 int main(int argc, char * argv[])
 {	
-	ble_enable(1);	//enable ble module
+	/* Enable ble module */
+	ble_enable(1);
 
-	/* Init */
+	/* Init device manage */
 	ble_dev_mgr_init();
 
+	/* Create an epoll instance descriptor poll_fd */
 	uloop_init();
 
     int serialFd = hal_init();
     serial_fd.cb = serial_msg_handle_cb;
     serial_fd.fd = serialFd;
 
+	/* Register a new descriptor into the event processing loop */
     uloop_fd_add(&serial_fd, ULOOP_READ);
     
+	/* Connect to ubusd and get ctx */
 	ctx = ubus_connect(sock_path);
-    if (!ctx)
-	{
+    if (!ctx) {
 		fprintf(stderr,"Ubus connect failed\n");
 		return -1;
 	}
 	ctx->connection_lost = ubus_connection_lost;
 
+	/* Register epoll events to uloop, start sock listing */
     ubus_add_uloop(ctx);
+
+	/* Register a ubus_object to ubusd */
 	if (ubus_add_object(ctx, &ble_obj) != 0)
 	{
 		fprintf(stderr,"ubus add obj failed\n");
@@ -831,11 +844,13 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
+	/* uloop routine: events monitoring and callback provoking */
 	uloop_run();
  
 	ubus_free(ctx);
-	uloop_done();
- 
-	return 0;
 
+	/* Destruct event loop */
+	uloop_done();
+
+	return GL_SUCCESS;
 }

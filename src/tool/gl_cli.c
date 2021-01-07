@@ -103,6 +103,7 @@ GL_RET cmd_set_power(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
+
 GL_RET cmd_listen(int argc, char **argv)
 {
 	gl_ble_cbs ble_cb;

@@ -161,9 +161,13 @@ GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 
 	ble_register_cb(callback);
 
+	/* The handler for notification arrival */
 	subscriber.cb = sub_handler;
+
+	/* When the server exits */
 	subscriber.remove_cb = sub_remove_callback;
 
+	/* Connect to ubusd and get ctx */
 	struct ubus_context *CTX = ubus_connect(NULL);
 	if (!CTX) {
 		fprintf(stderr,"Ubus connect failed\n");
@@ -175,6 +179,7 @@ GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 		fprintf(stderr, "Failed to register subscriber: %d\n", ret);
 	}
 
+	/* Get the id of the object to subscribe to */
 	if (ubus_lookup_id(CTX, "ble", &id)) {
 		fprintf(stderr,"Ubus lookup id failed.\n");
 		if (CTX) {
@@ -183,6 +188,7 @@ GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 		return GL_ERR_UBUS_LOOKUP;
 	}
 
+	/* Subscribe object */
 	ret = ubus_subscribe(CTX, &subscriber, id);
 	if (ret) { 
 		log_err("Failed to subscribe: %d\n", ret); 
@@ -258,12 +264,14 @@ GL_RET gl_ble_call(const char *path, const char *method, struct blob_buf *b, int
 	int32_t id = 0;
 	struct ubus_context *ctx = NULL;
 
+	/* Connect to ubusd and get ctx */
 	ctx = ubus_connect(NULL);
 	if (!ctx) {
 		fprintf(stderr,"Ubus connect failed\n");
 		return GL_ERR_UBUS_CONNECT;
 	}
 
+	/* Search a registered object with a given name */
 	if (ubus_lookup_id(ctx, path, &id)) {
 		fprintf(stderr,"Ubus lookup id failed.\n");
 		if (ctx) {
@@ -272,11 +280,44 @@ GL_RET gl_ble_call(const char *path, const char *method, struct blob_buf *b, int
 		return GL_ERR_UBUS_LOOKUP;
 	}
 
+	/* Call the ubus host object */
 	ubus_invoke(ctx, id, method, b->head, ubus_invoke_complete_cb, (void *)str, timeout * 1000);
 
 	if (ctx)
 		ubus_free(ctx);
 
+	return GL_SUCCESS;
+}
+
+GL_RET gl_ble_enable(int32_t enable)
+{
+	char *str = NULL;
+	static struct blob_buf b;
+
+	/* Prepare request method policy and data */
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "enable", enable);
+
+	gl_ble_call("ble", "enable", &b, 1, &str);
+	if (NULL == str) { 
+		log_err("Response missing!\n"); 
+		return GL_ERR_RESP_MISSING; 
+	}
+	
+	/* Construct a json formatted string as a json object */
+	json_object *o = json_tokener_parse(str);
+	
+	char *parameters[] = {};
+	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
+	if (ret) {
+		/* Release the generated object and resource */
+		free(str);
+		json_object_put(o);		
+		return ret; 
+	}
+
+	free(str);
+	json_object_put(o);
 	return GL_SUCCESS;
 }
 
@@ -320,34 +361,6 @@ GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	while (i < DEVICE_MAC_LEN) {
 		rsp->address[i] = mac[i];
 		i++;
-	}
-
-	free(str);
-	json_object_put(o);
-	return GL_SUCCESS;
-}
-
-GL_RET gl_ble_enable(int32_t enable)
-{
-	char *str = NULL;
-	static struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "enable", enable);
-
-	gl_ble_call("ble", "enable", &b, 1, &str);
-	if (NULL == str) { 
-		log_err("Response missing!\n"); 
-		return GL_ERR_RESP_MISSING; 
-	}
-
-	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {};
-	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret) { 
-		free(str);
-		json_object_put(o);		
-		return ret; 
 	}
 
 	free(str);
