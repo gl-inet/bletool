@@ -49,7 +49,7 @@
 
 #endif
 
-#ifdef TELINK_8251
+#ifdef TLK_8251
 #endif
 
 

@@ -48,24 +48,29 @@ GL_RET gl_ble_unsubscribe(void);
 GL_RET gl_ble_enable(int enable);
 
 /***********************************************************************************************//**
- *  \brief  Get local bluetooth MAC address.
+ *  \brief  This command can be used to read the Bluetooth public address used by the device. 
  *  \param[out]  rsp  A response structure used for storing the MAC address.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
 GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
 
 /***********************************************************************************************//**
- *  \brief  Set the global power level.
- *  \note   
+ *  \brief  This command can be used to set the global maximum TX power for Bluetooth. 
+ *  \note   By default, the global maximum TX power value is 8 dBm.
+ *          This command should not be used while advertising, scanning or during connection.
  *  \param[in]   power TX power in 0.1 dBm steps, for example the value of 10 is 1dBm
  *                     and 55 is 5.5 dBm.
- *  \param[out]  rsp   A response structure used for storing the the current global power.
+ *  \param[out]  rsp   The returned value in the response is the selected maximum output power 
+ *                     level after applying RF path compensation. If the GATT server contains a
+ *                     Tx Power service, the Tx Power Level attribute of the service will be 
+ *                     updated accordingly. 
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
 GL_RET gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
 
 /***********************************************************************************************//**
- *  \brief  Act as BLE slave, Set customized advertising data.
+ *  \brief  Act as BLE slave, set user defined data in advertising packets, scan response packets
+ *          or periodic advertising packets.
  *  \note
  *  \param[in]  flag  Adv data flag. This value selects if the data is intended for advertising 
  *                    packets, scan response packets or advertising packet in OTA.
@@ -93,7 +98,7 @@ GL_RET gl_ble_adv_data(int flag, char *data);
  *                        procedure, but may be discovered by using the Observation procedure
  *                     4: Send advertising and/or scan response data defined by the user.
  *                        The limited/general discoverable flags are defined by the user.
- *  \param[in]   adv_conn Connectable mode.
+ *  \param[in]   adv_conn Define the connectable mode.
  *                     0: Non-connectable non-scannable
  *                     1: Directed connectable (RESERVED, DO NOT USE)
  *                     2: Undirected connectable scannable (This mode can only be used
@@ -107,18 +112,20 @@ GL_RET gl_ble_adv_data(int flag, char *data);
 GL_RET gl_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
 
 /***********************************************************************************************//**
- *  \brief  Act as BLE slave, Stop advertising.
+ *  \brief  Act as BLE slave, stop the advertising of the given advertising set.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
 GL_RET gl_ble_stop_adv(void);
 
 /***********************************************************************************************//**
- *  \brief  Act as BLE slave, send Notification to remote device.
+ *  \brief  Act as BLE slave, send notifications or indications to one or more remote GATT clients.
  *  \note
- *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  address Address of the connection over which the notification or indication is sent.
+ *                      Like “11:22:33:44:55:66”.
  *  \param[in]  char_handle  GATT characteristic handle. 
- *  \param[in]  value  Data value to be sent.
- *  \param[out]  rsp   A response structure used for storing the length of the Notification.
+ *  \param[in]  value   Value to be notified or indicated.
+ *  \param[out]  rsp    A response structure used for storing the length of the notification 
+ *                      or indication.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
 GL_RET gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, uint8_t *address, int char_handle, char *value);
@@ -154,8 +161,8 @@ GL_RET gl_ble_stop(void);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Start connect to a remote BLE device.
- *  \param[in]  address  Remote BLE device MAC address. Like “11:22:33:44:55:66”.
- *  \param[in]  address_type  Advertiser address type. Values:
+ *  \param[in]  address  Address of the device to connect to. Like “11:22:33:44:55:66”.
+ *  \param[in]  address_type Address type of the device to connect to. Values:
  *                            0: Public address, 1: Random address
  *                            2: Public identity address resolved by stack
  *                            3: Random identity address resolved by stack
@@ -168,13 +175,13 @@ GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int address_t
 
 /***********************************************************************************************//**
  *  \brief  Act as master, disconnect with remote device.
- *  \param[in]  address  Remote BLE device MAC address. Like “11:22:33:44:55:66”.
+ *  \param[in]  address  Address of the device to disconnect. Like “11:22:33:44:55:66”.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
 GL_RET gl_ble_disconnect(uint8_t *address);
 
 /***********************************************************************************************//**
- *  \brief  Act as master, Get rssi of connection with remote device.
+ *  \brief  Act as master, get the latest RSSI value of a Bluetooth connection.
  *  \note
  *  \param[in]  address Remote BLE device MAC address. Like “11:22:33:44:55:66”.
  *  \param[out] rsp  A response structure used for storing the connection with remote device.
@@ -230,13 +237,34 @@ GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int cha
  **************************************************************************************************/
 GL_RET gl_ble_set_notify(uint8_t *address, int char_handle, int flag);
 
-/*DTM test, tx*/
+/***********************************************************************************************//**
+ *  \brief  This command can be used to start a transmitter test.
+ *  \param[in]   packet_type - 0: Advertising packets,      - 1: Scan response packets
+ *                           - 2: OTA advertising packets,  - 4: OTA scan response packets
+ *  \param[in]   length   Packet length in bytes, Range: 0-255
+ *  \param[in]   channel  Bluetooth channel, Range: 0-39, Channel is (F - 2402) / 2, where F is frequency in MHz
+ *  \param[in]   phy      Parameter phy specifies which PHY is used to transmit the packets. 
+ *                        All devices support at least the 1M PHY.
+ *  \param[out]  A response structure used for storing the number of the packet.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
 GL_RET gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
 
-/*DTM test, rx*/
+/***********************************************************************************************//**
+ *  \brief  This command can be used to start a receiver test. 
+ *  \param[in]   channel  Bluetooth channel, Range: 0-39, Channel is (F - 2402) / 2, where F is frequency in MHz
+ *  \param[in]   phy      Parameter phy specifies which PHY is used to transmit the packets. 
+ *                        All devices support at least the 1M PHY.
+ *  \param[out]  A response structure used for storing the number of the packet.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
 GL_RET gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
 
-/*DTM test, end*/
+/***********************************************************************************************//**
+ *  \brief  This command can be used to end a transmitter or a receiver test.
+ *  \param[out]  A response structure used for storing the number of the packet.
+ *  \return  0 means success, None-zero means failed.
+ **************************************************************************************************/
 GL_RET gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
 
 #endif

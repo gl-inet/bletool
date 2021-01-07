@@ -94,12 +94,12 @@ GL_RET cmd_set_power(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_set_power_rsp_t));
 	GL_RET ret = gl_ble_set_power(&rsp, power);
 	
-	printf("{ \"code\": %d ", ret);
-	printf("} \n");	
-	// if ( !ret ) {
-	// 	printf("\"current_power\": %d dBm ", rsp.current_power);
-	// 	printf("} \n");	
-	// }
+	// printf("{ \"code\": %d ", ret);
+	// printf("} \n");	
+	if ( !ret ) {
+		printf("\"current_power\": %d dBm ", rsp.current_power);
+		printf("} \n");	
+	}
 	return GL_SUCCESS;
 }
 
@@ -1032,18 +1032,9 @@ static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	{
 		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
 		addr2str(&data->update_conn_data.address, address);
-		if(!strcmp(address, address_test)) 
-		{
+		if(!strcmp(address, address_test)) {
 			adv_cnt ++;
 			rssi_sum += data->scan_rst.rssi;
-			// printf("{");
-			// printf(" \"address\": \"%s\", ", address);
-			// printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
-			// printf("\"rssi\": %d, ", data->scan_rst.rssi);
-			// printf("\"packet type\": %d, ", data->scan_rst.packet_type);
-			// printf("\"bonding\": %d, ", data->scan_rst.bonding);
-			// printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
-			// printf("}\n");
 		}
 		break;
 	}
@@ -1084,7 +1075,7 @@ static struct
 	{"dtm_rx", cmd_dtm_rx, "Start receiver for dtm test"},
 	{"dtm_end", cmd_dtm_end, "End a dtm test"},
 	/* Adv test */
-	{"adv_pack_test", cmd_adv_pack_test, "BLE adv packet test"},	
+	{"adv_pack_test", cmd_adv_pack_test, "Start ble adv packet test"},	
 	{NULL, NULL, 0}};
 
 static int usage(void)
@@ -1106,7 +1097,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		usage();
-		return -1;
+		return GL_ERR_PARAM_MISSING;
 	}
 
 	int i = 0;

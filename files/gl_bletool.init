@@ -23,14 +23,20 @@ start_service() {
     uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
   elif [ $model == x750 ]; then
     echo 1 > /sys/class/gpio/export
-
-    
     uci set ble.x750='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200
     uci set ble.@bleserial[0].flowcontrol=0
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio1/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio1/value'
+  elif [ $model == xe300 ]; then                                          
+    echo 14 > /sys/class/gpio/export                                        
+    uci set ble.xe300='bleserial'             
+    uci set ble.@bleserial[0].port='/dev/ttyS0'
+    uci set ble.@bleserial[0].baudrate=115200  
+    uci set ble.@bleserial[0].flowcontrol=0  
+    uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio14/value' 
+    uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio14/value'    
   elif [ $model == mt300n-v2 ]; then
     echo 5 > /sys/class/gpio/export
     echo out > /sys/class/gpio/gpio5/direction
