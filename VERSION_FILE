@@ -3,6 +3,7 @@ Build   : 2020.1.7
 Changes :
 	1. style(gl_bleapi.h): add/modify some comment info of some API
     2. support xe300
+    3. docs(README): update README file, add supported devices
 
 
 ---------------------------------------------------------------------------------
