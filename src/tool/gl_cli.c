@@ -340,7 +340,6 @@ GL_RET cmd_connect(int argc, char **argv)
 			break;
 		case 'a':
 			address = optarg;
-			// strcpy(address, argv[3]);
 			break;
 		}
 	}
@@ -373,16 +372,27 @@ GL_RET cmd_connect(int argc, char **argv)
 
 GL_RET cmd_disconnect(int argc, char **argv)
 {
-	char address[BLE_MAC_LEN] = {0};
+	char *address = NULL;
+	int ch, option_index;
 
-	if (argc < 3)
+	struct option long_options[] = {
+		{"address", required_argument, NULL, 'a'},
+		{0, 0, 0, 0}
+	};
+
+	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
 	{
+		switch (ch)
+		{
+		case 'a':
+			address = optarg;
+			break;
+		}
+	}
+
+	if (!address) {
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
-	}
-	else
-	{
-		strcpy(address, argv[2]);
 	}
 
 	uint8_t addr_len = strlen(address);

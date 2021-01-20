@@ -1,5 +1,12 @@
+Version : 3.3.2
+Build   : 2021.1.20
+Changes :
+	1. fix(gl_cli.c): fix cmd_disconnect
+    2. docs: update Bletool Commands Manual, Add the Error Code section
+
+
 Version : 3.3.1
-Build   : 2020.1.7
+Build   : 2021.1.7
 Changes :
 	1. style(gl_bleapi.h): add/modify some comment info of some API
     2. support xe300

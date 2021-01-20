@@ -38,14 +38,14 @@ typedef enum gl_error {
 	GL_ERR_MSG						= GL_ERRSPC_GENERAL + 4, 			// Message error
 	GL_ERR_PARAM					= GL_ERRSPC_GENERAL	+ 5, 			// Param error
 
-	GL_ERR_UBUS_CONNECT				= GL_ERRSPC_UBUS	+ 1,            // UBUS connect error
-	GL_ERR_UBUS_LOOKUP				= GL_ERRSPC_UBUS	+ 2,			// UBUS lookup ID error
-	GL_ERR_UBUS_SUBSCRIBE			= GL_ERRSPC_UBUS	+ 3,			// UBUS subscribe error
-	GL_ERR_UBUS_INVOKE				= GL_ERRSPC_UBUS	+ 4,			// UBUS invoke error
-	GL_ERR_UBUS_REGISTER			= GL_ERRSPC_UBUS	+ 5,			// UBUS register error
-	GL_ERR_UBUS_CALL_STR			= GL_ERRSPC_UBUS	+ 6,            // UBUS CALL return error
-	GL_ERR_UBUS_JSON_PARSE			= GL_ERRSPC_UBUS	+ 7,			// UBUS return json parse error
-	GL_ERR_UBUS_UNSUBSCRIBE			= GL_ERRSPC_UBUS	+ 8,			// UBUS unsubscribe error
+	GL_ERR_UBUS_CONNECT				= GL_ERRSPC_UBUS	+ 0,            // UBUS connect error
+	GL_ERR_UBUS_LOOKUP				= GL_ERRSPC_UBUS	+ 1,			// UBUS lookup ID error
+	GL_ERR_UBUS_SUBSCRIBE			= GL_ERRSPC_UBUS	+ 2,			// UBUS subscribe error
+	GL_ERR_UBUS_INVOKE				= GL_ERRSPC_UBUS	+ 3,			// UBUS invoke error
+	GL_ERR_UBUS_REGISTER			= GL_ERRSPC_UBUS	+ 4,			// UBUS register error
+	GL_ERR_UBUS_CALL_STR			= GL_ERRSPC_UBUS	+ 5,            // UBUS CALL return error
+	GL_ERR_UBUS_JSON_PARSE			= GL_ERRSPC_UBUS	+ 6,			// UBUS return json parse error
+	GL_ERR_UBUS_UNSUBSCRIBE			= GL_ERRSPC_UBUS	+ 7,			// UBUS unsubscribe error
 }errcode_t;
 
 #endif

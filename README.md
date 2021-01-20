@@ -41,7 +41,7 @@ Here is example of how to use cli commands.
 
 ## API Reference
 
-Look at the [Bletool manual](docs/BLETOOL%20Commands%20Manual_V0.5.pdf). It contains all detail about the API and CLI.
+Look at the [Bletool manual](docs/BLETOOL%20Commands%20Manual_V0.8.pdf). It contains all detail about the API and CLI.
 
 ## Directory Structure
 
