@@ -86,7 +86,7 @@ typedef struct {
     int32_t handle;
     uint8_t att_opcode;
     int32_t offset;
-    uint8_t value[CHAR_VALUE_MAX];
+    char value[CHAR_VALUE_MAX];
 } gl_ble_char_read_rsp_t;
 
 typedef struct {

@@ -303,7 +303,9 @@ static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct
 	blobmsg_parse(get_service_policy, SERVICE_MAX, tb, blob_data(msg), blob_len(msg));
 
 	char *address = blobmsg_get_string(tb[SERVICE_ADDRESS]);
+	printf("address = %s\n", address);
 	int connection = ble_dev_mgr_get_connection(address);
+	printf("connection = %d\n", connection);
 	json_object* output = ble_get_service(connection);
 
 	blob_buf_init(&b, 0);

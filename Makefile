@@ -16,7 +16,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gl-bletool
-PKG_VERSION:=3.3.2
+PKG_VERSION:=3.3.3
 
 
 include $(INCLUDE_DIR)/package.mk

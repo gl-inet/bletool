@@ -43,6 +43,8 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
+int print_format = 1; // 0: debug, 1: json format
+
 /* System functions */
 GL_RET cmd_enable(int argc, char **argv)
 {
@@ -55,26 +57,69 @@ GL_RET cmd_enable(int argc, char **argv)
 	}
 
 	GL_RET ret  = gl_ble_enable(enable);
-	
-	printf("{ \"code\": %d ", ret);
-	printf("} \n");	
 
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
+	const char *temp=json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("} \n");	
+	
+	return GL_SUCCESS;
+}
+
+GL_RET cmd_print_format(int argc, char **argv)
+{
+	print_format = 0;
+	if (argc < 3) {
+		print_format = 1;
+	}
+	else {
+		print_format = atoi(argv[2]);
+	}
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(print_format));
+	if (print_format) {
+		json_object_object_add(o, "print_format", json_object_new_string("print_json_format"));
+	} else {
+		json_object_object_add(o, "print_format", json_object_new_string("print_debug_format"));
+	}
+	
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+	
 	return GL_SUCCESS;
 }
 
 GL_RET cmd_local_address(int argc, char **argv)
 {
-	char addr[BLE_MAC_LEN] = {0};
+	char address[BLE_MAC_LEN] = {0};
 	gl_ble_get_mac_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_get_mac_rsp_t));
 	GL_RET ret = gl_ble_get_mac(&rsp);
-	
-	printf("{ \"code\": %d", ret);
-	if ( !ret ) {
-		addr2str(rsp.address, addr);
-		printf(", \"address\": \"%s\" ", addr);
+
+	if( print_format ) {
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o,"code",json_object_new_int(ret));
+		addr2str(rsp.address, address);
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
+	} else {
+		// debug print
+		printf("return code: %d", ret);
+		if ( !ret ) {
+			addr2str(rsp.address, address);
+			printf("address: %s\n", address);
+		}
+		printf("}\n");			
 	}
-	printf("}\n");	
 
 	return GL_SUCCESS;
 }
@@ -93,13 +138,22 @@ GL_RET cmd_set_power(int argc, char **argv)
 	gl_ble_set_power_rsp_t rsp;
 	memset(&rsp, 0, sizeof(gl_ble_set_power_rsp_t));
 	GL_RET ret = gl_ble_set_power(&rsp, power);
+
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	json_object_object_add(o, "current_power", json_object_new_int(rsp.current_power));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
 	
+	// debug print
 	// printf("{ \"code\": %d ", ret);
 	// printf("} \n");	
-	if ( !ret ) {
-		printf("\"current_power\": %d dBm ", rsp.current_power);
-		printf("} \n");	
-	}
+	// if ( !ret ) {
+	// 	printf("\"current_power\": %d dBm ", rsp.current_power);
+	// 	printf("} \n");	
+	// }
 	return GL_SUCCESS;
 }
 
@@ -158,9 +212,17 @@ GL_RET cmd_adv(int argc, char **argv)
 	}
 
 	GL_RET ret = gl_ble_adv(phys, interval_min, interval_max, discover, adv_conn);
-	
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");	
+
+	// json format	
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");	
 
 	return GL_SUCCESS;
 }
@@ -196,8 +258,17 @@ GL_RET cmd_adv_data(int argc, char **argv)
 
 	GL_RET ret = gl_ble_adv_data(flag, value);
 
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");	
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);	
+	
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");	
+
 
 	return GL_SUCCESS;
 }
@@ -206,8 +277,16 @@ GL_RET cmd_adv_stop(int argc, char **argv)
 {
 	GL_RET ret = gl_ble_stop_adv();
 
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -255,11 +334,20 @@ GL_RET cmd_send_notify(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_send_notify_rsp_t));
 	GL_RET ret = gl_ble_send_notify(&rsp, address_u8, char_handle, value);
 
-	printf("{ \"code\": %d ", ret);
-	if ( !ret ) {
-		printf(", \"sent_len\": %d", rsp.sent_len);
-	}
-	printf(" }\n");	
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	json_object_object_add(o, "sent_len", json_object_new_int(rsp.sent_len));
+	const char *temp=json_object_to_json_string(o);
+	printf("%s\n",temp);	
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// if ( !ret ) {
+	// 	printf(", \"sent_len\": %d", rsp.sent_len);
+	// }
+	// printf(" }\n");	
 
 	return GL_SUCCESS;
 }
@@ -300,8 +388,16 @@ GL_RET cmd_discovery(int argc, char **argv)
 
 	GL_RET ret = gl_ble_discovery(phys, interval, window, type, mode);
 
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");	
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");	
 
 	return GL_SUCCESS;
 }
@@ -310,8 +406,16 @@ GL_RET cmd_stop(int argc, char **argv)
 {
 	GL_RET ret = gl_ble_stop();
 
-	printf("{ \"code\": %d ", ret);
-	printf("}\n");
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -357,15 +461,31 @@ GL_RET cmd_connect(int argc, char **argv)
 
 	GL_RET ret =  gl_ble_connect(&rsp, address_u8, address_type, phy);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
 	if ( !ret ) {
-		printf(", \"address\": %s, ", address);
-		printf("\"address_type\": %d, ", rsp.address_type);
-		printf("\"master\": %d, ", rsp.master);
-		printf("\"bonding\": %d, ", rsp.bonding);
-		printf("\"advertiser\": %d ", rsp.advertiser);
+		addr2str(rsp.address, address);
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "address_type",json_object_new_int(rsp.address_type));
+		json_object_object_add(o, "master",json_object_new_int(rsp.master));
+		json_object_object_add(o, "bonding",json_object_new_int(rsp.bonding));
+		json_object_object_add(o, "advertiser",json_object_new_int(rsp.advertiser));
 	}
-	printf(" }\n");	
+	const char *temp=json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"address\": %s, ", address);
+	// 	printf("\"address_type\": %d, ", rsp.address_type);
+	// 	printf("\"master\": %d, ", rsp.master);
+	// 	printf("\"bonding\": %d, ", rsp.bonding);
+	// 	printf("\"advertiser\": %d ", rsp.advertiser);
+	// }
+	// printf(" }\n");	
 
 	return GL_SUCCESS;
 }
@@ -407,8 +527,16 @@ GL_RET cmd_disconnect(int argc, char **argv)
 
 	GL_RET ret = gl_ble_disconnect(address_u8);
 
-	printf("{ \"code\": %d", ret);
-	printf(" }\n");
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// printf(" }\n");
 
 	return GL_SUCCESS;
 }
@@ -446,12 +574,26 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 
 	GL_RET ret = gl_ble_get_rssi(&rsp, address_u8);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
+
 	if ( !ret ) {
-		printf(", \"address\": \"%s\"", address);
-		printf(", \"rssi\": %d", rsp.rssi);
+		addr2str(rsp.address, address);
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "rssi", json_object_new_int(rsp.rssi));
 	}
-	printf(" }\n");	
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"mac\": \"%s\"", address);
+	// 	printf(", \"rssi\": %d", rsp.rssi);
+	// }
+	// printf(" }\n");	
 
 	return GL_SUCCESS;
 }
@@ -488,15 +630,39 @@ GL_RET cmd_get_service(int argc, char **argv)
 
 	int ret = gl_ble_get_service(&rsp, address_u8);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object *o = NULL, *l = NULL, *obj = NULL, *array = NULL;
+	
+	array = json_object_new_array();
+	obj = json_object_new_object(); 
+	json_object_object_add(obj, "code", json_object_new_int(ret));
+    json_object_object_add(obj, "service_list", array);
 	int len = rsp.list_len;
 	int i = 0;
-	while ( i < len ) {
-		printf(", \"service_handle\": %d", rsp.list[i].handle);
-		printf(", \"service_uuid\": \"%s\" ", rsp.list[i].uuid);
-		i++;
+
+	if ( !ret ) {
+		while ( i < len ) {	
+			o = json_object_new_object();
+            l = json_object_object_get(obj, "service_list");
+			json_object_object_add(o, "service_handle", json_object_new_int(rsp.list[i].handle));
+			json_object_object_add(o, "service_uuid", json_object_new_string(rsp.list[i].uuid));
+            json_object_array_add(l,o);
+			i++;
+		}
 	}
-	printf("}\n");
+	const char *temp = json_object_to_json_string(obj);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// int len = rsp.list_len;
+	// int i = 0;
+	// while ( i < len ) {
+	// 	printf(", \"service_handle\": %d", rsp.list[i].handle);
+	// 	printf(", \"service_uuid\": \"%s\" ", rsp.list[i].uuid);
+	// 	i++;
+	// }
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -541,16 +707,41 @@ GL_RET cmd_get_char(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_get_char_rsp_t));
 	GL_RET ret = gl_ble_get_char(&rsp, address_u8, service_handle);
 
-	printf("{ \"code\": %d, ", ret);
+	// json format
+	json_object *o = NULL, *l = NULL, *obj = NULL, *array = NULL;
+	
+	array = json_object_new_array();
+	obj = json_object_new_object(); 
+	json_object_object_add(obj, "code", json_object_new_int(ret));
+    json_object_object_add(obj, "characteristic_list", array);
 	int len = rsp.list_len;
 	int i = 0;
-	while ( i < len ) {
-		printf("\"characteristic_handle\": %d, ", rsp.list[i].handle);
-		printf("\"properties\": \"%d\", ", rsp.list[i].properties);
-		printf("\"characteristic_uuid\": \"%s\", ", rsp.list[i].uuid);
-		i++;
+
+	if ( !ret ) {
+		while ( i < len ) {	
+			o = json_object_new_object();
+            l = json_object_object_get(obj, "characteristic_list");
+			json_object_object_add(o, "characteristic_handle", json_object_new_int(rsp.list[i].handle));
+			json_object_object_add(o, "properties", json_object_new_int(rsp.list[i].properties));
+			json_object_object_add(o, "characteristic_uuid", json_object_new_string(rsp.list[i].uuid));
+            json_object_array_add(l,o);
+			i++;
+		}
 	}
-	printf("} \n");	
+	const char *temp = json_object_to_json_string(obj);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d, ", ret);
+	// int len = rsp.list_len;
+	// int i = 0;
+	// while ( i < len ) {
+	// 	printf("\"characteristic_handle\": %d, ", rsp.list[i].handle);
+	// 	printf("\"properties\": \"%d\", ", rsp.list[i].properties);
+	// 	printf("\"characteristic_uuid\": \"%s\", ", rsp.list[i].uuid);
+	// 	i++;
+	// }
+	// printf("} \n");	
 
 	return GL_SUCCESS;
 }
@@ -595,9 +786,17 @@ GL_RET cmd_set_notify(int argc, char **argv)
 	str2addr(address, &address_u8);
 
 	GL_RET ret = gl_ble_set_notify(address_u8, char_handle, flag);
-	
-	printf("{ \"code\": %d ", ret);
-	printf("} \n");	
+
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d ", ret);
+	// printf("} \n");	
 
 	return GL_SUCCESS;
 }
@@ -605,9 +804,9 @@ GL_RET cmd_set_notify(int argc, char **argv)
 GL_RET cmd_read_value(int argc, char **argv)
 {
 	int ch, char_handle = -1;
-	char *str = NULL;
-	char address[BLE_MAC_LEN] = {0};	
+	char *str = NULL, *address = NULL;
 	uint8_t addr_len;
+	char value[CHAR_VALUE_MAX];
 
 	struct option long_options[] = {
 		{"address", required_argument, NULL, 'a'},
@@ -620,7 +819,7 @@ GL_RET cmd_read_value(int argc, char **argv)
 		switch (ch)
 		{
 		case 'a':
-			strcpy(address, argv[3]);
+			address = optarg;
 			break;
 		case 'h':
 			char_handle = atoi(optarg);
@@ -642,14 +841,30 @@ GL_RET cmd_read_value(int argc, char **argv)
 
 	GL_RET ret = gl_ble_read_char(&rsp, address_u8, char_handle);
 
-	printf("{ \"code\": %d, ", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
 	if ( !ret ) {
-		printf("\"characteristic_handle\": %d, ", rsp.handle);
-		printf("\"att_opcode\": %d, ", rsp.att_opcode);
-		printf("\"offset\": %d, ", rsp.offset);
-		printf("\"value\": \"%s\" ", rsp.value);
+		addr2str(rsp.address, address);
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "characteristic_handle", json_object_new_int(rsp.handle));
+		json_object_object_add(o, "att_opcode", json_object_new_int(rsp.att_opcode));
+		json_object_object_add(o, "offset", json_object_new_int(rsp.offset));
+		json_object_object_add(o, "value", json_object_new_string(rsp.value));
 	}
-	printf("} \n");	
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d, ", ret);
+	// if ( !ret ) {
+	// 	printf("\"characteristic_handle\": %d, ", rsp.handle);
+	// 	printf("\"att_opcode\": %d, ", rsp.att_opcode);
+	// 	printf("\"offset\": %d, ", rsp.offset);
+	// 	printf("\"value\": \"%s\" ", rsp.value);
+	// }
+	// printf("} \n");	
 
 	return GL_SUCCESS;
 }
@@ -700,11 +915,23 @@ GL_RET cmd_write_value(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_write_char_rsp_t));
 	GL_RET ret = gl_ble_write_char(&rsp, address_u8, char_handle, value, res);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o, "code", json_object_new_int(ret));
+	
 	if ( !ret ) {
-		printf(", \"sent_len\": %d", rsp.sent_len);
-		printf(" } \n");	
+		json_object_object_add(o, "sent_len", json_object_new_int( rsp.sent_len));
 	}
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n", temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"sent_len\": %d", rsp.sent_len);
+	// 	printf(" } \n");	
+	// }
 
 	return GL_SUCCESS;
 }
@@ -745,11 +972,22 @@ GL_RET cmd_dtm_tx(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_dtm_test_rsp_t));
 	GL_RET ret = gl_ble_dtm_tx(&rsp, packet_type, length, channel, phy);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
 	if ( !ret ) {
-		printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
-	}
-	printf("}\n");
+		json_object_object_add(o, "number_of_packets",json_object_new_int(rsp.number_of_packets));
+	}	
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
+	// }
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -782,11 +1020,23 @@ GL_RET cmd_dtm_rx(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_dtm_test_rsp_t));
 	GL_RET ret = gl_ble_dtm_rx(&rsp, channel, phy);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
 	if ( !ret ) {
-		printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
+		json_object_object_add(o, "number_of_packets",json_object_new_int(rsp.number_of_packets));
 	}
-	printf("}\n");
+	
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
+	// }
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -797,11 +1047,22 @@ GL_RET cmd_dtm_end(int argc, char **argv)
 	memset(&rsp, 0, sizeof(gl_ble_dtm_test_rsp_t));
 	GL_RET ret = gl_ble_dtm_end(&rsp);
 
-	printf("{ \"code\": %d", ret);
+	// json format
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
 	if ( !ret ) {
-		printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
+		json_object_object_add(o, "number_of_packets",json_object_new_int(rsp.number_of_packets));
 	}
-	printf("}\n");
+	const char *temp = json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	// debug print
+	// printf("{ \"code\": %d", ret);
+	// if ( !ret ) {
+	// 	printf(", \"number_of_packets\": %d ", rsp.number_of_packets);
+	// }
+	// printf("}\n");
 
 	return GL_SUCCESS;
 }
@@ -891,44 +1152,79 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	{
 		gl_ble_gatt_data_t *remote_notify = (gl_ble_gatt_data_t *)data;
 		addr2str(&data->remote_notify.address, address);
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "characteristic", json_object_new_int(data->remote_notify.characteristic));
+		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_notify.att_opcode));
+		json_object_object_add(o, "offset", json_object_new_int(data->remote_notify.offset));
+		json_object_object_add(o, "value", json_object_new_string(data->remote_notify.value));
+		const char *temp=json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle remote notify event: \n");
-		printf("{");		
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"characteristic\": %d, ",data->remote_notify.characteristic);
-		printf("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
-		printf("\"offset\": %d, ", data->remote_notify.offset);
-		printf("\"value\": \"%s\" ", data->remote_notify.value);
-		printf("}\n");
+		// debug print
+		// printf("\nBle remote notify event: \n");
+		// printf("{");		
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"characteristic\": %d, ",data->remote_notify.characteristic);
+		// printf("\"att_opcode\": %d, ",data->remote_notify.att_opcode);
+		// printf("\"offset\": %d, ", data->remote_notify.offset);
+		// printf("\"value\": \"%s\" ", data->remote_notify.value);
+		// printf("}\n");
 		break;
 	}
 	case GATT_BLE_REMOTE_WRITE_EVT:
 	{
 		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;
 		addr2str(&data->remote_write.address, address);
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "attribute", json_object_new_int(data->remote_write.attribute));
+		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_write.att_opcode));
+		json_object_object_add(o, "offset", json_object_new_int(data->remote_write.offset));
+		json_object_object_add(o, "value", json_object_new_string(data->remote_write.value));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle remote write event: \n");
-		printf("{");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"attribute\": %d, ", data->remote_write.attribute);
-		printf("\"att_opcode\": %d, ", data->remote_write.att_opcode);
-		printf("\"offset\": %d, ", data->remote_write.offset);
-		printf("\"value\": \"%s\" ", data->remote_write.value);
-		printf("}\n");
+		// debug print		
+		// printf("\nBle remote write event: \n");
+		// printf("{");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"attribute\": %d, ", data->remote_write.attribute);
+		// printf("\"att_opcode\": %d, ", data->remote_write.att_opcode);
+		// printf("\"offset\": %d, ", data->remote_write.offset);
+		// printf("\"value\": \"%s\" ", data->remote_write.value);
+		// printf("}\n");
 		break;
 	}
 	case GATT_BLE_REMOTE_SET_EVT:
 	{
 		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;		
 		addr2str(&data->remote_set.address, address);
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "characteristic", json_object_new_int(data->remote_set.characteristic));
+		json_object_object_add(o, "status_flags", json_object_new_int(data->remote_set.status_flags));
+		json_object_object_add(o, "client_config_flags", json_object_new_int(data->remote_set.client_config_flags));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle remote set event: \n");
-		printf("{");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"characteristic\": %d, ", data->remote_set.characteristic);
-		printf("\"status_flags\": %d, ", data->remote_set.status_flags);
-		printf("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
-		printf("}\n");
+		// debug print				
+		// printf("\nBle remote set event: \n");
+		// printf("{");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"characteristic\": %d, ", data->remote_set.characteristic);
+		// printf("\"status_flags\": %d, ", data->remote_set.status_flags);
+		// printf("\"client_config_flags\": %d ", data->remote_set.client_config_flags);
+		// printf("}\n");
 		break;
 	}
 
@@ -944,17 +1240,31 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 	case MODULE_BLE_SYSTEM_BOOT_EVT:
 	{
 		gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "major", json_object_new_int(data->system_boot_data.major));
+		json_object_object_add(o, "minor", json_object_new_int(data->system_boot_data.minor));
+		json_object_object_add(o, "patch", json_object_new_int(data->system_boot_data.patch));
+		json_object_object_add(o, "build", json_object_new_int(data->system_boot_data.build));
+		json_object_object_add(o, "bootloader", json_object_new_int(data->system_boot_data.bootloader));
+		json_object_object_add(o, "hw", json_object_new_int(data->system_boot_data.hw));
+		json_object_object_add(o, "ble_hash", json_object_new_string(data->system_boot_data.ble_hash));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle system boot event: \n");
-		printf("{");
-		printf(" \"major\": \"%d\", ", data->system_boot_data.major);
-		printf("\"minor\": %d, ",data->system_boot_data.minor);
-		printf("\"patch\": %d, ",data->system_boot_data.patch);
-		printf("\"build\": %d, ", data->system_boot_data.build);
-		printf("\"bootloader\": %d, ", data->system_boot_data.bootloader);
-		printf("\"hw\": %d, ", data->system_boot_data.hw);
-		printf("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
-		printf("}\n");
+		// debug print					
+		// printf("\nBle system boot event: \n");
+		// printf("{");
+		// printf(" \"major\": \"%d\", ", data->system_boot_data.major);
+		// printf("\"minor\": %d, ",data->system_boot_data.minor);
+		// printf("\"patch\": %d, ",data->system_boot_data.patch);
+		// printf("\"build\": %d, ", data->system_boot_data.build);
+		// printf("\"bootloader\": %d, ", data->system_boot_data.bootloader);
+		// printf("\"hw\": %d, ", data->system_boot_data.hw);
+		// printf("\"ble_hash\": \"%s\" ", data->system_boot_data.ble_hash);
+		// printf("}\n");
 		break;
 	}
 	default:
@@ -972,14 +1282,27 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
 		addr2str(&data->update_conn_data.address, address);
 
-		printf("{");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"address type\": %d, ", data->scan_rst.ble_addr_type);
-		printf("\"rssi\": %d, ", data->scan_rst.rssi);
-		printf("\"packet type\": %d, ", data->scan_rst.packet_type);
-		printf("\"bonding\": %d, ", data->scan_rst.bonding);
-		printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
-		printf("}\n");
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "address_type", json_object_new_int(data->scan_rst.ble_addr_type));
+		json_object_object_add(o, "rssi", json_object_new_int(data->scan_rst.rssi));
+		json_object_object_add(o, "packet_type", json_object_new_int(data->scan_rst.packet_type));
+		json_object_object_add(o, "bonding", json_object_new_int(data->scan_rst.bonding));
+		json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
+		
+		// debug print					
+		// printf("{");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"address_type\": %d, ", data->scan_rst.ble_addr_type);
+		// printf("\"rssi\": %d, ", data->scan_rst.rssi);
+		// printf("\"packet_type\": %d, ", data->scan_rst.packet_type);
+		// printf("\"bonding\": %d, ", data->scan_rst.bonding);
+		// printf("\"data\": \"%s\" ", data->scan_rst.ble_adv);
+		// printf("}\n");
 		break;
 	}
 
@@ -987,32 +1310,57 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	{
 		gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
 		addr2str(&data->update_conn_data.address, address);
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "interval", json_object_new_int(data->update_conn_data.interval));
+		json_object_object_add(o, "latency", json_object_new_int(data->update_conn_data.latency));
+		json_object_object_add(o, "timeout", json_object_new_int(data->update_conn_data.timeout));
+		json_object_object_add(o, "security_mode", json_object_new_int(data->update_conn_data.security_mode));
+		json_object_object_add(o, "txsize", json_object_new_int(data->update_conn_data.txsize));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle update connect event: \n");		
-		printf("{");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"interval\": %d, ", data->update_conn_data.interval);
-		printf("\"latency\": %d, ", data->update_conn_data.latency);
-		printf("\"timeout\": %d, ", data->update_conn_data.timeout);
-		printf("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
-		printf("\"txsize\": %d ", data->update_conn_data.txsize);
-		printf("}\n");
+		// debug print	
+		// printf("\nBle update connect event: \n");		
+		// printf("{");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"interval\": %d, ", data->update_conn_data.interval);
+		// printf("\"latency\": %d, ", data->update_conn_data.latency);
+		// printf("\"timeout\": %d, ", data->update_conn_data.timeout);
+		// printf("\"security_mode\": %d, ",  data->update_conn_data.security_mode);
+		// printf("\"txsize\": %d ", data->update_conn_data.txsize);
+		// printf("}\n");
 		break;
 	}
 
 	case GAP_BLE_CONNECT_EVT:
 	{
 		gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
-		addr2str(&data->disconnect_data.address, address);
+		addr2str(&data->connect_open_data.address, address);
+
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "address_type", json_object_new_int(data->connect_open_data.ble_addr_type));
+		json_object_object_add(o, "connect_role", json_object_new_int(data->connect_open_data.conn_role));
+		json_object_object_add(o, "bonding", json_object_new_int(data->connect_open_data.bonding));
+		json_object_object_add(o, "advertiser", json_object_new_int(data->connect_open_data.advertiser));
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
 		
-		printf("\nBle connect event: \n");
-		printf("{");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"address type\": %d, ", data->connect_open_data.ble_addr_type);
-		printf("\"connect role\": %d, ", data->connect_open_data.conn_role);
-		printf("\"bonding\": %d, ", data->connect_open_data.bonding);
-		printf("\"advertiser\": %d ", data->connect_open_data.advertiser);
-		printf("}\n");
+		// debug print		
+		// printf("\nBle connect event: \n");
+		// printf("{");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"address_type\": %d, ", data->connect_open_data.ble_addr_type);
+		// printf("\"connect_role\": %d, ", data->connect_open_data.conn_role);
+		// printf("\"bonding\": %d, ", data->connect_open_data.bonding);
+		// printf("\"advertiser\": %d ", data->connect_open_data.advertiser);
+		// printf("}\n");
 		break;
 	}
 
@@ -1021,11 +1369,20 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
 		addr2str(&data->disconnect_data.address, address);
 
-		printf("\nBle disconnect event: \n");
-		printf("{ ");
-		printf(" \"address\": \"%s\", ", address);
-		printf("\"reason\": %d ", data->disconnect_data.reason);
-		printf("}\n");
+		// json format
+		json_object* o = NULL;
+		o = json_object_new_object();
+		json_object_object_add(o, "mac", json_object_new_string(address));
+		json_object_object_add(o, "reason", json_object_new_int(data->disconnect_data.reason));	
+		const char *temp = json_object_to_json_string(o);
+		printf("%s\n",temp);
+		
+		// debug print		
+		// printf("\nBle disconnect event: \n");
+		// printf("{ ");
+		// printf(" \"address\": \"%s\", ", address);
+		// printf("\"reason\": %d ", data->disconnect_data.reason);
+		// printf("}\n");
 		break;
 	}
 	default:
@@ -1062,6 +1419,7 @@ static struct
 } commands[] = {
 	/* System functions */
 	{"enable", cmd_enable, "Enable or disable the module"},
+	{"print_format", cmd_print_format, "Specify log print information: JSON format(default) or debug format"},
 	{"set_power", cmd_set_power, "Set the tx power level"},
 	{"local_address", cmd_local_address, "Get local Bluetooth module public address"},
 	{"listen", cmd_listen, "Listen BLE event"},

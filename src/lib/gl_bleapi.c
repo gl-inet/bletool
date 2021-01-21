@@ -473,7 +473,6 @@ GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int32_t addre
 		return GL_ERR_PARAM; 
 	}
 
-
 	char *str = NULL;
 	static struct blob_buf b;
 
@@ -518,15 +517,17 @@ GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int32_t addre
 		rsp->advertiser = json_object_get_int(val_obj);
 	}
 
-	int32_t mac[DEVICE_MAC_LEN];
-	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", 
-			&mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
-	int32_t i = 0;
-	while (i < 6)
-	{
-		rsp->address[i] = mac[i];
-		i++;
-	}
+	// int32_t mac[DEVICE_MAC_LEN];
+	// sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", 
+	// 		&mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
+	// int32_t i = 0;
+	// while (i < 6)
+	// {
+	// 	rsp->address[i] = address[i];
+	// 	i++;
+	// }
+
+	memcpy(&rsp->address, address, DEVICE_MAC_LEN);
 
 	free(str);
 	json_object_put(o);
@@ -572,7 +573,6 @@ GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address)
 		return GL_ERR_PARAM; 
 	}
 
-
 	char *str = NULL;
 	int32_t connection = 0;
 	static struct blob_buf b;
@@ -599,7 +599,7 @@ GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address)
 	}
 
 	json_object *val_obj = NULL;
-	// strcpy(rsp->addr , address);	
+	memcpy(rsp->address, address, DEVICE_MAC_LEN);	
 
 	if ( json_object_object_get_ex(o, "rssi",  &val_obj) ) {
 		rsp->rssi = json_object_get_int(val_obj);
@@ -753,6 +753,8 @@ GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int32_t c
 	}
 
 	json_object *val_obj = NULL;
+
+	memcpy(rsp->address, address, DEVICE_MAC_LEN);
 
 	if ( json_object_object_get_ex(o, "characteristic_handle",  &val_obj) ) {
 		rsp->handle = json_object_get_int(val_obj);

@@ -1,3 +1,10 @@
+Version : 3.3.3
+Build   : 2021.1.21
+Changes :
+	1. fix(gl_cli.c): change the print information to json format(default)
+    2. feat(gl_cli.c): add cmd_print_format command
+
+
 Version : 3.3.2
 Build   : 2021.1.20
 Changes :
