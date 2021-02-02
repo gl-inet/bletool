@@ -19,12 +19,7 @@
 #ifndef GL_COMMON_H
 #define GL_COMMON_H
 #include <stdint.h>
-
-#define MAC_LEN 18
-
-typedef struct {
-    uint8_t addr[MAC_LEN];
-} ble_addr;
+#include "../../../include/gl_type.h"
 
 /***********************************************************************************************//**
  *  \brief  The MAC address of uint8_t type convets to string.
@@ -32,7 +27,7 @@ typedef struct {
  *  \param[out]   str Buffer used for storing the mac address. 
  *  \return 0 means success, None-zero means failed.
  **************************************************************************************************/
-int addr2str(ble_addr *adr, char* str);
+int addr2str(BLE_MAC adr, char* str);
 
 /***********************************************************************************************//**
  *  \brief  The MAC address of string type convets to uint8_t type.
@@ -40,7 +35,7 @@ int addr2str(ble_addr *adr, char* str);
  *  \param[out]   address Buffer used for storing the mac address. 
  *  \return 0 means success, None-zero means failed.
  **************************************************************************************************/
-int str2addr(char* str, ble_addr *address);
+int str2addr(char* str, BLE_MAC address);
 
 /***********************************************************************************************//**
  *  \brief  The string convets to uint8_t array.

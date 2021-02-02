@@ -52,7 +52,7 @@ GL_RET gl_ble_enable(int enable);
  *  \param[out]  rsp  A response structure used for storing the MAC address.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
+GL_RET gl_ble_get_mac(BLE_MAC mac);
 
 /***********************************************************************************************//**
  *  \brief  This command can be used to set the global maximum TX power for Bluetooth. 
@@ -66,7 +66,7 @@ GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp);
  *                     updated accordingly. 
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int power);
+GL_RET gl_ble_set_power(int power, int *current_power);
 
 /***********************************************************************************************//**
  *  \brief  Act as BLE slave, set user defined data in advertising packets, scan response packets
@@ -128,7 +128,7 @@ GL_RET gl_ble_stop_adv(void);
  *                      or indication.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, uint8_t *address, int char_handle, char *value);
+GL_RET gl_ble_send_notify(BLE_MAC address, int char_handle, char *value);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Set and start the BLE discovery.
@@ -157,7 +157,7 @@ GL_RET gl_ble_discovery(int phys, int interval, int window, int type, int mode);
  *  \brief  Act as master, End the current GAP discovery procedure.
  *  \return 0 on success, -1 on failure.
  **************************************************************************************************/
-GL_RET gl_ble_stop(void);
+GL_RET gl_ble_stop_discovery(void);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Start connect to a remote BLE device.
@@ -171,14 +171,14 @@ GL_RET gl_ble_stop(void);
  *  \param[out]  rsp  A response structure used for storing the connect parameters of the remote device.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int address_type, int phy);
+GL_RET gl_ble_connect(BLE_MAC address, int address_type, int phy);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, disconnect with remote device.
  *  \param[in]  address  Address of the device to disconnect. Like “11:22:33:44:55:66”.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_disconnect(uint8_t *address);
+GL_RET gl_ble_disconnect(BLE_MAC address);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, get the latest RSSI value of a Bluetooth connection.
@@ -187,7 +187,7 @@ GL_RET gl_ble_disconnect(uint8_t *address);
  *  \param[out] rsp  A response structure used for storing the connection with remote device.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address);
+GL_RET gl_ble_get_rssi(BLE_MAC address, int32_t *rssi);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Get service list of a remote GATT server.
@@ -195,7 +195,7 @@ GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address);
  *  \param[out] rsp  A response structure used for storing the  service list of a remote GATT server.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address);
+GL_RET gl_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC address);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Get characteristic list of a remote GATT server.
@@ -205,7 +205,7 @@ GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address);
  *                   list of a remote GATT server.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int service_handle);
+GL_RET gl_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int service_handle);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Read value of specified characteristic in a remote gatt server.
@@ -214,7 +214,7 @@ GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int service
  *  \param[out] rsp  A response structure used for storing the value of specified characteristic.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int char_handle);
+GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Write value to specified characteristic in a remote gatt server.
@@ -225,7 +225,7 @@ GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int char_
  *  \param[out] rsp  A response structure used for storing the length of value to be wrote.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int char_handle, char *value, int res);
+GL_RET gl_ble_write_char(BLE_MAC address, int char_handle, char *value, int res);
 
 /***********************************************************************************************//**
  *  \brief  Act as master, Enable or disable the notification or indication of a remote gatt server.
@@ -235,36 +235,7 @@ GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int cha
  *                      0: disable, 1: notification, 2: indication.
  *  \return  0 means success, None-zero means failed.
  **************************************************************************************************/
-GL_RET gl_ble_set_notify(uint8_t *address, int char_handle, int flag);
+GL_RET gl_ble_set_notify(BLE_MAC address, int char_handle, int flag);
 
-/***********************************************************************************************//**
- *  \brief  This command can be used to start a transmitter test.
- *  \param[in]   packet_type - 0: Advertising packets,      - 1: Scan response packets
- *                           - 2: OTA advertising packets,  - 4: OTA scan response packets
- *  \param[in]   length   Packet length in bytes, Range: 0-255
- *  \param[in]   channel  Bluetooth channel, Range: 0-39, Channel is (F - 2402) / 2, where F is frequency in MHz
- *  \param[in]   phy      Parameter phy specifies which PHY is used to transmit the packets. 
- *                        All devices support at least the 1M PHY.
- *  \param[out]  A response structure used for storing the number of the packet.
- *  \return  0 means success, None-zero means failed.
- **************************************************************************************************/
-GL_RET gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int packet_type, int length, int channel, int phy);
-
-/***********************************************************************************************//**
- *  \brief  This command can be used to start a receiver test. 
- *  \param[in]   channel  Bluetooth channel, Range: 0-39, Channel is (F - 2402) / 2, where F is frequency in MHz
- *  \param[in]   phy      Parameter phy specifies which PHY is used to transmit the packets. 
- *                        All devices support at least the 1M PHY.
- *  \param[out]  A response structure used for storing the number of the packet.
- *  \return  0 means success, None-zero means failed.
- **************************************************************************************************/
-GL_RET gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int channel, int phy);
-
-/***********************************************************************************************//**
- *  \brief  This command can be used to end a transmitter or a receiver test.
- *  \param[out]  A response structure used for storing the number of the packet.
- *  \return  0 means success, None-zero means failed.
- **************************************************************************************************/
-GL_RET gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp);
 
 #endif

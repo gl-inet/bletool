@@ -321,13 +321,8 @@ GL_RET gl_ble_enable(int32_t enable)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
+GL_RET gl_ble_get_mac(BLE_MAC mac)
 {
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	json_object *val_obj = NULL;
 	static struct blob_buf b;
@@ -353,28 +348,17 @@ GL_RET gl_ble_get_mac(gl_ble_get_mac_rsp_t *rsp)
 	if ( json_object_object_get_ex(o, "mac",  &val_obj) ) {
 		address = json_object_get_string(val_obj);
 	}
+	// printf("address: %s\n", address);
 
-	int32_t mac[DEVICE_MAC_LEN];	
-	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x",
-		   &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
-	int32_t i = 0;
-	while (i < DEVICE_MAC_LEN) {
-		rsp->address[i] = mac[i];
-		i++;
-	}
+	str2addr(address, mac);
 
 	free(str);
 	json_object_put(o);
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int32_t power)
+GL_RET gl_ble_set_power(int power, int *current_power)
 {
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	static struct blob_buf b;
 
@@ -399,11 +383,12 @@ GL_RET gl_ble_set_power(gl_ble_set_power_rsp_t *rsp, int32_t power)
 	json_object *val_obj = NULL;
 
 	if ( json_object_object_get_ex(o, "power",  &val_obj) ) {
-		rsp->current_power = json_object_get_int(val_obj);
+		*current_power = json_object_get_int(val_obj);
 	}
 
 	free(str);
 	json_object_put(o);
+	
 	return GL_SUCCESS;
 }
 
@@ -439,14 +424,14 @@ GL_RET gl_ble_discovery(int32_t phys, int32_t interval, int32_t window, int32_t 
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_stop(void)
+GL_RET gl_ble_stop_discovery(void)
 {
 	char *str = NULL;
 	static struct blob_buf b;
 
 	blob_buf_init(&b, 0);
 
-	gl_ble_call("ble", "stop", &b, 1, &str);
+	gl_ble_call("ble", "stop_discovery", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -466,13 +451,8 @@ GL_RET gl_ble_stop(void)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int32_t address_type, int32_t phy)
+GL_RET gl_ble_connect(BLE_MAC address, int32_t address_type, int32_t phy)
 {
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	static struct blob_buf b;
 
@@ -491,7 +471,7 @@ GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int32_t addre
 	}
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"address", "address_type", "master", "bonding", "advertiser"};
+	char *parameters[] = {"connection"};
 	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
 	if (ret) { 
 		free(str);
@@ -499,43 +479,24 @@ GL_RET gl_ble_connect(gl_ble_connect_rsp_t *rsp, uint8_t *address, int32_t addre
 		return ret; 
 	}
 
-	json_object *val_obj = NULL;
+	// json_object *val_obj = NULL;
 
-	if ( json_object_object_get_ex(o, "address_type",  &val_obj) ) {
-		rsp->address_type = json_object_get_int(val_obj);
-	}
-
-	if ( json_object_object_get_ex(o, "master",  &val_obj) ) {
-		rsp->master = json_object_get_int(val_obj);
-	}
-
-	if ( json_object_object_get_ex(o, "bonding",  &val_obj) ) {
-		rsp->bonding = json_object_get_int(val_obj);
-	}
-
-	if ( json_object_object_get_ex(o, "advertiser",  &val_obj) ) {
-		rsp->advertiser = json_object_get_int(val_obj);
-	}
-
-	// int32_t mac[DEVICE_MAC_LEN];
-	// sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", 
-	// 		&mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
-	// int32_t i = 0;
-	// while (i < 6)
-	// {
-	// 	rsp->address[i] = address[i];
-	// 	i++;
+	// char *opened_address = NULL;
+	// if ( json_object_object_get_ex(o, "address",  &val_obj) ) {
+	// 	opened_address = json_object_get_string(val_obj);
 	// }
+	// free(str);
+	// json_object_put(o);
 
-	memcpy(&rsp->address, address, DEVICE_MAC_LEN);
-
-	free(str);
-	json_object_put(o);
+	// if(0 != strncmp(address_str, opened_address, DEVICE_MAC_LEN))
+	// {
+	// 	return GL_UNKNOW_ERR;
+	// }
 
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_disconnect(uint8_t * address)
+GL_RET gl_ble_disconnect(BLE_MAC address)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -566,13 +527,8 @@ GL_RET gl_ble_disconnect(uint8_t * address)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address)  
+GL_RET gl_ble_get_rssi(BLE_MAC address, int32_t *rssi)
 {
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	int32_t connection = 0;
 	static struct blob_buf b;
@@ -599,10 +555,9 @@ GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address)
 	}
 
 	json_object *val_obj = NULL;
-	memcpy(rsp->address, address, DEVICE_MAC_LEN);	
 
 	if ( json_object_object_get_ex(o, "rssi",  &val_obj) ) {
-		rsp->rssi = json_object_get_int(val_obj);
+		*rssi = json_object_get_int(val_obj);
 	}
 
 	free(str);
@@ -610,9 +565,10 @@ GL_RET gl_ble_get_rssi(gl_ble_get_rssi_rsp_t *rsp, uint8_t *address)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address)
+GL_RET gl_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC address)
 {
-	if (!rsp) { 
+	if ((!service_list) || (!address))
+	{ 
 		log_err("Parameter error!\n"); 
 		return GL_ERR_PARAM; 
 	}
@@ -641,26 +597,17 @@ GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address)
 		return ret; 
 	}
 
-	int32_t mac[DEVICE_MAC_LEN];
-	sscanf(address, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[5], &mac[4], &mac[3], &mac[2], &mac[1], &mac[0]);
-	int32_t i = 0;
-	while (i < 6)
-	{
-		rsp->address[i] = mac[i];
-		i++;
-	}
-
 	json_object *list = json_object_object_get(o, "service_list");
 	int32_t len = json_object_array_length(list);
-	rsp->list_len = len;
+	service_list->list_len = len;
 	json_object *obj;
 
-	i = 0;
+	int i = 0;
 	while (i < len)
 	{
 		obj = json_object_array_get_idx(list, i);
-		rsp->list[i].handle = json_object_get_int(json_object_object_get(obj, "service_handle"));
-		strcpy(rsp->list[i].uuid, json_object_get_string(json_object_object_get(obj, "service_uuid")));
+		service_list->list[i].handle = json_object_get_int(json_object_object_get(obj, "service_handle"));
+		strcpy(service_list->list[i].uuid, json_object_get_string(json_object_object_get(obj, "service_uuid")));
 		i++;
 	}
 
@@ -669,9 +616,10 @@ GL_RET gl_ble_get_service(gl_ble_get_service_rsp_t *rsp, uint8_t *address)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int32_t service_handle)
+GL_RET gl_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int service_handle)
 {
-	if (!rsp) { 
+	if ((!char_list) || (!address))
+	{ 
 		log_err("Parameter error!\n"); 
 		return GL_ERR_PARAM; 
 	}
@@ -703,16 +651,16 @@ GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int32_t ser
 
 	json_object *list = json_object_object_get(o, "characteristic_list");
 	int32_t len = json_object_array_length(list);
-	rsp->list_len = len;
+	char_list->list_len = len;
 	json_object *obj;
 
 	int32_t i = 0;
 	while (i < len)
 	{
 		obj = json_object_array_get_idx(list, i);
-		rsp->list[i].handle = json_object_get_int(json_object_object_get(obj, "characteristic_handle"));
-		rsp->list[i].properties = json_object_get_int(json_object_object_get(obj, "properties"));
-		strcpy(rsp->list[i].uuid, json_object_get_string(json_object_object_get(obj, "characteristic_uuid")));
+		char_list->list[i].handle = json_object_get_int(json_object_object_get(obj, "characteristic_handle"));
+		char_list->list[i].properties = json_object_get_int(json_object_object_get(obj, "properties"));
+		strcpy(char_list->list[i].uuid, json_object_get_string(json_object_object_get(obj, "characteristic_uuid")));
 		i++;
 	}
 	free(str);
@@ -720,14 +668,14 @@ GL_RET gl_ble_get_char(gl_ble_get_char_rsp_t *rsp, uint8_t *address, int32_t ser
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int32_t char_handle)
+GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value)
 {
-	if (!rsp) { 
+	if (!value) { 
 		log_err("Parameter error!\n"); 
 		return GL_ERR_PARAM; 
 	}
 
-	char *str = NULL, *value = NULL;
+	char *str = NULL;
 	static struct blob_buf b;
 
 	char address_str[BLE_MAC_LEN] = {0};
@@ -754,22 +702,19 @@ GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int32_t c
 
 	json_object *val_obj = NULL;
 
-	memcpy(rsp->address, address, DEVICE_MAC_LEN);
-
+	int rsp_handle = -1;
 	if ( json_object_object_get_ex(o, "characteristic_handle",  &val_obj) ) {
-		rsp->handle = json_object_get_int(val_obj);
+		rsp_handle = json_object_get_int(val_obj);
 	}
 
-	if ( json_object_object_get_ex(o, "att_opcode",  &val_obj) ) {
-		rsp->att_opcode = json_object_get_int(val_obj);
-	}
-
-	if ( json_object_object_get_ex(o, "offset",  &val_obj) ) {
-		rsp->offset = json_object_get_int(val_obj);
+	if(char_handle != rsp_handle) {
+		free(str);
+		json_object_put(o);
+		return GL_UNKNOW_ERR;
 	}
 
 	if ( json_object_object_get_ex(o, "value",  &val_obj) ) {
-		strcpy(rsp->value, json_object_get_string(val_obj));
+		strcpy(value, json_object_get_string(val_obj));
 	}
 
 	free(str);
@@ -777,9 +722,9 @@ GL_RET gl_ble_read_char(gl_ble_char_read_rsp_t *rsp, uint8_t *address, int32_t c
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int32_t char_handle, char *value, int32_t res)
+GL_RET gl_ble_write_char(uint8_t *address, int32_t char_handle, char *value, int32_t res)
 {
-	if (!rsp) { 
+	if (!value) { 
 		log_err("Parameter error!\n"); 
 		return GL_ERR_PARAM; 
 	}
@@ -805,22 +750,30 @@ GL_RET gl_ble_write_char(gl_ble_write_char_rsp_t *rsp, uint8_t *address, int32_t
 	json_object *o = json_tokener_parse(str);
 	char *parameters[] = {};
 
-	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
+	GL_RET ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
 	if (ret) { 
-		free(str);
-		json_object_put(o);	
-		return ret; 
+		goto end;
 	}
 
+	int sent_len = -1;
 	json_object *obj = json_object_object_get(o, "sent_len");
-	if (obj) { rsp->sent_len = json_object_get_int(obj); }
+	if (obj) { 
+		sent_len = json_object_get_int(obj); 
+	}
 
+	if(sent_len != strlen(value))
+	{
+		ret = GL_UNKNOW_ERR;
+		goto end;
+	}
+
+end:
 	free(str);
 	json_object_put(o);
-	return GL_SUCCESS;
+	return ret;
 }
 
-GL_RET gl_ble_set_notify(uint8_t *address, int32_t char_handle, int32_t flag)
+GL_RET gl_ble_set_notify(BLE_MAC address, int32_t char_handle, int32_t flag)
 {
 	char *str = NULL;
 	static struct blob_buf b;
@@ -944,13 +897,8 @@ GL_RET gl_ble_stop_adv(void)
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, uint8_t *address, int32_t char_handle, char *value)
+GL_RET gl_ble_send_notify(BLE_MAC address, int32_t char_handle, char *value)
 {
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	static struct blob_buf b;
 
@@ -977,118 +925,15 @@ GL_RET gl_ble_send_notify(gl_ble_send_notify_rsp_t *rsp, uint8_t *address, int32
 		return ret; 
 	}
 
-	rsp->sent_len = json_object_get_int(json_object_object_get(o, "sent_len"));
-
+	int sent_len = json_object_get_int(json_object_object_get(o, "sent_len"));
 	free(str);
 	json_object_put(o);
-	return GL_SUCCESS;
-}
 
-GL_RET gl_ble_dtm_tx(gl_ble_dtm_test_rsp_t *rsp, int32_t packet_type, int32_t length, int32_t channel, int32_t phy)
-{
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
+	if(sent_len != (strlen(value) / 2))
+	{
+		return GL_UNKNOW_ERR;
 	}
 
-	char *str = NULL;
-	static struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "dtm_tx_type", packet_type);
-	blobmsg_add_u32(&b, "dtm_tx_length", length);
-	blobmsg_add_u32(&b, "dtm_tx_channel", channel);
-	blobmsg_add_u32(&b, "dtm_tx_phy", phy);
-
-	gl_ble_call("ble", "dtm_tx", &b, 1, &str);
-	if (NULL == str) { 
-		log_err("Response missing!\n"); 
-		return GL_ERR_RESP_MISSING; 
-	}
-
-	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"number_of_packets"};
-	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret) { 
-		free(str);
-		json_object_put(o);
-		return ret; 
-	}
-
-	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
-
-	free(str);
-	json_object_put(o);
-	return GL_SUCCESS;
-}
-
-GL_RET gl_ble_dtm_rx(gl_ble_dtm_test_rsp_t *rsp, int32_t channel, int32_t phy)
-{
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
-	char *str = NULL;
-	static struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "dtm_rx_channel", channel);
-	blobmsg_add_u32(&b, "dtm_rx_phy", phy);
-
-	gl_ble_call("ble", "dtm_rx", &b, 1, &str);
-	if (NULL == str) { 
-		log_err("Response missing!\n"); 
-		return GL_ERR_RESP_MISSING; 
-	}
-
-	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"number_of_packets"};
-	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret) { 
-		free(str);
-		json_object_put(o);
-		return ret; 
-	}
-
-	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
-
-	free(str);
-	json_object_put(o);
-	return GL_SUCCESS;
-}
-
-GL_RET gl_ble_dtm_end(gl_ble_dtm_test_rsp_t *rsp)
-{
-	if (!rsp) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
-	char *str = NULL;
-	static struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-
-	gl_ble_call("ble", "dtm_end", &b, 1, &str);
-	if (NULL == str) { 
-		log_err("Response missing!\n"); 
-		return GL_ERR_RESP_MISSING; 
-	}
-
-	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"number_of_packets"};
-	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
-	if (ret) { 
-		free(str);
-		json_object_put(o);
-		return ret; 
-	}
-
-	rsp->number_of_packets = json_object_get_int(json_object_object_get(o, "number_of_packets"));
-
-	free(str);
-	json_object_put(o);
 	return GL_SUCCESS;
 }
 

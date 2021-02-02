@@ -25,12 +25,14 @@
 
 #include "silabs_bleapi.h"
 
-#define serial_msg_callback             silabs_get_notify
+#define ble_run							silabs_run
+#define ble_transfer_func				silabs_init_transfer_func
+
 #define ble_enable                      silabs_ble_enable
 #define ble_local_mac                   silabs_ble_local_mac
 #define ble_set_power                   silabs_ble_set_power
 #define ble_discovery                   silabs_ble_discovery
-#define ble_stop                        silabs_ble_stop
+#define ble_stop_discovery              silabs_ble_stop_discovery
 #define ble_adv                         silabs_ble_adv
 #define ble_adv_data                    silabs_ble_adv_data
 #define ble_stop_adv                    silabs_ble_stop_adv
@@ -43,9 +45,6 @@
 #define ble_read_char                   silabs_ble_read_char
 #define ble_write_char                  silabs_ble_write_char
 #define ble_set_notify                  silabs_ble_set_notify
-#define ble_dtm_tx                      silabs_ble_dtm_tx
-#define ble_dtm_rx                      silabs_ble_dtm_rx
-#define ble_dtm_end                     silabs_ble_dtm_end
 
 #endif
 

@@ -30,8 +30,11 @@
 #include "gl_dev_mgr.h"
 #include "gl_common.h"
 #include "gl_errno.h"
+#include "silabs_msg.h"
+#include "gl_thread.h"
+
  
-static struct ubus_context * ctx = NULL;
+struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;
 static struct blob_buf b;
 static struct uloop_fd serial_fd;
@@ -159,11 +162,11 @@ static int discovery(struct ubus_context *ctx, struct ubus_object *obj, struct u
 }
 
 /*Act as master, End the current GAP discovery procedure*/
-int stop(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
+int stop_discovery(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
     uloop_fd_delete(&serial_fd);
     
-    json_object* output = ble_stop();
+    json_object* output = ble_stop_discovery();
 
     blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -188,7 +191,6 @@ static const struct blobmsg_policy conn_policy[CONN_MAX] = {
 };
 static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-	log_debug("leave fd listen");
     uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[CONN_MAX];
 	blobmsg_parse(conn_policy, CONN_MAX, tb, blob_data(msg), blob_len(msg));
@@ -201,15 +203,15 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	
 	int ret = -1;
 
-	json_object *val_obj = NULL;
-	if ( json_object_object_get_ex(output, "code",  &val_obj) ) {
-		ret = json_object_get_int(val_obj);
-	}
+	// json_object *val_obj = NULL;
+	// if ( json_object_object_get_ex(output, "code",  &val_obj) ) {
+	// 	ret = json_object_get_int(val_obj);
+	// }
 
-	if ( !ret )
-		add_device_to_list(output);
-	else 
-		log_err("Connect output is null\n");
+	// if ( !ret )
+	// 	add_device_to_list(output);
+	// else 
+	// 	log_err("Connect output is null\n");
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
@@ -217,7 +219,6 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	log_debug("start fd listen");
 	uloop_fd_add(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
@@ -239,6 +240,7 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 
 	char* address = blobmsg_get_string(tb[DISCONN_ADDRESS]);
 	int connection = ble_dev_mgr_get_connection(address);
+	
 	json_object* output = ble_disconnect(connection);
 	char *str = json_object_to_json_string(output);
 	
@@ -581,86 +583,6 @@ static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct
 	return GL_SUCCESS;
 }
 
-/* DTM test functions, TX*/
-enum
-{
-	DTM_TX_TYPE,
-	DTM_TX_LENGTH,
-	DTM_TX_CHANNEL,
-	DTM_TX_PHY,
-	DTM_TX_MAX
-};
-static const struct blobmsg_policy dtm_tx_policy[DTM_TX_MAX] = {
-	[DTM_TX_TYPE] = {.name = "dtm_tx_type", .type = BLOBMSG_TYPE_INT32},
-	[DTM_TX_LENGTH] = {.name = "dtm_tx_length", .type = BLOBMSG_TYPE_INT32},
-	[DTM_TX_CHANNEL] = {.name = "dtm_tx_channel", .type = BLOBMSG_TYPE_INT32},
-	[DTM_TX_PHY] = {.name = "dtm_tx_phy", .type = BLOBMSG_TYPE_INT32}
-};
-static int dtm_tx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    uloop_fd_delete(&serial_fd);
-
-	struct blob_attr *tb[DTM_TX_MAX];
-	blobmsg_parse(dtm_tx_policy, DTM_TX_MAX, tb, blob_data(msg), blob_len(msg));
-	int dtm_tx_type = blobmsg_get_u32(tb[DTM_TX_TYPE]);
-	int dtm_tx_length = blobmsg_get_u32(tb[DTM_TX_LENGTH]);
-	int dtm_tx_channel = blobmsg_get_u32(tb[DTM_TX_CHANNEL]);
-	int dtm_tx_phy = blobmsg_get_u32(tb[DTM_TX_PHY]);
-	json_object* output = ble_dtm_tx(dtm_tx_type,dtm_tx_length,dtm_tx_channel,dtm_tx_phy);
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_object(&b, output);
-	ubus_send_reply(ctx, req, b.head);
-	json_object_put(output);
-
-	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return GL_SUCCESS;
-}
-/* DTM test functions, RX */
-enum
-{
-	DTM_RX_CHANNEL,
-	DTM_RX_PHY,
-	DTM_RX_MAX
-};
-static const struct blobmsg_policy dtm_rx_policy[DTM_RX_MAX] = {
-	[DTM_RX_CHANNEL] = {.name = "dtm_rx_channel", .type = BLOBMSG_TYPE_INT32},
-	[DTM_RX_PHY] = {.name = "dtm_rx_phy", .type = BLOBMSG_TYPE_INT32}
-};
-static int dtm_rx(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    uloop_fd_delete(&serial_fd);
-
-	struct blob_attr *tb[DTM_RX_MAX];
-	blobmsg_parse(dtm_rx_policy, DTM_RX_MAX, tb, blob_data(msg), blob_len(msg));
-	int dtm_rx_channel = blobmsg_get_u32(tb[DTM_RX_CHANNEL]);
-	int dtm_rx_phy = blobmsg_get_u32(tb[DTM_RX_PHY]);
-	json_object* output = ble_dtm_rx(dtm_rx_channel,dtm_rx_phy);
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_object(&b, output);
-	ubus_send_reply(ctx, req, b.head);
-	json_object_put(output);
-
-	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return GL_SUCCESS;
-}
-/* DTM test functions, end */
-
-static int dtm_end(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    uloop_fd_delete(&serial_fd);
-
-	json_object* output = ble_dtm_end();
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_object(&b, output);
-	ubus_send_reply(ctx, req, b.head);
-	json_object_put(output);
-
-	uloop_fd_add(&serial_fd, ULOOP_READ);
-	return GL_SUCCESS;
-}
 
 /* ubus methods */
 static struct ubus_method ble_methods[] = 
@@ -671,7 +593,7 @@ static struct ubus_method ble_methods[] =
 	UBUS_METHOD("set_power", set_power, set_power_policy),
 	/*Master*/
 	UBUS_METHOD("discovery", discovery, discovery_policy),
-	UBUS_METHOD_NOARG("stop", stop),
+	UBUS_METHOD_NOARG("stop_discovery", stop_discovery),
 	UBUS_METHOD("connect", connect, conn_policy),
 	UBUS_METHOD("disconnect", disconnect, disconnect_policy),
 	UBUS_METHOD("get_rssi", get_rssi, get_rssi_policy),
@@ -685,18 +607,13 @@ static struct ubus_method ble_methods[] =
 	UBUS_METHOD("adv_data", adv_data, adv_data_policy),
 	UBUS_METHOD_NOARG("stop_adv", stop_adv),
 	UBUS_METHOD("send_notify", send_notify, send_noti_policy),
-
-	/*Test*/
-	UBUS_METHOD("dtm_tx", dtm_tx, dtm_tx_policy),
-	UBUS_METHOD("dtm_rx", dtm_rx, dtm_rx_policy),
-	UBUS_METHOD_NOARG("dtm_end", dtm_end),
 };
 
 /* ubus object type */
 static struct ubus_object_type ble_obj_type = UBUS_OBJECT_TYPE("ble", ble_methods);
 
 /* ubus object assignment */
-static struct ubus_object ble_obj = 
+struct ubus_object ble_obj = 
 {
 	.name = "ble",
 	.type = &ble_obj_type,
@@ -722,91 +639,23 @@ static void ubus_connection_lost(struct ubus_context *ctx)
 	ubus_reconn_timer(NULL);
 }
 
-static void manage_device(json_object* o)
+
+static void create_module_thread(void)
 {
-	json_object *val_obj = NULL;
-	uint16_t connection;
+	thread_ctx_t* ctx = _thread_get_ctx();
 
-	char *type = NULL, *addr = NULL;
-	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
-		type = json_object_get_string(val_obj);
-	}
+    ctx->mutex = HAL_MutexCreate();
+    if (ctx->mutex == NULL) {
+        printf("Not Enough Memory");
+        return ;
+    }
 
-	log_info("notification type: %s", type);
-
-	if ( !strcmp(type, CONN_OPEN)) {
-		add_device_to_list(o);
-	}
-	else if ( !strcmp(type, CONN_CLOSE)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}
-
-		addr = ble_dev_mgr_get_address(connection);
-
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));
-		delete_device_from_list(o);
-	}	
-	else if ( !strcmp(type, CONN_UPDATE)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}
-
-		addr = ble_dev_mgr_get_address(connection);
-
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-	}
-	else if ( !strcmp(type, REMOTE_NOTIFY))	{
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}		
-		
-		addr = ble_dev_mgr_get_address(connection);
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));
-		
-	}
-	else if ( !strcmp(type, REMOTE_WRITE))	{
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}		
-		
-		addr = ble_dev_mgr_get_address(connection);
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-		
-	}
-	else if ( !strcmp(type, REMOTE_SET)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}		
-		
-		addr = ble_dev_mgr_get_address(connection);
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-	}
-
-    return;
-}
-
-void serial_msg_handle_cb(struct uloop_fd *u, unsigned int events)
-{
-    json_object* output = serial_msg_callback();
-
-	if(output) {
-		manage_device(output);
-		blob_buf_init(&b, 0);
-		blobmsg_add_object(&b, output);
-
-		/* broadcast notification message */
-		ubus_notify(ctx,  &ble_obj, "Notify", b.head, -1);
-		json_object_put(output);
-	}
+    int ret;
+    ret = HAL_ThreadCreate(&ctx->g_dispatch_thread, ble_run, NULL, NULL, NULL);
+    if (ret != 0) {
+        printf("pthread_create failed!\n");
+        return ;
+    }
 }
 
 int main(int argc, char * argv[])
@@ -819,14 +668,10 @@ int main(int argc, char * argv[])
 
 	/* Create an epoll instance descriptor poll_fd */
 	uloop_init();
+	
+	// init hal
+	hal_init();
 
-    int serialFd = hal_init();
-    serial_fd.cb = serial_msg_handle_cb;
-    serial_fd.fd = serialFd;
-
-	/* Register a new descriptor into the event processing loop */
-    uloop_fd_add(&serial_fd, ULOOP_READ);
-    
 	/* Connect to ubusd and get ctx */
 	ctx = ubus_connect(sock_path);
     if (!ctx) {
@@ -845,6 +690,9 @@ int main(int argc, char * argv[])
 		ubus_free(ctx);
 		return -1;
 	}
+
+	// create a thread to recv module message
+	create_module_thread();
 
 	/* uloop routine: events monitoring and callback provoking */
 	uloop_run();

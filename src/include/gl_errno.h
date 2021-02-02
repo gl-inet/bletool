@@ -30,13 +30,16 @@ enum gl_error_spaces {
 	GL_ERRSPC_UBUS 		= 20,
 };
 
+typedef int32_t GL_RET;
+
 typedef enum gl_error {
 	GL_SUCCESS      	   			= GL_ERRSPC_GENERAL + 0,            // No error
-	GL_ERR_RESP_MISSING				= GL_ERRSPC_GENERAL	+ 1, 			// Response missing
-	GL_ERR_EVENT_MISSING			= GL_ERRSPC_GENERAL + 2, 			// Event missing
-	GL_ERR_PARAM_MISSING			= GL_ERRSPC_GENERAL + 3, 			// Param missing
-	GL_ERR_MSG						= GL_ERRSPC_GENERAL + 4, 			// Message error
-	GL_ERR_PARAM					= GL_ERRSPC_GENERAL	+ 5, 			// Param error
+	GL_UNKNOW_ERR					= GL_ERRSPC_GENERAL	+ 1, 			// Error
+	GL_ERR_RESP_MISSING				= GL_ERRSPC_GENERAL	+ 2, 			// Response missing
+	GL_ERR_EVENT_MISSING			= GL_ERRSPC_GENERAL + 3, 			// Event missing
+	GL_ERR_PARAM_MISSING			= GL_ERRSPC_GENERAL + 4, 			// Param missing
+	GL_ERR_MSG						= GL_ERRSPC_GENERAL + 5, 			// Message error
+	GL_ERR_PARAM					= GL_ERRSPC_GENERAL	+ 6, 			// Param error
 
 	GL_ERR_UBUS_CONNECT				= GL_ERRSPC_UBUS	+ 0,            // UBUS connect error
 	GL_ERR_UBUS_LOOKUP				= GL_ERRSPC_UBUS	+ 1,			// UBUS lookup ID error

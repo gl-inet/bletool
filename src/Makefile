@@ -29,23 +29,31 @@ DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
 					daemon/bledriver/util	\
 					components/dev_mgr \
 					components/log \
+					components/thread \
+					components/timestamp \
 					include
 
 DAEMON_SRCDIRS	:=  daemon  \
 					daemon/bledriver/util	\
 					daemon/bledriver/silabs  \
 					components/dev_mgr  \
-					components/log	
+					components/log  \
+					components/timestamp \
+					components/thread
 
 LIB_INCDIRS		:= 	lib \
 					components/dev_mgr \
 					components/log \
+					components/thread \
+					components/timestamp \
 					include \
 					daemon/bledriver/util						
 
 LIB_SRCDIRS		:=  lib  \
 					components/dev_mgr \
 					components/log	\
+					components/thread \
+					components/timestamp \
 					daemon/bledriver/util					
 
 UTIL_INCDIRS	:= 	lib \
@@ -91,7 +99,7 @@ $(info DAEMON_OBJS = $(DAEMON_OBJS))
 VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 
 # Dependences               
-DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
+DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
 UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
 

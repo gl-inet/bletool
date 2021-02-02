@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-START=99
+START=98
 USE_PROCD=1
 
 start_service() {
@@ -13,8 +13,10 @@ start_service() {
 
   if [ $model == s1300 ]; then
     [ -n "$(ls -l /sys/class/gpio/gpiochip412 2>/dev/null)" ] && S1300_GPIO=460 || S1300_GPIO=48
-    echo ${S1300_GPIO} > /sys/class/gpio/export
-    echo out > /sys/class/gpio/gpio${S1300_GPIO}/direction
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio${S1300_GPIO} 2>/dev/null)" ]; then
+		echo ${S1300_GPIO} > /sys/class/gpio/export
+	fi
+	echo out > /sys/class/gpio/gpio${S1300_GPIO}/direction
     uci set ble.s1300='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyMSM1'
     uci set ble.@bleserial[0].baudrate=115200
@@ -22,7 +24,10 @@ start_service() {
     uci set ble.@bleserial[0].rston="echo 1 > /sys/class/gpio/gpio${S1300_GPIO}/value"
     uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
   elif [ $model == x750 ]; then
-    echo 1 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio1 2>/dev/null)" ]; then
+    	echo 1 > /sys/class/gpio/export
+	fi
+	echo out > /sys/class/gpio/gpio1/direction
     uci set ble.x750='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200
@@ -30,7 +35,10 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio1/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio1/value'
   elif [ $model == xe300 ]; then                                          
-    echo 14 > /sys/class/gpio/export                                        
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio14 2>/dev/null)" ]; then
+    	echo 14 > /sys/class/gpio/export
+	fi
+    echo out > /sys/class/gpio/gpio14/direction                                      
     uci set ble.xe300='bleserial'             
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200  
@@ -38,7 +46,9 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio14/value' 
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio14/value'    
   elif [ $model == mt300n-v2 ]; then
-    echo 5 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio5 2>/dev/null)" ]; then
+	    echo 5 > /sys/class/gpio/export
+	fi
     echo out > /sys/class/gpio/gpio5/direction
     uci set ble.mt300nv2='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS1'
@@ -47,7 +57,10 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio5/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio5/value'
   elif [ $model == e750 ]; then
-    echo 17 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio17 2>/dev/null)" ]; then
+	    echo 17 > /sys/class/gpio/export
+	fi
+    echo out > /sys/class/gpio/gpio17/direction
     uci set ble.e750='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyUSB0'
     uci set ble.@bleserial[0].baudrate=115200
@@ -55,7 +68,10 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio17/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio17/value'
   elif [ $model == x300b ]; then
-    echo 13 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio13 2>/dev/null)" ]; then
+	    echo 13 > /sys/class/gpio/export
+	fi
+    echo out > /sys/class/gpio/gpio13/direction
     uci set ble.x300b='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200
@@ -63,7 +79,10 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio13/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio13/value'
   elif [ $model == ap1300 ]; then
-    echo 62 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio62 2>/dev/null)" ]; then
+	    echo 62 > /sys/class/gpio/export
+	fi
+    echo out > /sys/class/gpio/gpio62/direction
     uci set ble.ap1300='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyUSB0'
     uci set ble.@bleserial[0].baudrate=115200
@@ -71,7 +90,10 @@ start_service() {
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio62/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio62/value'
   elif [ $model == b2200 ]; then
-    echo 43 > /sys/class/gpio/export
+	if [ ! -n "$(ls -l /sys/class/gpio/gpio43 2>/dev/null)" ]; then
+	    echo 43 > /sys/class/gpio/export
+	fi
+    echo out > /sys/class/gpio/gpio43/direction
     uci set ble.b2200='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyHS0'
     uci set ble.@bleserial[0].baudrate=115200
@@ -81,8 +103,8 @@ start_service() {
   fi
   uci commit ble
 
-  procd_open_instance
-  procd_set_param command "bledaemon"
-  procd_set_param respawn
-  procd_close_instance
+#   procd_open_instance
+#   procd_set_param command "bledaemon"
+#   procd_set_param respawn
+#   procd_close_instance
 }

@@ -2,21 +2,24 @@
 #include <stdio.h>
 #include "gl_common.h"
 
-int addr2str(ble_addr* adr, char* str) {
-    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x", adr->addr[5], adr->addr[4],
-            adr->addr[3], adr->addr[2], adr->addr[1], adr->addr[0]);
+
+
+int addr2str(BLE_MAC adr, char* str) {
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x", adr[5], adr[4],
+            adr[3], adr[2], adr[1], adr[0]);
     return 0;
 }
 
-int str2addr(char* str, ble_addr* address) {
-    int mac[6];
+int str2addr(char* str, BLE_MAC address) {
+	int mac[6] = {0};
     sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[5], &mac[4], &mac[3],
            &mac[2], &mac[1], &mac[0]);
-    int i = 0;
-    while (i < 6) {
-        address->addr[i] = mac[i];
-        i++;
-    }
+
+	uint8_t i = 0;
+	for(;i < 6; i++)
+	{
+		address[i] = mac[i];
+	}
     return 0;
 }
 

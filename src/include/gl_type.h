@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <json-c/json.h>
 
-typedef int32_t GL_RET;
 
 #define UUID_MAX                    128
 #define LIST_LENGTHE_MAX            16
@@ -43,68 +42,29 @@ typedef struct {
     uint8_t properties;
 } ble_characteristic_list_t;
 
-// typedef enum {
-//     DISABLE = 0,
-//     ENABLE,
-// }gl_ble_e;
+/**
+ * @brief BLE 48-bit MAC.
+ */
+typedef uint8_t BLE_MAC[DEVICE_MAC_LEN];
 
 typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
-} gl_ble_get_mac_rsp_t;
-
-typedef struct {
-    int32_t current_power;
-} gl_ble_set_power_rsp_t;
-
-typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
-    uint8_t address_type;
-    uint8_t master;
-    uint8_t bonding;
-    uint8_t advertiser;
-} gl_ble_connect_rsp_t;
-
-typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
-    int32_t rssi;
-} gl_ble_get_rssi_rsp_t;
-
-typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_service_list_t list[LIST_LENGTHE_MAX];
-} gl_ble_get_service_rsp_t;
+} gl_ble_service_list_t;
 
 typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
     uint8_t list_len;
     ble_characteristic_list_t list[LIST_LENGTHE_MAX];
-} gl_ble_get_char_rsp_t;
-
-typedef struct {
-    uint8_t address[DEVICE_MAC_LEN];
-    int32_t handle;
-    uint8_t att_opcode;
-    int32_t offset;
-    char value[CHAR_VALUE_MAX];
-} gl_ble_char_read_rsp_t;
-
-typedef struct {
-    int32_t sent_len;
-} gl_ble_write_char_rsp_t;
-
-typedef struct {
-    int32_t sent_len;
-} gl_ble_send_notify_rsp_t;
+} gl_ble_char_list_t;
 
 typedef struct {
     int32_t number_of_packets;
 } gl_ble_dtm_test_rsp_t;
 
-typedef struct {
-    ubus_handler_t cb;
-    ubus_remove_handler_t remove_cb;
-} ubus_subscriber_cb_t;
+// typedef struct {
+//     ubus_handler_t cb;
+//     ubus_remove_handler_t remove_cb;
+// } ubus_subscriber_cb_t;
 
 // module callback event type
 typedef enum {
@@ -215,7 +175,6 @@ typedef struct {
     int32_t (*ble_module_event)(gl_ble_module_event_t event, gl_ble_module_data_t *data);
     int32_t (*ble_gap_event)(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
     int32_t (*ble_gatt_event)(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
-
 } gl_ble_cbs;
 
 #endif

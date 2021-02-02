@@ -2604,8 +2604,8 @@ union{
 void gecko_handle_command(uint32_t,void*);
 void gecko_handle_command_noresponse(uint32_t,void*);
 
-struct gecko_cmd_packet  _gecko_cmd_msg;
-struct gecko_cmd_packet*  gecko_cmd_msg = &_gecko_cmd_msg;
+extern struct gecko_cmd_packet*  gecko_cmd_msg;
+extern struct gecko_cmd_packet*  gecko_rsp_msg;
 
 /** 
 *
