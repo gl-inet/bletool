@@ -20,6 +20,13 @@ extern struct gecko_cmd_packet gecko_queue[BGLIB_QUEUE_LEN];
 extern int    gecko_queue_w;
 extern int    gecko_queue_r;
 
+#define SPE_EVT_MAX				50
+extern struct gecko_cmd_packet special_evt[SPE_EVT_MAX];
+extern int special_evt_num;
+
+
+
+
 #define BGLIB_INITIALIZE(OFUNC, IFUNC) bglib_output = OFUNC; bglib_input = IFUNC; bglib_peek = NULL;
 
-int wait_rsp_evt(uint32_t *evt_id, uint8_t evt_num, uint32_t timeout);
+int wait_rsp_evt(uint32_t evt_id, uint32_t timeout);

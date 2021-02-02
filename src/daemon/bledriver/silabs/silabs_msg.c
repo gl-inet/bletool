@@ -21,7 +21,12 @@ BGLIB_DEFINE();
 
 
 struct gecko_cmd_packet* evt = NULL;
-bool new_rsp_evt = false;
+
+struct gecko_cmd_packet special_evt[SPE_EVT_MAX];
+int special_evt_num = 0;
+
+
+
 
 struct gecko_cmd_packet* gecko_get_event(int block);
 struct gecko_cmd_packet* gecko_wait_event(void);
@@ -56,7 +61,7 @@ void* silabs_run(void* arg)
         // Run application and event handler.
         silabs_event_handler(evt);
 
-		usleep(1000);
+		usleep(100);
     }
 
 }
@@ -165,13 +170,13 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
 
 int rx_peek_timeout(int ms)
 {
-    int timeout = ms * 100;
+    int timeout = ms;
     while (timeout) {
         timeout--;
         if (uartRxPeek() > 0) {
             return 0;
         }
-        usleep(10);
+        usleep(1000);
     }
 
     return -1;
@@ -185,9 +190,7 @@ void gecko_handle_command(uint32_t hdr, void* data)
 	}
 
 	// _thread_ctx_mutex_lock(); // get lock
-	printf("uartTx\n");
 	uartTx(send_msg_length, (uint8_t*)gecko_cmd_msg); // send cmd msg
-	printf("uartTx end\n");
 	// _thread_ctx_mutex_unlock(); // release lock
 
 	rx_peek_timeout(200); // wait for response
@@ -222,7 +225,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
     if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id)
         && !appBooted) {
         // #if defined(DEBUG)
-        printf("Event: 0x%04x\n", BGLIB_MSG_ID(evt->header));
+        // printf("Event: 0x%04x\n", BGLIB_MSG_ID(evt->header));
         // #endif
         usleep(50000);
         return;
@@ -264,8 +267,6 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 				hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,value);
 				json_object_object_add(o,"value",json_object_new_string(value));
 
-			}else if(p->data.evt_gatt_characteristic_value.att_opcode == gatt_read_response){
-				new_rsp_evt = true;
 			}
 			break;
 		}
@@ -330,13 +331,12 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			json_object_object_add(o,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
 			break;
 		}
-		case gecko_evt_le_connection_rssi_id:
 		case gecko_evt_gatt_service_id:
 		case gecko_evt_gatt_characteristic_id:
-		case gecko_evt_gatt_procedure_completed_id:
 		{
-			printf("rsp evt! ID: %08x\n", BGLIB_MSG_ID(p->header));
-			new_rsp_evt = true;
+			special_evt[special_evt_num].header = p->header;
+			memcpy(&special_evt[special_evt_num].data.payload, p->data.payload, BGLIB_MSG_MAX_PAYLOAD);
+			special_evt_num++;
 			break;
 		}
         default:
@@ -360,9 +360,8 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
     return ;
 }
 
-int wait_rsp_evt(uint32_t *evt_id, uint8_t evt_num, uint32_t timeout)
+int wait_rsp_evt(uint32_t evt_id, uint32_t timeout)
 {
-	printf("wait_rsp_evt\n");
     uint32_t current_time_ms = 0, start_time_ms = 0;
     uint32_t spend = 0;
 
@@ -370,18 +369,8 @@ int wait_rsp_evt(uint32_t *evt_id, uint8_t evt_num, uint32_t timeout)
 
 	int i = 0;
     while (timeout > spend) {
-		i = 0;
-		if(!new_rsp_evt) {
-			usleep(1);
-			continue;
-		}
-
-		while (i < evt_num)
-		{
-			if (evt_id[i] == BGLIB_MSG_ID(evt->header)) {
-				return 0;
-			}
-			i++;
+		if (evt_id == BGLIB_MSG_ID(evt->header)) {
+			return 0;
 		}
 		
         current_time_ms = utils_get_timestamp();
@@ -398,6 +387,9 @@ static void manage_device(json_object* o)
 	char *type = NULL, *addr = NULL;
 	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
 		type = json_object_get_string(val_obj);
+	}else{
+		// log_err("error response");
+		return ;
 	}
 
 	// log_info("notification type: %s", type);
@@ -410,7 +402,12 @@ static void manage_device(json_object* o)
 			connection = json_object_get_int(val_obj);
 		}
 
-		addr = ble_dev_mgr_get_address(connection);
+		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
+		if(ret != 0)
+		{
+			json_object_object_add(o,"code",json_object_new_int(ret));
+			return;
+		}
 
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));
@@ -421,7 +418,12 @@ static void manage_device(json_object* o)
 			connection = json_object_get_int(val_obj);
 		}
 
-		addr = ble_dev_mgr_get_address(connection);
+		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
+		if(ret != 0)
+		{
+			json_object_object_add(o,"code",json_object_new_int(ret));
+			return;
+		}
 
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));		
@@ -431,7 +433,12 @@ static void manage_device(json_object* o)
 			connection = json_object_get_int(val_obj);
 		}		
 		
-		addr = ble_dev_mgr_get_address(connection);
+		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
+		if(ret != 0)
+		{
+			json_object_object_add(o,"code",json_object_new_int(ret));
+			return;
+		}
 		
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));
@@ -442,7 +449,12 @@ static void manage_device(json_object* o)
 			connection = json_object_get_int(val_obj);
 		}		
 		
-		addr = ble_dev_mgr_get_address(connection);
+		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
+		if(ret != 0)
+		{
+			json_object_object_add(o,"code",json_object_new_int(ret));
+			return;
+		}
 		
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));		
@@ -453,7 +465,12 @@ static void manage_device(json_object* o)
 			connection = json_object_get_int(val_obj);
 		}		
 		
-		addr = ble_dev_mgr_get_address(connection);
+		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
+		if(ret != 0)
+		{
+			json_object_object_add(o,"code",json_object_new_int(ret));
+			return;
+		}
 		
 		json_object_object_del(o, "connection");
 		json_object_object_add(o, "address", json_object_new_string(addr));		

@@ -132,7 +132,7 @@ int ble_dev_mgr_del(uint16_t connection) {
     return GL_SUCCESS;
 }
 
-char *ble_dev_mgr_get_address(uint16_t connection) {
+uint16_t ble_dev_mgr_get_address(uint16_t connection, char **mac) {
     ble_dev_mgr_node_t *node = NULL;
 
     if (connection == 0) {
@@ -143,10 +143,12 @@ char *ble_dev_mgr_get_address(uint16_t connection) {
         log_err("The device is not in the list");
         return GL_ERR_MSG;
     }
-    return node->ble_dev_desc.dev_addr;
+
+	*mac = node->ble_dev_desc.dev_addr;
+    return GL_SUCCESS;
 }
 
-uint16_t ble_dev_mgr_get_connection(char *dev_addr) {
+uint16_t ble_dev_mgr_get_connection(char *dev_addr, int* connection) {
     ble_dev_mgr_node_t *node = NULL;
 
     if (dev_addr == NULL) {
@@ -159,7 +161,8 @@ uint16_t ble_dev_mgr_get_connection(char *dev_addr) {
         return GL_ERR_MSG;
     }
 
-    return node->ble_dev_desc.connection;
+	*connection = node->ble_dev_desc.connection;
+    return GL_SUCCESS;
 }
 
 int ble_dev_mgr_get_list_size(void) {
