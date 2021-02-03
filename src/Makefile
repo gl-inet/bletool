@@ -1,142 +1,137 @@
- ###################################################################
- # Copyright 2020 GL-iNet. https://www.gl-inet.com/
- # 
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- # 
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ####################################################################
-
-.PHONY: all clean
-
-####################################################################
-# Definitions                                                      #
+###################################################################
+# Copyright 2020 GL-iNet. https://www.gl-inet.com/
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ####################################################################
 
-DAEMON = bledaemon
-UTIL = bletool
-LIBRARIES = libglbleapi.so
 
-DAEMON_DIR = daemonbuild
-UTIL_DIR = utilbuild
-LIB_DIR = libbuild
-EXE_DIR = exe
+# Targets	                                                       
+DAEMON			?=  bledaemon
+UTIL 			?=  bletool
+LIBRARIES 		?=  libglbleapi.so
 
+# Flags		                                                       
+CC	 			:=  gcc
+CFLAG			:=  -g -Wall
 
-####################################################################
-# Definitions of toolchain.                                        #
-# You might need to do changes to match your system setup          #
-####################################################################
+# Directories and files
+DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
+					daemon/bledriver/util	\
+					components/dev_mgr \
+					components/log \
+					components/thread \
+					components/timestamp \
+					include
+
+DAEMON_SRCDIRS	:=  daemon  \
+					daemon/bledriver/util	\
+					daemon/bledriver/silabs  \
+					components/dev_mgr  \
+					components/log  \
+					components/timestamp \
+					components/thread
+
+LIB_INCDIRS		:= 	lib \
+					components/dev_mgr \
+					components/log \
+					components/thread \
+					components/timestamp \
+					include \
+					daemon/bledriver/util						
+
+LIB_SRCDIRS		:=  lib  \
+					components/dev_mgr \
+					components/log	\
+					components/thread \
+					components/timestamp \
+					daemon/bledriver/util					
+
+UTIL_INCDIRS	:= 	lib \
+					tool \
+					components/dev_mgr \
+					components/log	\
+					include \
+					daemon/bledriver/util
+
+UTIL_SRCDIRS	:=  lib  \
+					tool \
+					components/dev_mgr  \
+					components/log	\
+					daemon/bledriver/util
+
+# Objects directories 
+DAEMON_DIR 		=	daemonbuild
+UTIL_DIR 		=	utilbuild
+LIB_DIR 		=	libbuild
+EXE_DIR 		=	exe
 
 NULLDEVICE := /dev/null
-
-# Create directories and do a clean which is compatible with parallell make
 $(shell mkdir $(DAEMON_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(UTIL_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(LIB_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(EXE_DIR)>$(NULLDEVICE) 2>&1)
 
-CC = gcc
-LD = gcc
+# Rules
+DAEMON_INCLUD 	:=  $(patsubst %, -I %, $(DAEMON_INCDIRS))
+LIB_INCLUD	 	:=  $(patsubst %, -I %, $(LIB_INCDIRS))		
+UTIL_INCLUD 	:=  $(patsubst %, -I %, $(UTIL_INCDIRS))	
 
+DAEMON_CFILES	:=  $(foreach dir, $(DAEMON_SRCDIRS), $(wildcard $(dir)/*.c))
+UTIL_CFILES		:=  $(foreach dir, $(UTIL_SRCDIRS), $(wildcard $(dir)/*.c))
+LIB_CFILES		:=  $(foreach dir, $(LIB_SRCDIRS), $(wildcard $(dir)/*.c))
+$(info DAEMON_CFILES = $(DAEMON_CFILES))
 
-####################################################################
-# Flags                                                            #
-####################################################################
+DAEMON_OBJS 	:=  $(patsubst %.c, $(DAEMON_DIR)/%.o, $(notdir $(DAEMON_CFILES)))
+UTIL_OBJS	 	:=  $(patsubst %.c, $(UTIL_DIR)/%.o, $(notdir $(UTIL_CFILES)))
+LIB_OBJS	 	:=  $(patsubst %.c, $(LIB_DIR)/%.o, $(notdir $(LIB_CFILES)))
+$(info DAEMON_OBJS = $(DAEMON_OBJS))
 
-INCLUDEPATHS += \
--I bledriver/silabs \
--I uart
+VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 
+# Dependences               
+DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
+UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json -luci
+LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
 
-DEBUG += \
--g \
--O0 \
--w
+all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES)
 
-override CFLAGS += \
--c \
--std=gnu99 \
-$(DEBUG)
-
-# NOTE: The -Wl,--gc-sections flag may interfere with debugging using gdb.
-override LDFLAGS += 
-
-####################################################################
-# Files                                                            #
-####################################################################
-
-DAEMON_SRC +=  \
-daemon.c \
-hal.c \
-bledriver/silabs/silabs_bleapi.c \
-uart/uart.c
-
-UTIL_SRC += \
-cli.c \
-libglbleapi.c
-
-LIB_SRC += \
-libglbleapi.c
-
-DAEMONDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json -luci 
-UTILDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json
-LIBDEPENDS += -lubox -lubus -ljson-c -lblobmsg_json
-
-
-####################################################################
-# Rules                                                            #
-####################################################################
-
-DAEMON_FILES = $(notdir $(DAEMON_SRC) )
-DAEMON_OBJS = $(addprefix $(DAEMON_DIR)/, $(DAEMON_FILES:.c=.o))
-UTIL_FILES = $(notdir $(UTIL_SRC) )
-UTIL_OBJS = $(addprefix $(UTIL_DIR)/, $(UTIL_FILES:.c=.o))
-LIB_FILES = $(notdir $(LIB_SRC) )
-LIB_OBJS = $(addprefix $(LIB_DIR)/, $(LIB_FILES:.c=.o))
-VPATH = bledriver:uart:bledriver/silabs
-
-# Default build is debug build
-all:    $(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES)
-
-# Create objects from C SRC files
-$(DAEMON_DIR)/%.o: %.c
+# Create bledaemon
+$(DAEMON_DIR)/%.o : %.c
 	@echo "Building file: $<"
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c $< -o $@
+	$(CC) -c $(CFLAG) $(DAEMON_INCLUD) ${DAEMON_DEPENDS}  $< -o $@ 
 
-# Create ble DAEMON
 $(EXE_DIR)/$(DAEMON): $(DAEMON_OBJS)
 	@echo "Linking target: $@"
-	$(CC) $(LDFLAGS) $^ -o $@ $(DAEMONDEPENDS)
-
-# Create objects from C SRC files
-$(LIB_DIR)/%.o: %.c
-	@echo "Building file: $<"
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -fPIC -c $< -o $@
+	$(CC) $^ -o $@ $(DAEMON_DEPENDS)
 
 # Create shared lib
+$(LIB_DIR)/%.o : %.c
+	@echo "Building file: $<"
+	$(CC) -c $(CFLAG) $(LIB_INCLUD) ${LIB_DEPENDS} -fPIC $< -o $@ 
+
 $(EXE_DIR)/$(LIBRARIES): $(LIB_OBJS)
 	@echo "Linking target: $@"
-	$(CC) $^ -o $@ $(LIBFLAGS) -shared $(LIBDEPENDS)
-
-# Create objects from C SRC files
-$(UTIL_DIR)/%.o: %.c
-	@echo "Building file: $<"
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c $< -o $@
+	$(CC) $^ -o $@ $(LIBFLAGS) $(CFLAG)  -shared $(LIBDEPENDS)
 
 # Create util tool
+$(UTIL_DIR)/%.o : %.c
+	@echo "Building file: $<"
+	$(CC) -c $(CFLAG) ${UTIL_INCLUD}  $(UTIL_DEPENDS) $< -o $@ 
+
 $(EXE_DIR)/$(UTIL): $(UTIL_OBJS)
 	@echo "Linking target: $@"
-	$(CC) $^ -o $@  $(UTILDEPENDS)
+	$(CC) $^ -o $@ $(UTIL_DEPENDS)	
 
-
-
+.PHONY: clean
 clean:
 	rm -rf $(DAEMON_DIR) $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR)
