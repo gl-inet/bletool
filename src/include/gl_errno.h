@@ -28,8 +28,6 @@
  * 
 */
 
-#define MANUFACTURER_CODE_BASE						  0x0100
-
 enum gl_error_spaces {
 /**
  * @brief The base num of return code for GL-iNet.
@@ -39,7 +37,7 @@ enum gl_error_spaces {
 /**
  * @brief The base num of return code for chip manufacturer.
  */
- 	MANUFACTURER_ERR_BASE 		= MANUFACTURER_CODE_BASE,
+ 	MANUFACTURER_ERR_BASE 		= 0x0100,
 };
 
 typedef int32_t GL_RET;

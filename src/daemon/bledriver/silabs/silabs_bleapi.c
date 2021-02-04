@@ -26,10 +26,7 @@
 #include "gl_errno.h"
 #include "gl_common.h"
 #include "silabs_msg.h"
-
-
-extern char rston[];
-extern char rstoff[];
+#include "gl_dev_mgr.h"
 
 extern struct gecko_cmd_packet* evt;
 
@@ -82,7 +79,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
     }
     if(p->data.rsp_le_gap_set_discovery_timing.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_discovery_timing.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_discovery_timing.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -94,7 +91,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
     }
     if(p->data.rsp_le_gap_set_discovery_type.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_discovery_type.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_discovery_type.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -106,7 +103,7 @@ json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int 
     }
     if(p->data.rsp_le_gap_start_discovery.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_start_discovery.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_start_discovery.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -127,8 +124,14 @@ json_object* silabs_ble_stop_discovery(void)
         json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
         return obj;
     }
+	
+	if(p->data.rsp_le_gap_end_procedure.result != 0)
+	{
+    	json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_end_procedure.result + MANUFACTURER_ERR_BASE));
+	}else{
+    	json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+	}
 
-    json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_end_procedure.result));
     return obj;
 }
 json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_max,int adv_discover,int adv_conn)
@@ -145,7 +148,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     }
     if(p->data.rsp_le_gap_set_advertise_phy.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_advertise_phy.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_advertise_phy.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -159,7 +162,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     }
     if(p->data.rsp_le_gap_set_advertise_timing.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_advertise_timing.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_set_advertise_timing.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -172,7 +175,7 @@ json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_m
     }
     if(p->data.rsp_le_gap_start_advertising.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_start_advertising.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_start_advertising.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -205,7 +208,7 @@ json_object* silabs_ble_adv_data(int adv_data_flag,char* adv_data)
     }
     if(p->data.rsp_le_gap_bt5_set_adv_data.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_bt5_set_adv_data.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_bt5_set_adv_data.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -227,7 +230,7 @@ json_object* silabs_ble_stop_adv(void)
     }
     if(p->data.rsp_le_gap_stop_advertising.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_stop_advertising.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_stop_advertising.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -259,7 +262,7 @@ json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* 
     }
     if(p->data.rsp_gatt_server_send_characteristic_notification.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_server_send_characteristic_notification.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_server_send_characteristic_notification.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -292,14 +295,32 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
     }   
     if(p->data.rsp_le_gap_connect.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_connect.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_connect.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
     int connection = p->data.rsp_le_gap_connect.connection;
+	// printf("connection : %d\n", connection);
+	
+	uint32_t evt_id = gecko_evt_le_connection_opened_id;
+	if(wait_rsp_evt(evt_id, 4000) == 0) {
+		if(evt->data.evt_le_connection_opened.connection == connection && evt->data.evt_le_connection_opened.master == 1)
+		{
+			// printf("~~~~~~~~~~~~~\n");
+    		json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+			char str[18] = {0};
+			addr2str(evt->data.evt_le_connection_opened.address.addr,str);
+			// printf("str: %s\n", str);
+			json_object_object_add(obj,"address",json_object_new_string(str));
+    		json_object_object_add(obj,"connection",json_object_new_int(connection));
 
-    json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
-    json_object_object_add(obj,"connection",json_object_new_int(connection));
+			// add_device_to_list(obj);
+			return obj;
+		}
+	}
 
+	// connect timeout , disconnect 
+	gecko_cmd_le_connection_close(connection);
+	json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
     return obj;
 }
 
@@ -316,7 +337,13 @@ json_object* silabs_ble_disconnect(int connection)
         return obj;
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_close.result));
+	if(p->data.rsp_le_connection_close.result != 0)
+	{
+    	json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_close.result + MANUFACTURER_ERR_BASE));
+	}else{
+        json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+	}
+
     return obj;
 }
 
@@ -336,7 +363,7 @@ json_object* silabs_ble_get_rssi(int connection)
     if(p->data.rsp_le_connection_get_rssi.result)
     {
 		result = p->data.rsp_le_connection_get_rssi.result;
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_get_rssi.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_connection_get_rssi.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -366,7 +393,7 @@ json_object* silabs_ble_get_service(int connection)
     }
     if(p->data.rsp_gatt_discover_primary_services.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_discover_primary_services.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_discover_primary_services.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -435,7 +462,7 @@ json_object* silabs_ble_get_char(int connection,int service_handle)
     }
     if(p->data.rsp_gatt_discover_characteristics.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_discover_characteristics.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_discover_characteristics.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
 
@@ -508,7 +535,7 @@ json_object* silabs_ble_read_char(int connection,int char_handle)
     }
     if(p->data.rsp_gatt_read_characteristic_value.result)
     {
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_read_characteristic_value.result));
+        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_read_characteristic_value.result + MANUFACTURER_ERR_BASE));
         return obj;   
     }
 
@@ -552,7 +579,13 @@ json_object* silabs_ble_write_char(int connection,int char_handle,char* value,in
             json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
             return obj;
         }
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_write_characteristic_value.result));
+		if(p->data.rsp_gatt_write_characteristic_value.result != 0)
+		{
+        	json_object_object_add(obj,"code", \
+				json_object_new_int(p->data.rsp_gatt_write_characteristic_value.result + MANUFACTURER_ERR_BASE));
+		}else{
+			json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+		}
     }else{
         gecko_cmd_gatt_write_characteristic_value_without_response(connection, char_handle, len, data);
         p = gecko_rsp_msg;
@@ -561,8 +594,14 @@ json_object* silabs_ble_write_char(int connection,int char_handle,char* value,in
             json_object_object_add(obj,"code",json_object_new_int(GL_ERR_RESP_MISSING));
             return obj;
         }
-        json_object_object_add(obj,"sent_len",json_object_new_int(p->data.rsp_gatt_write_characteristic_value_without_response.sent_len));
-        json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_write_characteristic_value.result));
+		if(p->data.rsp_gatt_write_characteristic_value_without_response.result != 0)
+		{
+        	json_object_object_add(obj,"code", \
+				json_object_new_int(p->data.rsp_gatt_write_characteristic_value_without_response.result + MANUFACTURER_ERR_BASE));
+		}else{
+			json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+        	json_object_object_add(obj,"sent_len",json_object_new_int(p->data.rsp_gatt_write_characteristic_value_without_response.sent_len));
+		}
     }
 
     return obj;
@@ -581,6 +620,13 @@ json_object* silabs_ble_set_notify(int connection,int char_handle,int flag)
         return obj;
     }
 
-    json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_gatt_set_characteristic_notification.result));
+	if(p->data.rsp_gatt_set_characteristic_notification.result != 0)
+	{
+	    json_object_object_add(obj,"code", \
+			json_object_new_int(p->data.rsp_gatt_set_characteristic_notification.result + MANUFACTURER_ERR_BASE));
+	}else{
+		json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
+	}
+
     return obj;
 }

@@ -298,7 +298,7 @@ GL_RET gl_ble_enable(int32_t enable)
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "enable", enable);
 
-	gl_ble_call("ble", "enable", &b, 3, &str);
+	gl_ble_call("ble", "enable", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -329,7 +329,7 @@ GL_RET gl_ble_get_mac(BLE_MAC mac)
 
 	blob_buf_init(&b, 0);
 
-	gl_ble_call("ble", "local_mac", &b, 3, &str);
+	gl_ble_call("ble", "local_mac", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -365,7 +365,7 @@ GL_RET gl_ble_set_power(int power, int *current_power)
 	blob_buf_init(&b, 0);
 	blobmsg_add_u32(&b, "system_power_level", power);
 
-	gl_ble_call("ble", "set_power", &b, 3, &str);
+	gl_ble_call("ble", "set_power", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -404,7 +404,7 @@ GL_RET gl_ble_discovery(int32_t phys, int32_t interval, int32_t window, int32_t 
 	blobmsg_add_u32(&b, "type", type);
 	blobmsg_add_u32(&b, "mode", mode);
 
-	gl_ble_call("ble", "discovery", &b, 3, &str);
+	gl_ble_call("ble", "discovery", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -431,7 +431,7 @@ GL_RET gl_ble_stop_discovery(void)
 
 	blob_buf_init(&b, 0);
 
-	gl_ble_call("ble", "stop_discovery", &b, 3, &str);
+	gl_ble_call("ble", "stop_discovery", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -464,14 +464,14 @@ GL_RET gl_ble_connect(BLE_MAC address, int32_t address_type, int32_t phy)
 	blobmsg_add_u32(&b, "conn_address_type", address_type);
 	blobmsg_add_u32(&b, "conn_phy", phy);
 
-	gl_ble_call("ble", "connect", &b, 5, &str);
+	gl_ble_call("ble", "connect", &b, 4, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
 	}
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"connection"};
+	char *parameters[] = {};
 	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
 	if (ret) { 
 		free(str);
@@ -507,7 +507,7 @@ GL_RET gl_ble_disconnect(BLE_MAC address)
 	blob_buf_init(&b, 0);	
 	blobmsg_add_string(&b, "disconn_address", address_str);
 
-	gl_ble_call("ble", "disconnect", &b, 3, &str);
+	gl_ble_call("ble", "disconnect", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -539,7 +539,7 @@ GL_RET gl_ble_get_rssi(BLE_MAC address, int32_t *rssi)
 	blob_buf_init(&b, 0);	
 	blobmsg_add_string(&b, "rssi_address", address_str);
 
-	gl_ble_call("ble", "get_rssi", &b, 3, &str);
+	gl_ble_call("ble", "get_rssi", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -582,7 +582,7 @@ GL_RET gl_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC address)
 	blob_buf_init(&b, 0);
 	blobmsg_add_string(&b, "get_service_address", address_str);
 
-	gl_ble_call("ble", "get_service", &b, 3, &str);
+	gl_ble_call("ble", "get_service", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -634,7 +634,7 @@ GL_RET gl_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int servi
 	blobmsg_add_string(&b, "char_conn_address", address_str);
 	blobmsg_add_u32(&b, "char_service_handle", service_handle);
 
-	gl_ble_call("ble", "get_char", &b, 3, &str);
+	gl_ble_call("ble", "get_char", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -685,7 +685,7 @@ GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value)
 	blobmsg_add_string(&b, "char_conn_addr", address_str);
 	blobmsg_add_u32(&b, "char_handle", char_handle);
 
-	gl_ble_call("ble", "read_char", &b, 3, &str);
+	gl_ble_call("ble", "read_char", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -741,7 +741,7 @@ GL_RET gl_ble_write_char(uint8_t *address, int32_t char_handle, char *value, int
 	blobmsg_add_string(&b, "char_value", value);
 	blobmsg_add_u32(&b, "write_res", res);
 
-	gl_ble_call("ble", "write_char", &b, 3, &str);
+	gl_ble_call("ble", "write_char", &b, 2, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -774,7 +774,7 @@ GL_RET gl_ble_set_notify(BLE_MAC address, int32_t char_handle, int32_t flag)
 	blobmsg_add_u32(&b, "char_handle", char_handle);
 	blobmsg_add_u32(&b, "notify_flag", flag);
 
-	gl_ble_call("ble", "set_notify", &b, 3, &str);
+	gl_ble_call("ble", "set_notify", &b, 1, &str);
 
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
@@ -807,7 +807,7 @@ GL_RET gl_ble_adv(int32_t phys, int32_t interval_min, int32_t interval_max, int3
 	blobmsg_add_u32(&b, "adv_discover", discover);
 	blobmsg_add_u32(&b, "adv_conn", adv_conn);
 
-	gl_ble_call("ble", "adv", &b, 3, &str);
+	gl_ble_call("ble", "adv", &b, 1, &str);
 
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
@@ -838,7 +838,7 @@ GL_RET gl_ble_adv_data(int32_t flag, char *data)
 	blobmsg_add_u32(&b, "adv_data_flag", flag);
 	blobmsg_add_string(&b, "adv_data", data);
 
-	gl_ble_call("ble", "adv_data", &b, 3, &str);
+	gl_ble_call("ble", "adv_data", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -865,7 +865,7 @@ GL_RET gl_ble_stop_adv(void)
 
 	blob_buf_init(&b, 0);
 
-	gl_ble_call("ble", "stop_adv", &b, 3, &str);
+	gl_ble_call("ble", "stop_adv", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -898,7 +898,7 @@ GL_RET gl_ble_send_notify(BLE_MAC address, int32_t char_handle, char *value)
 	blobmsg_add_u32(&b, "send_noti_char", char_handle);
 	blobmsg_add_string(&b, "send_noti_value", value);
 
-	gl_ble_call("ble", "send_notify", &b, 3, &str);
+	gl_ble_call("ble", "send_notify", &b, 1, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 

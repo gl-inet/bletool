@@ -90,23 +90,39 @@ int ble_dev_mgr_init(void) {
     return GL_SUCCESS;
 }
 
-int ble_dev_mgr_add(char *dev_addr, uint16_t connection) {
+int ble_dev_mgr_add(char *dev_addr, uint16_t connection) 
+{
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
+	ble_dev_mgr_node_t *search_node = NULL;
 
-    node = malloc(sizeof(ble_dev_mgr_node_t));
-    memset(node, 0, sizeof(ble_dev_mgr_node_t));
+    list_for_each_entry(search_node, &mgr_ctx->dev_list, linked_list) {
+        if (!strcmp(search_node->ble_dev_desc.dev_addr, dev_addr)) {
+			node = search_node;
+            break;
+        }
+    }
 
-    memcpy(node->ble_dev_desc.dev_addr, dev_addr, MAC_STR_LEN);
-    node->ble_dev_desc.connection = connection;
+	if(node == NULL)
+	{
+		node = malloc(sizeof(ble_dev_mgr_node_t));
+		memset(node, 0, sizeof(ble_dev_mgr_node_t));
 
-    INIT_LIST_HEAD(&node->linked_list);
+		memcpy(node->ble_dev_desc.dev_addr, dev_addr, MAC_STR_LEN);
+		node->ble_dev_desc.connection = connection;
 
-    int ret_dev_list = list_empty(&mgr_ctx->dev_list);
+		INIT_LIST_HEAD(&node->linked_list);
 
-    list_add_tail(&node->linked_list, &mgr_ctx->dev_list);
-    log_info("Device Join: dev_addr=%s, connection=%d.\n",
-           node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
+		int ret_dev_list = list_empty(&mgr_ctx->dev_list);
+
+		list_add_tail(&node->linked_list, &mgr_ctx->dev_list);
+		log_info("Device Join: dev_addr=%s, connection=%d.\n",
+			node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
+	}else{
+		node->ble_dev_desc.connection = connection;
+		log_info("Device update: dev_addr=%s, connection=%d.\n",
+			node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
+	}
 
     return GL_SUCCESS;
 }

@@ -20,6 +20,10 @@
 #ifndef GL_HAL_H
 #define GL_HAL_H
 
+
+extern char rston[];
+extern char rstoff[];
+
 /*Initilize the hal*/
 int hal_init(void);
 

@@ -9,5 +9,5 @@ uint32_t utils_get_timestamp(void)
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    return tv.tv_sec;
+    return tv.tv_usec;
 }

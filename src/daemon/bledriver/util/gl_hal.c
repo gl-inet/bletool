@@ -99,12 +99,16 @@ static int serial_init(void)
 int hal_init(void)
 {
     check_endian();
+
     int serialFd = serial_init();
     if( serialFd < 0 )
     {
         fprintf(stderr,"Hal initilized failed.\n");
         exit(1);
     }
+
+	system(rston); // enable module 
+
     return serialFd;
 }
 

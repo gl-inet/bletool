@@ -123,7 +123,7 @@ typedef enum {
 
 typedef union {
     struct ble_scan_result_evt_data {
-        uint8_t address[DEVICE_MAC_LEN]; 
+        BLE_MAC address; 
         gl_ble_addr_type_t ble_addr_type; 
         int32_t packet_type;  
         int32_t rssi;  
@@ -132,7 +132,7 @@ typedef union {
     } scan_rst;
 
     struct ble_update_conn_evt_data {
-        uint8_t address[DEVICE_MAC_LEN];
+        BLE_MAC address;
         int32_t interval; 
         int32_t latency;
         int32_t timeout;
@@ -141,7 +141,7 @@ typedef union {
     } update_conn_data;
 
     struct ble_connect_open_evt_data {
-        uint8_t address[DEVICE_MAC_LEN]; 
+        BLE_MAC address; 
         gl_ble_addr_type_t ble_addr_type;
         int32_t conn_role;
         int32_t connection;
@@ -150,7 +150,7 @@ typedef union {
     } connect_open_data;
 
     struct ble_disconnect_evt_data {
-        uint8_t address[DEVICE_MAC_LEN];
+        BLE_MAC address;
         int32_t reason;
     } disconnect_data;
 } gl_ble_gap_data_t;
@@ -168,7 +168,7 @@ typedef enum {
 
 typedef union {
     struct ble_remote_notify_evt_data {
-        uint8_t address[DEVICE_MAC_LEN];
+        BLE_MAC address;
         int32_t characteristic;
         int32_t att_opcode;
         int32_t offset;
@@ -176,7 +176,7 @@ typedef union {
 
     } remote_notify;
     struct ble_remote_write_evt_data {
-        uint8_t address[DEVICE_MAC_LEN];
+        BLE_MAC address;
         int32_t attribute;
         int32_t att_opcode;
         int32_t offset;
@@ -184,7 +184,7 @@ typedef union {
 
     } remote_write;
     struct ble_remote_set_evt_data {
-        uint8_t address[DEVICE_MAC_LEN];
+        BLE_MAC address;
         int32_t characteristic;
         int32_t status_flags;
         int32_t client_config_flags;

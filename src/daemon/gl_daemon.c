@@ -726,9 +726,6 @@ static void create_module_thread(void)
 
 int main(int argc, char * argv[])
 {	
-	/* Enable ble module */
-	ble_enable(1);
-
 	/* Init device manage */
 	ble_dev_mgr_init();
 

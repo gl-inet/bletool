@@ -822,7 +822,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	case GATT_BLE_REMOTE_NOTIFY_EVT:
 	{
 		gl_ble_gatt_data_t *remote_notify = (gl_ble_gatt_data_t *)data;
-		addr2str(&data->remote_notify.address, address);
+		addr2str(data->remote_notify.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -841,7 +841,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	case GATT_BLE_REMOTE_WRITE_EVT:
 	{
 		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;
-		addr2str(&data->remote_write.address, address);
+		addr2str(data->remote_write.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -860,7 +860,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	case GATT_BLE_REMOTE_SET_EVT:
 	{
 		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;		
-		addr2str(&data->remote_set.address, address);
+		addr2str(data->remote_set.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -918,7 +918,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_SCAN_RESULT_EVT:
 	{
 		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
-		addr2str(&data->update_conn_data.address, address);
+		addr2str(data->scan_rst.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -939,7 +939,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_UPDATE_CONN_EVT:
 	{
 		gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
-		addr2str(&data->update_conn_data.address, address);
+		addr2str(data->update_conn_data.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -960,7 +960,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_CONNECT_EVT:
 	{
 		gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
-		addr2str(&data->connect_open_data.address, address);
+		addr2str(data->connect_open_data.address, address);
 
 		// json format
 		json_object* o = NULL;
@@ -980,7 +980,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	case GAP_BLE_DISCONNECT_EVT:
 	{
 		gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
-		addr2str(&data->disconnect_data.address, address);
+		addr2str(data->disconnect_data.address, address);
 
 		// json format
 		json_object* o = NULL;
