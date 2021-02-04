@@ -143,7 +143,7 @@ GL_RET gl_ble_stop_adv(void);
  *  @param address : Address of the connection over which the notification or indication is sent.
  *                   Like “11:22:33:44:55:66”.
  *  @param char_handle : GATT characteristic handle. 
- *  @param value : Value to be notified or indicated.
+ *  @param value : Value to be notified or indicated. Must be hexadecimal ASCII. Like “020106”
  * 
  *  @retval  GL-RETURN-CODE
  */
@@ -250,8 +250,10 @@ GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value);
  * 
  *  @param address : Remote BLE device MAC address. Like “11:22:33:44:55:66”.
  *  @param char_handle : The characteristic handle of connection with remote device.
- *  @param value : Data value to be wrote.
- *  @param res : Response flag. 0: Write with no response, 1: Write with response.
+ *  @param value : Data value to be wrote. Must be hexadecimal ASCII. Like “020106”
+ *  @param res : Response flag. \n
+ * 					0: Write with no response \n
+ * 					1: Write with response
  * 
  *  @retval  GL-RETURN-CODE
  */
@@ -262,8 +264,10 @@ GL_RET gl_ble_write_char(BLE_MAC address, int char_handle, char *value, int res)
  * 
  *  @param address : Remote BLE device MAC address. Like “11:22:33:44:55:66”.
  *  @param char_handle : The characteristic handle of connection with remote device.
- *  @param flag : Notification flag.
- *                      0: disable, 1: notification, 2: indication.
+ *  @param flag : Notification flag. \n
+ *                      0: disable \n
+ * 						1: notification \n
+ * 						2: indication
  * 
  *  @retval  GL-RETURN-CODE
  */
