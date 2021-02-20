@@ -27,7 +27,7 @@ start_service() {
 	if [ ! -n "$(ls -l /sys/class/gpio/gpio1 2>/dev/null)" ]; then
     	echo 1 > /sys/class/gpio/export
 	fi
-	echo out > /sys/class/gpio/gpio1/direction
+	# echo out > /sys/class/gpio/gpio1/direction
     uci set ble.x750='bleserial'
     uci set ble.@bleserial[0].port='/dev/ttyS0'
     uci set ble.@bleserial[0].baudrate=115200

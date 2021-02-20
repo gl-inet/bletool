@@ -95,7 +95,7 @@ int local_mac(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_req
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
     
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
+	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
     return GL_SUCCESS;
 }
 /*Set the global power level*/
@@ -197,7 +197,6 @@ static const struct blobmsg_policy conn_policy[CONN_MAX] = {
 };
 static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[CONN_MAX];
 	blobmsg_parse(conn_policy, CONN_MAX, tb, blob_data(msg), blob_len(msg));
 	char* address = blobmsg_get_string(tb[CONN_ADDRESS]);
@@ -205,25 +204,14 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	int conn_phy = blobmsg_get_u32(tb[CONN_PHY]);
 	json_object* output = ble_connect(address, address_type, conn_phy);
 	
-	// int ret = -1;
-	// json_object *val_obj = NULL;
-	// if ( json_object_object_get_ex(output, "code",  &val_obj) ) {
-	// 	ret = json_object_get_int(val_obj);
-	// }
-
-	// if ( !ret )
-	// 	add_device_to_list(output);
-	// else 
-	// 	log_err("Connect output is null\n");
-
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
+
 /*Act as master, disconnect with remote device*/
 enum
 {
@@ -251,16 +239,6 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 	
 	output = ble_disconnect(connection);
 	
-	char *addr = NULL;
-	ret =  ble_dev_mgr_get_address(connection, &addr);
-	if(ret != GL_SUCCESS)
-	{
-		json_object_object_add(output,"code",json_object_new_int(ret));
-		goto end;
-	}
-
-	json_object_object_add(output, "address",json_object_new_string(addr));
-
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);

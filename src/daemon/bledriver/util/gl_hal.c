@@ -34,8 +34,15 @@ int guci2_get(struct uci_context* ctx, const char* section_or_key, char value[])
 static int check_endian(void)
 {
   int x = 1;
-  if(*((char *)&x) == 1) ENDIAN = 0;   //little endian
-  else ENDIAN = 1;   //big endian
+  if(*((char *)&x) == 1) 
+  {
+	ENDIAN = 0;   //little endian
+	printf("little endian\n");
+  }else{
+	ENDIAN = 1;   //big endian
+	printf("big endian\n");
+  }
+
   return 0;
 }
 static int serial_init(void)
@@ -107,7 +114,10 @@ int hal_init(void)
         exit(1);
     }
 
-	system(rston); // enable module 
+	// reset module
+	system(rstoff); 
+	usleep(500000);
+	system(rston); 
 
     return serialFd;
 }

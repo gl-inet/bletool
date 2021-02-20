@@ -24,6 +24,8 @@
 #include "bg_types.h"
 #include "gecko_configuration.h"
 #include "bg_errorcodes.h"
+#include "timestamp.h"
+
 
 
 /* Compatibility */

@@ -18,7 +18,9 @@
  ******************************************************************************/
 
 /**
- * @addtogroup SILABS-RETURN-CODE
+ * @defgroup SILABS_RETURN_CODE SILABS_RETURN_CODE
+ * @ingroup RETURN_CODE
+ * RETURN CODE define by silabs
  * @{
  */
 

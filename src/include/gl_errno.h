@@ -17,7 +17,14 @@
 #define _GL_ERRNO_H_
 
 /**
- * @addtogroup GL-RETURN-CODE
+ * @defgroup RETURN_CODE RETURN_CODE
+ * The return value definition of the API
+ */
+
+/**
+ * @defgroup GL_RETURN_CODE GL_RETURN_CODE
+ * @ingroup RETURN_CODE
+ * RETURN CODE define by GL-iNet
  * @{
  */
 

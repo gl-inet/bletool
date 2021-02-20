@@ -13,6 +13,7 @@
 #include "gl_uart.h"
 #include "gl_thread.h"
 #include "timestamp.h"
+#include "gl_log.h"
 #include "gl_dev_mgr.h"
 #include "silabs_bleapi.h"
 
@@ -22,17 +23,16 @@ BGLIB_DEFINE();
 
 struct gecko_cmd_packet* evt = NULL;
 
+// save resp data evt
 struct gecko_cmd_packet special_evt[SPE_EVT_MAX];
 int special_evt_num = 0;
-
-
 
 
 struct gecko_cmd_packet* gecko_get_event(int block);
 struct gecko_cmd_packet* gecko_wait_event(void);
 struct gecko_cmd_packet* gecko_wait_message(void); //wait for event from system
 
-bool appBooted = false; // App booted flag
+// bool appBooted = false; // App booted flag
 
 // ubus value
 extern struct ubus_object ble_obj;
@@ -41,7 +41,6 @@ extern struct ubus_context * ctx;
 
 void silabs_event_handler(struct gecko_cmd_packet *p);
 static void reverse_rev_payload(struct gecko_cmd_packet* pck);
-static int manage_device(json_object* o);
 
 
 
@@ -52,9 +51,7 @@ void* silabs_run(void* arg)
     while (1) {
         // Check for stack event.
 		// if(0 == _thread_ctx_mutex_try_lock()) {
-
 		evt = gecko_wait_event();
-
 		// 	_thread_ctx_mutex_unlock();
 		// }
 
@@ -89,9 +86,9 @@ struct gecko_cmd_packet* gecko_get_event(int block)
             return p;
         }
         //if not blocking and nothing in uart -> out
-        if (!block) {
-            return NULL;
-        }
+        // if (!block) {
+        //     return NULL;
+        // }
 
         //read more messages from device
         if ((p = gecko_wait_message())) {
@@ -108,18 +105,25 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     struct gecko_cmd_packet *pck, *retVal = NULL;
     int ret;
     //sync to header byte
-    ret = uartRx(1, (uint8_t*)&header);
-    if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko) {
-        return 0;
-    }
-    ret = uartRx(BGLIB_MSG_HEADER_LEN - 1, &((uint8_t*)&header)[1]);
-    if (ret < 0) {
-        return 0;
-    }
 
+	/* fix bug(2021.2.18): big endian recv bug*/
+    // ret = uartRx(1, (uint8_t*)&header);
+    // if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko) {
+    //     return 0;
+    // }
+    // ret = uartRx(BGLIB_MSG_HEADER_LEN - 1, &((uint8_t*)&header)[1]);
+    // if (ret < 0) {
+    //     return 0;
+    // }
+
+    ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
     if(ENDIAN){
         reverse_endian((uint8_t*)&header,BGLIB_MSG_HEADER_LEN);
     } 
+
+	if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko){
+        return 0;
+    }
 
     msg_length = BGLIB_MSG_LEN(header);
 
@@ -153,13 +157,14 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     if (msg_length) {
         ret = uartRx(msg_length, payload);
         if (ret < 0) {
+			log_err("recv fail\n");
             return 0;
         }
     }
 
 	if(ENDIAN)  
 	{
-		reverse_rev_payload(&pck);
+		reverse_rev_payload(pck);
 	}
 
     // Using retVal avoid double handling of event msg types in outer function
@@ -210,8 +215,8 @@ void gecko_handle_command(uint32_t hdr, void* data)
 
 
 
-
-
+static struct blob_buf evt_b;
+char* target_dev_address = NULL;
 /*
  *	module events report 
  */
@@ -220,23 +225,34 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
     json_object* o = NULL;
     char value[256] = {0};
     char addr[18] = {0};
+	char* change_mac_addr = NULL;
 
-	// printf("Event: 0x%04x\n", BGLIB_MSG_ID(evt->header));
+	log_debug("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
 
     // Do not handle any events until system is booted up properly.
     // if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id)
     //     && !appBooted) {
         // #if defined(DEBUG)
-        // printf("Event: 0x%04x\n", BGLIB_MSG_ID(evt->header));
         // #endif
     //     usleep(50000);
     //     return;
     // }
 
     switch(BGLIB_MSG_ID(p->header)){
+		case gecko_rsp_le_gap_connect_id:
+		{
+			// as master start to connect slave device
+			if(target_dev_address == NULL)
+			{
+				log_err("As master start to connect device, but target device mac lost!");
+				return ;
+			}
+			ble_dev_mgr_add(target_dev_address, p->data.rsp_le_gap_connect.connection);
+			break;
+		}
         case gecko_evt_system_boot_id:
 		{
-			appBooted = true;
+			// appBooted = true;
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(SYSTEM_BOOT));
 			json_object_object_add(o,"major",json_object_new_int(p->data.evt_system_boot.major));
@@ -254,7 +270,19 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(CONN_CLOSE));
 			json_object_object_add(o,"reason",json_object_new_int(p->data.evt_le_connection_closed.reason));
-			json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_closed.connection));
+
+			// get target device mac
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, &change_mac_addr);
+			if(ret != 0)
+			{
+				log_err("get dev mac from dev-list failed!\n");
+				json_object_object_add(o,"code",json_object_new_int(ret));
+				return -1;
+			}
+			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
+
+			// delete from dev-list
+			ble_dev_mgr_del(p->data.evt_le_connection_closed.connection);
 			break;
 		}
         case gecko_evt_gatt_characteristic_value_id:
@@ -262,12 +290,21 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(p->data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
 				o = json_object_new_object();
 				json_object_object_add(o,"type",json_object_new_string(REMOTE_NOTIFY));
-				json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_characteristic_value.connection));
 				json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_characteristic_value.characteristic));
 				json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_characteristic_value.att_opcode));
 				json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_characteristic_value.offset));
 				hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,value);
 				json_object_object_add(o,"value",json_object_new_string(value));
+
+				// get target device mac
+				uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_characteristic_value.connection, &change_mac_addr);
+				if(ret != 0)
+				{
+					log_err("get dev mac from dev-list failed!\n");
+					json_object_object_add(o,"code",json_object_new_int(ret));
+					return -1;
+				}
+				json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
 			}
 			break;
 		}
@@ -275,22 +312,40 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 		{
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(REMOTE_WRITE));
-			json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_server_attribute_value.connection));
 			json_object_object_add(o,"attribute",json_object_new_int(p->data.evt_gatt_server_attribute_value.attribute));
 			json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_server_attribute_value.att_opcode));
 			json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_server_attribute_value.offset));
 			hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,value);
 			json_object_object_add(o,"value",json_object_new_string(value));
+
+			// get target device mac
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_attribute_value.connection, &change_mac_addr);
+			if(ret != 0)
+			{
+				log_err("get dev mac from dev-list failed!\n");
+				json_object_object_add(o,"code",json_object_new_int(ret));
+				return -1;
+			}
+			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
 			break;
 		}
         case gecko_evt_gatt_server_characteristic_status_id:
 		{
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(REMOTE_SET));
-			json_object_object_add(o,"connection",json_object_new_int(p->data.evt_gatt_server_characteristic_status.connection));
 			json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_server_characteristic_status.characteristic));
 			json_object_object_add(o,"status_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.status_flags));
 			json_object_object_add(o,"client_config_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.client_config_flags));
+			
+			// get target device mac
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_characteristic_status.connection, &change_mac_addr);
+			if(ret != 0)
+			{
+				log_err("get dev mac from dev-list failed!\n");
+				json_object_object_add(o,"code",json_object_new_int(ret));
+				return -1;
+			}
+			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
 			break;
 		}
         case gecko_evt_le_gap_scan_response_id:
@@ -311,37 +366,35 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 		{
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(CONN_UPDATE));
-			json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_parameters.connection));
 			json_object_object_add(o,"interval",json_object_new_int(p->data.evt_le_connection_parameters.interval));
 			json_object_object_add(o,"latency",json_object_new_int(p->data.evt_le_connection_parameters.latency));
 			json_object_object_add(o,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
 			json_object_object_add(o,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
 			json_object_object_add(o,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
+
+			// get target device mac
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_parameters.connection, &change_mac_addr);
+			if(ret != 0)
+			{
+				log_err("get dev mac from dev-list failed!\n");
+				json_object_object_add(o,"code",json_object_new_int(ret));
+				return -1;
+			}
+			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
 			break;
 		}
         case gecko_evt_le_connection_opened_id:
 		{
-			if(p->data.evt_le_connection_opened.master == 0)
-			{
-				o = json_object_new_object();
-				json_object_object_add(o,"type",json_object_new_string(CONN_OPEN));
-				addr2str(p->data.evt_le_connection_opened.address.addr,addr);
-				json_object_object_add(o,"address",json_object_new_string(addr));
-				json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_connection_opened.address_type));
-				json_object_object_add(o,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
-				json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_opened.connection));
-				json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
-				json_object_object_add(o,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
-			}else{
-				o = json_object_new_object();
-				json_object_object_add(o,"type",json_object_new_string(CONN_OPEN));
-				addr2str(p->data.evt_le_connection_opened.address.addr,addr);
-				json_object_object_add(o,"address",json_object_new_string(addr));
-				json_object_object_add(o,"connection",json_object_new_int(p->data.evt_le_connection_opened.connection));
-				manage_device(o);
-				json_object_put(o);
-				return ;
-			}
+			o = json_object_new_object();
+			json_object_object_add(o,"type",json_object_new_string(CONN_OPEN));
+			addr2str(p->data.evt_le_connection_opened.address.addr,addr);
+			json_object_object_add(o,"address",json_object_new_string(addr));
+			json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_connection_opened.address_type));
+			json_object_object_add(o,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
+			json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
+			json_object_object_add(o,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
+
+			ble_dev_mgr_add(addr, p->data.evt_le_connection_opened.connection);
 			break;
 		}
 		case gecko_evt_gatt_service_id:
@@ -360,19 +413,13 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 	{
 		return ;
 	}
+	// else{
+	// 	printf("object %s\n",json_object_to_json_string(o));
+	// }
 
-	if(manage_device(o) != 0)
-	{
-		// log_err("error event report!\n");
-		json_object_put(o);
-		return ;
-	}
-
-	struct blob_buf b;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_object(&b, o);
-	ubus_notify(ctx, &ble_obj, "Notify", b.head, -1);
+	blob_buf_init(&evt_b, 0);
+	blobmsg_add_object(&evt_b, o);
+	ubus_notify(ctx, &ble_obj, "Notify", evt_b.head, -1);
 
 	json_object_put(o);
     return ;
@@ -380,16 +427,13 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 
 int wait_rsp_evt(uint32_t evt_id, uint32_t timeout)
 {
-	// printf("wait_rsp_evt\n");
     uint32_t current_time_us = 0, start_time_us = 0;
     uint32_t spend = 0;
 
 	uint32_t timeout_us = timeout * 1000;
 
     start_time_us = utils_get_timestamp();
-	// printf("start_time_ms: %d\n", start_time_us);
 
-	int i = 0;
     while (timeout_us > spend) {
 		if (evt_id == BGLIB_MSG_ID(evt->header)) {
 			return 0;
@@ -398,118 +442,10 @@ int wait_rsp_evt(uint32_t evt_id, uint32_t timeout)
         current_time_us = utils_get_timestamp();
         spend = current_time_us - start_time_us;
     }
+
     return -1;
 }
 
-static int manage_device(json_object* o)
-{
-	json_object *val_obj = NULL;
-	uint16_t connection;
-
-	char *type = NULL, *addr = NULL;
-	if ( json_object_object_get_ex(o, "type",  &val_obj) ) {
-		type = json_object_get_string(val_obj);
-	}else{
-		// log_err("error response");
-		return -1;
-	}
-
-	// log_info("notification type: %s", type);
-
-	if ( !strcmp(type, CONN_OPEN)) {
-		add_device_to_list(o);
-	}
-	else if ( !strcmp(type, CONN_CLOSE)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}else{
-			return -1;
-		}
-
-		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
-		if(ret != 0)
-		{
-			json_object_object_add(o,"code",json_object_new_int(ret));
-			return -1;
-		}
-
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));
-		delete_device_from_list(o);
-	}	
-	else if ( !strcmp(type, CONN_UPDATE)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}else{
-			return -1;
-		}
-
-		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
-		if(ret != 0)
-		{
-			json_object_object_add(o,"code",json_object_new_int(ret));
-			return -1;
-		}
-
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-	}
-	else if ( !strcmp(type, REMOTE_NOTIFY))	{
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}else{
-			return -1;
-		}		
-		
-		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
-		if(ret != 0)
-		{
-			json_object_object_add(o,"code",json_object_new_int(ret));
-			return -1;
-		}
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));
-		
-	}
-	else if ( !strcmp(type, REMOTE_WRITE))	{
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}else{
-			return -1;
-		}		
-		
-		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
-		if(ret != 0)
-		{
-			json_object_object_add(o,"code",json_object_new_int(ret));
-			return -1;
-		}
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-		
-	}
-	else if ( !strcmp(type, REMOTE_SET)) {
-		if ( json_object_object_get_ex(o, "connection", &val_obj)) {
-			connection = json_object_get_int(val_obj);
-		}else{
-			return -1;
-		}		
-		
-		uint16_t ret = ble_dev_mgr_get_address(connection, &addr);
-		if(ret != 0)
-		{
-			json_object_object_add(o,"code",json_object_new_int(ret));
-			return -1;
-		}
-		
-		json_object_object_del(o, "connection");
-		json_object_object_add(o, "address", json_object_new_string(addr));		
-	}
-
-    return 0;
-}
 
 
 
@@ -532,6 +468,8 @@ static int manage_device(json_object* o)
 static void reverse_rev_payload(struct gecko_cmd_packet* pck)
 {
   uint32 p = BGLIB_MSG_ID(pck->header);
+//   log_debug("p: %04x %04x\n", p, BGLIB_MSG_ID(pck->header));
+
   switch (p){
       case gecko_rsp_dfu_flash_set_address_id:
           reverse_endian((uint8*)&(pck->data.rsp_dfu_flash_set_address.result),2);

@@ -56,10 +56,10 @@ GL_RET cmd_enable(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o,"code",json_object_new_int(ret));
-	const char *temp=json_object_to_json_string(o);
+	char *temp=json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 	
 	return GL_SUCCESS;
@@ -79,10 +79,10 @@ GL_RET cmd_local_address(int argc, char **argv)
 		addr2str(address, str_addr);
 		json_object_object_add(o, "mac", json_object_new_string(str_addr));
 	}
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -110,10 +110,10 @@ GL_RET cmd_set_power(int argc, char **argv)
 	{
 		json_object_object_add(o, "current_power", json_object_new_int(current_p));
 	}
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 	
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -179,10 +179,10 @@ GL_RET cmd_adv(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -223,10 +223,10 @@ GL_RET cmd_adv_data(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);	
 	
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 	return GL_SUCCESS;
 }
@@ -239,10 +239,10 @@ GL_RET cmd_adv_stop(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -277,6 +277,12 @@ GL_RET cmd_send_notify(int argc, char **argv)
 		}
 	}
 
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
+	}
+
 	uint8_t addr_len = strlen(address);
 	if (addr_len < BLE_MAC_LEN - 1 || char_handle < 0 || !value)
 	{
@@ -293,10 +299,10 @@ GL_RET cmd_send_notify(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp=json_object_to_json_string(o);
+	char *temp=json_object_to_json_string(o);
 	printf("%s\n",temp);	
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -342,10 +348,10 @@ GL_RET cmd_discovery(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -359,10 +365,10 @@ GL_RET cmd_stop(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -396,6 +402,12 @@ GL_RET cmd_connect(int argc, char **argv)
 		}
 	}
 
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
+	}
+
 	if (address_type < 0 || !address) {
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
@@ -410,10 +422,10 @@ GL_RET cmd_connect(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o,"code",json_object_new_int(ret));
-	const char *temp=json_object_to_json_string(o);
+	char *temp=json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -439,9 +451,10 @@ GL_RET cmd_disconnect(int argc, char **argv)
 		}
 	}
 
-	if (!address) {
+	if(address == NULL)
+	{
 		printf(PARA_MISSING);
-		return GL_ERR_PARAM_MISSING;
+		return GL_ERR_PARAM;
 	}
 
 	uint8_t addr_len = strlen(address);
@@ -460,10 +473,10 @@ GL_RET cmd_disconnect(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -471,7 +484,8 @@ GL_RET cmd_disconnect(int argc, char **argv)
 
 GL_RET cmd_get_rssi(int argc, char **argv)
 {
-	char address[BLE_MAC_LEN] = {0};
+	int ch, option_index;
+	char *address = NULL;
 
 	struct option long_options[] = {
 	{"address", required_argument, NULL, 'a'},
@@ -482,13 +496,25 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
-	else
+
+	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
 	{
-		strcpy(address, argv[3]);
+		switch (ch)
+		{
+			case 'a':
+				address = optarg;
+				break;
+		}
+	}
+
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
 
 	uint8_t addr_len = strlen(address);
-	if (addr_len < BLE_MAC_LEN - 1)
+	if (addr_len != BLE_MAC_LEN - 1)
 	{
 		printf(PARA_ERROR);
 		return GL_ERR_PARAM;
@@ -508,10 +534,10 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 	if ( ret == GL_SUCCESS ) {
 		json_object_object_add(o, "rssi", json_object_new_int(rssi));
 	}
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -519,7 +545,8 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 
 GL_RET cmd_get_service(int argc, char **argv)
 {
-	char address[BLE_MAC_LEN] = {0};
+	int ch, option_index;
+	char *address = NULL;
 
 	struct option long_options[] = {
 	{"address", required_argument, NULL, 'a'},
@@ -530,9 +557,21 @@ GL_RET cmd_get_service(int argc, char **argv)
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
-	else
+
+	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
 	{
-		strcpy(address, argv[3]);
+		switch (ch)
+		{
+			case 'a':
+				address = optarg;
+				break;
+		}
+	}
+
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
 
 	uint8_t addr_len = strlen(address);
@@ -570,10 +609,10 @@ GL_RET cmd_get_service(int argc, char **argv)
 			i++;
 		}
 	}
-	const char *temp = json_object_to_json_string(obj);
+	char *temp = json_object_to_json_string(obj);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -584,7 +623,7 @@ GL_RET cmd_get_char(int argc, char **argv)
 	int ch, service_handle = -1;
 	int option_index;
 	char *str = NULL;
-	char address[BLE_MAC_LEN] = {0};	
+	char *address = NULL;	
 	uint8_t addr_len;
 
 	struct option long_options[] = {
@@ -596,13 +635,20 @@ GL_RET cmd_get_char(int argc, char **argv)
 	{
 		switch (ch)
 		{
-		case 'a':
-			strcpy(address, argv[3]);
-			break;
-		case 'h':
-			service_handle = atoi(optarg);
-			break;
+			case 'a':
+				address = optarg;
+				break;
+			case 'h':
+				service_handle = atoi(optarg);
+				printf("service handle: %d\n", service_handle);
+				break;
 		}
+	}
+
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
 
 	addr_len = strlen(address);
@@ -641,10 +687,10 @@ GL_RET cmd_get_char(int argc, char **argv)
 			i++;
 		}
 	}
-	const char *temp = json_object_to_json_string(obj);
+	char *temp = json_object_to_json_string(obj);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -653,7 +699,7 @@ GL_RET cmd_set_notify(int argc, char **argv)
 {
 	int ch, char_handle = -1, flag = -1;
 	char *str = NULL;
-	char address[BLE_MAC_LEN] = {0};	
+	char *address = NULL;	
 	uint8_t addr_len;
 
 	struct option long_options[] = {
@@ -667,16 +713,22 @@ GL_RET cmd_set_notify(int argc, char **argv)
 	{
 		switch (ch)
 		{
-		case 'a':
-			strcpy(address, argv[3]);
-			break;
-		case 'h':
-			char_handle = atoi(optarg);
-			break;
-		case 'f':
-			flag = atoi(optarg);
-			break;
+			case 'a':
+				address = optarg;
+				break;
+			case 'h':
+				char_handle = atoi(optarg);
+				break;
+			case 'f':
+				flag = atoi(optarg);
+				break;
 		}
+	}
+
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
 
 	addr_len = strlen(address);
@@ -695,10 +747,10 @@ GL_RET cmd_set_notify(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -721,14 +773,20 @@ GL_RET cmd_read_value(int argc, char **argv)
 	{
 		switch (ch)
 		{
-		case 'a':
-			address = optarg;
-			break;
-		case 'h':
-			char_handle = atoi(optarg);
-			break;
+			case 'a':
+				address = optarg;
+				break;
+			case 'h':
+				char_handle = atoi(optarg);
+				break;
 		}
 	}
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
+	}
+
 	addr_len = strlen(address);
 
 	if (addr_len < BLE_MAC_LEN - 1 || char_handle < 0) {
@@ -748,10 +806,10 @@ GL_RET cmd_read_value(int argc, char **argv)
 	if ( ret == GL_SUCCESS ) {
 		json_object_object_add(o, "value", json_object_new_string(value));
 	}
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -761,7 +819,7 @@ GL_RET cmd_write_value(int argc, char **argv)
 {
 	int ch, char_handle = -1, res = 0;
 	char *value = NULL, *str = NULL;
-	char address[BLE_MAC_LEN] = {0};	
+	char *address = NULL;	
 	uint8_t addr_len;
 
 	struct option long_options[] = {
@@ -776,19 +834,25 @@ GL_RET cmd_write_value(int argc, char **argv)
 	{
 		switch (ch)
 		{
-		case 'a':
-			strcpy(address, argv[3]);
-			break;
-		case 'h':
-			char_handle = atoi(optarg);
-			break;
-		case 'r':
-			res = atoi(optarg);
-			break;
-		case 'v':
-			value = optarg;
-			break;
+			case 'a':
+				address = optarg;
+				break;
+			case 'h':
+				char_handle = atoi(optarg);
+				break;
+			case 'r':
+				res = atoi(optarg);
+				break;
+			case 'v':
+				value = optarg;
+				break;
 		}
+	}
+
+	if(address == NULL)
+	{
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
 
 	if (addr_len < BLE_MAC_LEN - 1  || char_handle < 0 || !value) {
@@ -805,10 +869,10 @@ GL_RET cmd_write_value(int argc, char **argv)
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
-	const char *temp = json_object_to_json_string(o);
+	char *temp = json_object_to_json_string(o);
 	printf("%s\n", temp);
 
-	free(temp);
+	//free(temp);
 	json_object_put(o);
 
 	return GL_SUCCESS;
@@ -833,7 +897,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_notify.att_opcode));
 		json_object_object_add(o, "offset", json_object_new_int(data->remote_notify.offset));
 		json_object_object_add(o, "value", json_object_new_string(data->remote_notify.value));
-		const char *temp=json_object_to_json_string(o);
+		char *temp=json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -852,7 +916,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_write.att_opcode));
 		json_object_object_add(o, "offset", json_object_new_int(data->remote_write.offset));
 		json_object_object_add(o, "value", json_object_new_string(data->remote_write.value));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -870,7 +934,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		json_object_object_add(o, "characteristic", json_object_new_int(data->remote_set.characteristic));
 		json_object_object_add(o, "status_flags", json_object_new_int(data->remote_set.status_flags));
 		json_object_object_add(o, "client_config_flags", json_object_new_int(data->remote_set.client_config_flags));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -900,7 +964,7 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 		json_object_object_add(o, "bootloader", json_object_new_int(data->system_boot_data.bootloader));
 		json_object_object_add(o, "hw", json_object_new_int(data->system_boot_data.hw));
 		json_object_object_add(o, "ble_hash", json_object_new_string(data->system_boot_data.ble_hash));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -930,7 +994,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		json_object_object_add(o, "packet_type", json_object_new_int(data->scan_rst.packet_type));
 		json_object_object_add(o, "bonding", json_object_new_int(data->scan_rst.bonding));
 		json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -951,7 +1015,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		json_object_object_add(o, "timeout", json_object_new_int(data->update_conn_data.timeout));
 		json_object_object_add(o, "security_mode", json_object_new_int(data->update_conn_data.security_mode));
 		json_object_object_add(o, "txsize", json_object_new_int(data->update_conn_data.txsize));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -971,7 +1035,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		json_object_object_add(o, "connect_role", json_object_new_int(data->connect_open_data.conn_role));
 		json_object_object_add(o, "bonding", json_object_new_int(data->connect_open_data.bonding));
 		json_object_object_add(o, "advertiser", json_object_new_int(data->connect_open_data.advertiser));
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;
@@ -988,7 +1052,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		json_object_object_add(o, "type", json_object_new_string("connect_close"));
 		json_object_object_add(o, "mac", json_object_new_string(address));
 		json_object_object_add(o, "reason", json_object_new_int(data->disconnect_data.reason));	
-		const char *temp = json_object_to_json_string(o);
+		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
 		break;

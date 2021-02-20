@@ -61,7 +61,7 @@ json_object* silabs_ble_local_mac(void)
 
     char addr[18];
     addr2str(p->data.rsp_system_get_bt_address.address.addr,addr);
-    json_object_object_add(obj,"mac",json_object_new_string(addr)); 
+    json_object_object_add(obj,"mac",json_object_new_string(addr));
     json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
 }
@@ -283,6 +283,7 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
         return obj;
     }
 
+	target_dev_address = address;
     bd_addr addr;
     str2addr(address,addr.addr);
     gecko_cmd_le_gap_connect(addr, address_type, conn_phy);
@@ -298,29 +299,9 @@ json_object* silabs_ble_connect(char* address,int address_type,int conn_phy)
         json_object_object_add(obj,"code",json_object_new_int(p->data.rsp_le_gap_connect.result + MANUFACTURER_ERR_BASE));
         return obj;       
     }
-    int connection = p->data.rsp_le_gap_connect.connection;
-	// printf("connection : %d\n", connection);
-	
-	uint32_t evt_id = gecko_evt_le_connection_opened_id;
-	if(wait_rsp_evt(evt_id, 4000) == 0) {
-		if(evt->data.evt_le_connection_opened.connection == connection && evt->data.evt_le_connection_opened.master == 1)
-		{
-			// printf("~~~~~~~~~~~~~\n");
-    		json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
-			char str[18] = {0};
-			addr2str(evt->data.evt_le_connection_opened.address.addr,str);
-			// printf("str: %s\n", str);
-			json_object_object_add(obj,"address",json_object_new_string(str));
-    		json_object_object_add(obj,"connection",json_object_new_int(connection));
 
-			// add_device_to_list(obj);
-			return obj;
-		}
-	}
+	json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
 
-	// connect timeout , disconnect 
-	gecko_cmd_le_connection_close(connection);
-	json_object_object_add(obj,"code",json_object_new_int(GL_ERR_EVENT_MISSING));
     return obj;
 }
 
@@ -518,6 +499,7 @@ json_object* silabs_ble_set_power(int power)
     }
     json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     json_object_object_add(obj,"power",json_object_new_int(p->data.rsp_system_set_tx_power.set_power));
+
     return obj;
 }
 

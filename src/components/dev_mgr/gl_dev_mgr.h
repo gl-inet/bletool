@@ -40,10 +40,6 @@ typedef struct
     struct list_head dev_list;
 } ble_dev_mgr_ctx_t;
 
-void delete_device_from_list(json_object *o);
-void add_device_to_list(json_object *o);
-void update_device_list(json_object *o);
-
 void ble_dev_mgr_print(void);
 int ble_dev_mgr_init(void);
 int ble_dev_mgr_add(char *dev_addr, uint16_t connection);
