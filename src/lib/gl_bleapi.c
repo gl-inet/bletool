@@ -431,7 +431,7 @@ GL_RET gl_ble_stop_discovery(void)
 
 	blob_buf_init(&b, 0);
 
-	gl_ble_call("ble", "stop_discovery", &b, 2, &str);
+	gl_ble_call("ble", "stop_discovery", &b, 3, &str);
 	if (NULL == str) { 
 		log_err("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
@@ -668,13 +668,8 @@ GL_RET gl_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int servi
 	return GL_SUCCESS;
 }
 
-GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value)
+GL_RET gl_ble_read_char(BLE_MAC address, int char_handle)
 {
-	if (!value) { 
-		log_err("Parameter error!\n"); 
-		return GL_ERR_PARAM; 
-	}
-
 	char *str = NULL;
 	static struct blob_buf b;
 
@@ -692,7 +687,7 @@ GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value)
 	}
 
 	json_object *o = json_tokener_parse(str);
-	char *parameters[] = {"characteristic_handle", "att_opcode", "offset", "value"};
+	char *parameters[] = {};
 	int32_t ret = json_parameter_check(o, parameters, sizeof(parameters) / sizeof(parameters[0]));
 	if (ret) { 
 		free(str);
@@ -700,25 +695,8 @@ GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value)
 		return ret; 
 	}
 
-	json_object *val_obj = NULL;
-
-	int rsp_handle = -1;
-	if ( json_object_object_get_ex(o, "characteristic_handle",  &val_obj) ) {
-		rsp_handle = json_object_get_int(val_obj);
-	}
-
-	if(char_handle != rsp_handle) {
-		free(str);
-		json_object_put(o);
-		return GL_UNKNOW_ERR;
-	}
-
-	if ( json_object_object_get_ex(o, "value",  &val_obj) ) {
-		strcpy(value, json_object_get_string(val_obj));
-	}
-
-	free(str);
 	json_object_put(o);
+	free(str);
 	return GL_SUCCESS;
 }
 

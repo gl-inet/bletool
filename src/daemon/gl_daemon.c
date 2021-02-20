@@ -60,9 +60,6 @@ static const struct blobmsg_policy enable_policy[ENABLE_POLICY_MAX] = {
 /* A callback function for ubus methods handling */
 static int enable(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-	/* delete a descriptor from the event processing loop */
-    // uloop_fd_delete(&serial_fd);
-
 	/* for parsed attr */
 	struct blob_attr *tb[ENABLE_POLICY_MAX];
 	
@@ -77,17 +74,12 @@ static int enable(struct ubus_context *ctx, struct ubus_object *obj, struct ubus
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	/* register a new descriptor into the event processing loop */
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
-	
 	return GL_SUCCESS;
 }
 
 /*Get local bluetooth MAC*/
 int local_mac(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    // uloop_fd_delete(&serial_fd);
-    
+{    
     json_object* output = ble_local_mac();
 
     blob_buf_init(&b, 0);
@@ -95,9 +87,9 @@ int local_mac(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_req
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
     
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
     return GL_SUCCESS;
 }
+
 /*Set the global power level*/
 enum
 {
@@ -109,8 +101,6 @@ static const struct blobmsg_policy set_power_policy[SYSTEM_POWER_MAX] = {
 };
 static int set_power(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[SYSTEM_POWER_MAX];
 	blobmsg_parse(set_power_policy, SYSTEM_POWER_MAX, tb, blob_data(msg), blob_len(msg));
 	int power = blobmsg_get_u32(tb[SYSTEM_POWER_LEVEL]);
@@ -121,7 +111,6 @@ static int set_power(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 
@@ -146,8 +135,6 @@ static const struct blobmsg_policy discovery_policy[DISCOVERY_POLICY_MAX] = {
 };
 static int discovery(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[DISCOVERY_POLICY_MAX];
 	blobmsg_parse(discovery_policy, DISCOVERY_POLICY_MAX, tb, blob_data(msg), blob_len(msg));
 	int phys = blobmsg_get_u32(tb[PHYS]);
@@ -163,15 +150,12 @@ static int discovery(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 
 /*Act as master, End the current GAP discovery procedure*/
 int stop_discovery(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    // uloop_fd_delete(&serial_fd);
-    
+{    
     json_object* output = ble_stop_discovery();
 
     blob_buf_init(&b, 0);
@@ -179,7 +163,6 @@ int stop_discovery(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
     
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
     return GL_SUCCESS;
 }
 /*Act as master, Start connect to a remote BLE device*/
@@ -223,7 +206,6 @@ static const struct blobmsg_policy disconnect_policy[DISCONNECT_MAX] = {
 };
 static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[DISCONNECT_MAX];
 	blobmsg_parse(disconnect_policy, DISCONNECT_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -245,7 +227,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as master, Get rssi of connection with remote device*/
@@ -259,7 +240,6 @@ static const struct blobmsg_policy get_rssi_policy[RSSI_MAX] = {
 };
 static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[RSSI_MAX];
 	blobmsg_parse(get_rssi_policy, RSSI_MAX, tb, blob_data(msg), blob_len(msg));
 	// int connection = blobmsg_get_u32(tb[RSSI_CONNECTION]);
@@ -282,7 +262,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as master, Get service list of a remote GATT server*/
@@ -296,7 +275,6 @@ static const struct blobmsg_policy get_service_policy[SERVICE_MAX] = {
 };
 static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[SERVICE_MAX];
 	blobmsg_parse(get_service_policy, SERVICE_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -319,7 +297,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as master, Get characteristic list of a remote GATT server*/
@@ -335,7 +312,6 @@ static const struct blobmsg_policy get_char_policy[CHAR_MAX] = {
 };
 static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[CHAR_MAX];
 	blobmsg_parse(get_char_policy, CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -359,7 +335,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 
@@ -378,7 +353,6 @@ static const struct blobmsg_policy read_char_policy[GATT_READ_CHAR_MAX] = {
 
 static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[GATT_READ_CHAR_MAX];
 	blobmsg_parse(read_char_policy, GATT_READ_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -402,7 +376,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 
@@ -423,7 +396,6 @@ static const struct blobmsg_policy write_char_policy[GATT_WRITE_CHAR_MAX] = {
 };
 static int write_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[GATT_WRITE_CHAR_MAX];
 	blobmsg_parse(write_char_policy, GATT_WRITE_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -450,7 +422,6 @@ end:
 	json_object_put(output);
 	free(address);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as master, Enable or disable the notification or indication of a remote gatt server*/
@@ -468,7 +439,6 @@ static const struct blobmsg_policy set_notify_policy[GATT_SET_NOTIFY_MAX] = {
 };
 static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
 	struct blob_attr *tb[GATT_SET_NOTIFY_MAX];
 	blobmsg_parse(set_notify_policy, GATT_SET_NOTIFY_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -493,7 +463,6 @@ end:
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 
@@ -518,8 +487,6 @@ static const struct blobmsg_policy adv_policy[ADV_MAX] = {
 };
 static int adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[ADV_MAX];
 	blobmsg_parse(adv_policy, ADV_MAX, tb, blob_data(msg), blob_len(msg));
 	int adv_phys = blobmsg_get_u32(tb[ADV_PHYS]);
@@ -534,7 +501,6 @@ static int adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_re
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as BLE slave, Set customized advertising data*/
@@ -550,8 +516,6 @@ static const struct blobmsg_policy adv_data_policy[ADV_DATA_MAX] = {
 };
 static int adv_data(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[ADV_DATA_MAX];
 	blobmsg_parse(adv_data_policy, ADV_DATA_MAX, tb, blob_data(msg), blob_len(msg));
 	int adv_data_flag = blobmsg_get_u32(tb[ADV_DATA_FLAG]);
@@ -563,14 +527,11 @@ static int adv_data(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
 
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 /*Act as BLE slave, Stop advertising*/
 int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
-{
-    // uloop_fd_delete(&serial_fd);
-    
+{    
     json_object* output = ble_stop_adv();
 
     blob_buf_init(&b, 0);
@@ -578,7 +539,6 @@ int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_requ
 	ubus_send_reply(ctx, req, b.head);
 	json_object_put(output);
     
-	    // uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
     return GL_SUCCESS;
 }
 /*Act as BLE slave, Send Notification*/
@@ -596,8 +556,6 @@ static const struct blobmsg_policy send_noti_policy[SEND_NOTI_MAX] = {
 };
 static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
-    // uloop_fd_delete(&serial_fd);
-
 	struct blob_attr *tb[SEND_NOTI_MAX];
 	blobmsg_parse(send_noti_policy, SEND_NOTI_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -623,7 +581,6 @@ end:
 	json_object_put(output);
 	free(address);
 
-	// uloop_fd_add(&serial_fd, ULOOP_READ);(&serial_fd, ULOOP_READ);
 	return GL_SUCCESS;
 }
 

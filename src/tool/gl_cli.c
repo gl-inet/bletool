@@ -640,7 +640,6 @@ GL_RET cmd_get_char(int argc, char **argv)
 				break;
 			case 'h':
 				service_handle = atoi(optarg);
-				printf("service handle: %d\n", service_handle);
 				break;
 		}
 	}
@@ -761,7 +760,6 @@ GL_RET cmd_read_value(int argc, char **argv)
 	int ch, char_handle = -1;
 	char *str = NULL, *address = NULL;
 	uint8_t addr_len;
-	char value[CHAR_VALUE_MAX];
 
 	struct option long_options[] = {
 		{"address", required_argument, NULL, 'a'},
@@ -797,15 +795,13 @@ GL_RET cmd_read_value(int argc, char **argv)
 	BLE_MAC address_u8;
 	str2addr(address, address_u8);
 
-	GL_RET ret = gl_ble_read_char(address_u8, char_handle, value);
+	GL_RET ret = gl_ble_read_char(address_u8, char_handle);
 
 	// json format
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o,"code",json_object_new_int(ret));
-	if ( ret == GL_SUCCESS ) {
-		json_object_object_add(o, "value", json_object_new_string(value));
-	}
+
 	char *temp = json_object_to_json_string(o);
 	printf("%s\n",temp);
 
@@ -854,6 +850,8 @@ GL_RET cmd_write_value(int argc, char **argv)
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM;
 	}
+
+	addr_len = strlen(address);
 
 	if (addr_len < BLE_MAC_LEN - 1  || char_handle < 0 || !value) {
 		printf(PARA_ERROR);

@@ -190,6 +190,13 @@ GL_RET gl_ble_stop_discovery(void);
  *  @param phys : The PHY on which the advertising packets are transmitted on. \n
  *                    1: LE 1M PHY, 4: LE Coded PHY.
  * 
+ *  @note : If connect success, it will report a GAP_event_callback "GAP_BLE_CONNECT_EVT".
+ *          If a connection cannot be established at all for some reason (for example, the remote 
+ *          device has gone out of range, has entered into deep sleep, or is not advertising), 
+ *          the stack will try to connect forever. In this case the application will not get any event 
+ *          related to the connection request. To recover from this situation, application can implement 
+ *          a timeout and call gl_ble_disconnect() to cancel the connection request.
+ * 
  *  @retval  GL-RETURN-CODE
  */
 GL_RET gl_ble_connect(BLE_MAC address, int address_type, int phy);
@@ -239,11 +246,12 @@ GL_RET gl_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int servi
  * 
  *  @param address : Remote BLE device MAC address. Like “11:22:33:44:55:66”.
  *  @param char_handle : The characteristic handle of connection with remote device.
- *  @param value : The value of specified characteristic.
+ *  
+ *  @note : The value will report in gatt_event_callback "GATT_BLE_REMOTE_NOTIFY_EVT"
  * 
  *  @retval  GL-RETURN-CODE
  */
-GL_RET gl_ble_read_char(BLE_MAC address, int char_handle, char *value);
+GL_RET gl_ble_read_char(BLE_MAC address, int char_handle);
 
 /**
  *  @brief  Act as master, Write value to specified characteristic in a remote gatt server.

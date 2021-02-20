@@ -227,7 +227,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
     char addr[18] = {0};
 	char* change_mac_addr = NULL;
 
-	log_debug("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
+	// printf("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
 
     // Do not handle any events until system is booted up properly.
     // if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id)
@@ -287,7 +287,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 		}
         case gecko_evt_gatt_characteristic_value_id:
 		{
-			if(p->data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
+			// if(p->data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
 				o = json_object_new_object();
 				json_object_object_add(o,"type",json_object_new_string(REMOTE_NOTIFY));
 				json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_characteristic_value.characteristic));
@@ -305,7 +305,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 					return -1;
 				}
 				json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
-			}
+			// }
 			break;
 		}
         case gecko_evt_gatt_server_attribute_value_id:
