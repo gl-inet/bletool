@@ -5,8 +5,10 @@ USE_PROCD=1
 
 start_service() {
   . /lib/functions.sh
-  board=$(board_name)
-  model="${board#*-}"
+  . /lib/functions/gl_util.sh
+  # board=$(board_name)
+  # model="${board#*-}"
+  model=$(get_model)
   if [ ! -f "/etc/config/ble" ]; then
   touch "/etc/config/ble"
   fi
