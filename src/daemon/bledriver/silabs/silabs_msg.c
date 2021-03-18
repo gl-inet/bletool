@@ -36,7 +36,7 @@ struct gecko_cmd_packet* gecko_wait_message(void); //wait for event from system
 
 // ubus value
 extern struct ubus_object ble_obj;
-extern struct ubus_context * ctx;
+extern struct ubus_context *ctx;
 
 
 void silabs_event_handler(struct gecko_cmd_packet *p);
@@ -50,10 +50,7 @@ void* silabs_run(void* arg)
 
     while (1) {
         // Check for stack event.
-		// if(0 == _thread_ctx_mutex_try_lock()) {
 		evt = gecko_wait_event();
-		// 	_thread_ctx_mutex_unlock();
-		// }
 
         // Run application and event handler.
         silabs_event_handler(evt);
@@ -145,6 +142,7 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
         gecko_queue_w = (gecko_queue_w + 1) % BGLIB_QUEUE_LEN;
     } else if ((header & 0xf8) == gecko_dev_type_gecko ) { //response
         retVal = pck = gecko_rsp_msg;
+		// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
     } else {
         //fail
         return 0;
@@ -179,7 +177,10 @@ int rx_peek_timeout(int ms)
     while (timeout) {
         timeout--;
         if (uartRxPeek() > 0) {
-            return 0;
+			if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
+			{
+	            return 0;
+			}
         }
         usleep(1000);
     }
@@ -193,10 +194,11 @@ void gecko_handle_command(uint32_t hdr, void* data)
 	{
 		reverse_endian((uint8_t*)&gecko_cmd_msg->header,BGLIB_MSG_HEADER_LEN);
 	}
-
+	gecko_rsp_msg->header = 0;
 	// _thread_ctx_mutex_lock(); // get lock
 	uartTx(send_msg_length, (uint8_t*)gecko_cmd_msg); // send cmd msg
 	// _thread_ctx_mutex_unlock(); // release lock
+	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
 
 	rx_peek_timeout(200); // wait for response
 }
@@ -215,7 +217,6 @@ void gecko_handle_command(uint32_t hdr, void* data)
 
 
 
-static struct blob_buf evt_b;
 char* target_dev_address = NULL;
 /*
  *	module events report 
@@ -417,9 +418,13 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 	// 	printf("object %s\n",json_object_to_json_string(o));
 	// }
 
+	static struct blob_buf evt_b;
 	blob_buf_init(&evt_b, 0);
 	blobmsg_add_object(&evt_b, o);
-	ubus_notify(ctx, &ble_obj, "Notify", evt_b.head, -1);
+
+	_thread_ctx_mutex_lock(); // get lock
+	int notify_ret = ubus_notify(ctx, &ble_obj, "Notify", evt_b.head, -1);
+	_thread_ctx_mutex_unlock(); // release lock
 
 	json_object_put(o);
     return ;

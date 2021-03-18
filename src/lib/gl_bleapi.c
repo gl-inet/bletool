@@ -50,6 +50,7 @@ static void call_remote_set_cb(json_object *msg);
 static void sub_remove_callback(struct ubus_context *ctx, struct ubus_subscriber *obj, int32_t id)
 {
 	fprintf(stderr, "Removed by server\n");
+	
 }
 
 static int32_t sub_handler(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, 
@@ -433,7 +434,7 @@ GL_RET gl_ble_stop_discovery(void)
 
 	gl_ble_call("ble", "stop_discovery", &b, 3, &str);
 	if (NULL == str) { 
-		log_err("Response missing!\n"); 
+		printf("Response missing!\n"); 
 		return GL_ERR_RESP_MISSING; 
 	}
 
@@ -703,7 +704,7 @@ GL_RET gl_ble_read_char(BLE_MAC address, int char_handle)
 GL_RET gl_ble_write_char(uint8_t *address, int32_t char_handle, char *value, int32_t res)
 {
 	if ((!value) || (strlen(value) % 2)) { 
-		log_err("Parameter error!\n"); 
+		log_err("Parameter error! value_len: %d\n", strlen(value)); 
 		return GL_ERR_PARAM; 
 	}
 

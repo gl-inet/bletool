@@ -4,6 +4,7 @@
 #define BGLIB_QUEUE_LEN 30
 #endif
 
+
 #define BGLIB_DEFINE()                                      \
   struct gecko_cmd_packet _gecko_cmd_msg;                   \
   struct gecko_cmd_packet _gecko_rsp_msg;                   \
@@ -15,6 +16,7 @@
   struct gecko_cmd_packet gecko_queue[BGLIB_QUEUE_LEN];     \
   int    gecko_queue_w = 0;                                 \
   int    gecko_queue_r = 0;                                 
+
 
 // #define BGLIB_MSG_GROUP()											\
 // 	uint32_t msg_group_bit;

@@ -117,7 +117,7 @@ json_object* silabs_ble_stop_discovery(void)
     json_object* obj = json_object_new_object();
 
     gecko_cmd_le_gap_end_procedure();
-    p = gecko_rsp_msg;
+	p = gecko_rsp_msg;
 
     if((p == NULL) || (BGLIB_MSG_ID(p->header) != gecko_rsp_le_gap_end_procedure_id))
     {

@@ -36,7 +36,6 @@
  
 struct ubus_context * ctx = NULL;
 static const char* sock_path = NULL;
-static struct blob_buf b;
 static struct uloop_fd serial_fd;
 
 static json_object* get_error_mac_return(void)
@@ -69,9 +68,14 @@ static int enable(struct ubus_context *ctx, struct ubus_object *obj, struct ubus
 	json_object* output = ble_enable(enable);
 
 	/* send a reply msg to the caller for information */
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+	
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+	
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -82,9 +86,14 @@ int local_mac(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_req
 {    
     json_object* output = ble_local_mac();
 
+	static struct blob_buf b;
     blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
     
     return GL_SUCCESS;
@@ -106,9 +115,14 @@ static int set_power(struct ubus_context *ctx, struct ubus_object *obj, struct u
 	int power = blobmsg_get_u32(tb[SYSTEM_POWER_LEVEL]);
 	json_object* output = ble_set_power(power);
 
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -145,9 +159,16 @@ static int discovery(struct ubus_context *ctx, struct ubus_object *obj, struct u
 
 	json_object* output = ble_discovery(phys,interval,window,type,mode);
 
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -158,9 +179,15 @@ int stop_discovery(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 {    
     json_object* output = ble_stop_discovery();
 
+	static struct blob_buf b;
     blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
 	json_object_put(output);
     
     return GL_SUCCESS;
@@ -187,9 +214,14 @@ static int connect(struct ubus_context *ctx, struct ubus_object *obj, struct ubu
 	int conn_phy = blobmsg_get_u32(tb[CONN_PHY]);
 	json_object* output = ble_connect(address, address_type, conn_phy);
 	
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -206,6 +238,8 @@ static const struct blobmsg_policy disconnect_policy[DISCONNECT_MAX] = {
 };
 static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[DISCONNECT_MAX];
 	blobmsg_parse(disconnect_policy, DISCONNECT_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -224,7 +258,11 @@ static int disconnect(struct ubus_context *ctx, struct ubus_object *obj, struct 
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -240,6 +278,8 @@ static const struct blobmsg_policy get_rssi_policy[RSSI_MAX] = {
 };
 static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[RSSI_MAX];
 	blobmsg_parse(get_rssi_policy, RSSI_MAX, tb, blob_data(msg), blob_len(msg));
 	// int connection = blobmsg_get_u32(tb[RSSI_CONNECTION]);
@@ -259,7 +299,11 @@ static int get_rssi(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -275,6 +319,8 @@ static const struct blobmsg_policy get_service_policy[SERVICE_MAX] = {
 };
 static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[SERVICE_MAX];
 	blobmsg_parse(get_service_policy, SERVICE_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -294,7 +340,11 @@ static int get_service(struct ubus_context *ctx, struct ubus_object *obj, struct
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -312,6 +362,8 @@ static const struct blobmsg_policy get_char_policy[CHAR_MAX] = {
 };
 static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[CHAR_MAX];
 	blobmsg_parse(get_char_policy, CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -332,7 +384,11 @@ static int get_char(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -353,6 +409,8 @@ static const struct blobmsg_policy read_char_policy[GATT_READ_CHAR_MAX] = {
 
 static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[GATT_READ_CHAR_MAX];
 	blobmsg_parse(read_char_policy, GATT_READ_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -373,7 +431,11 @@ static int read_char(struct ubus_context *ctx, struct ubus_object *obj, struct u
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -396,6 +458,8 @@ static const struct blobmsg_policy write_char_policy[GATT_WRITE_CHAR_MAX] = {
 };
 static int write_char(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[GATT_WRITE_CHAR_MAX];
 	blobmsg_parse(write_char_policy, GATT_WRITE_CHAR_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -418,7 +482,11 @@ static int write_char(struct ubus_context *ctx, struct ubus_object *obj, struct 
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 	free(address);
 
@@ -439,6 +507,8 @@ static const struct blobmsg_policy set_notify_policy[GATT_SET_NOTIFY_MAX] = {
 };
 static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[GATT_SET_NOTIFY_MAX];
 	blobmsg_parse(set_notify_policy, GATT_SET_NOTIFY_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -460,7 +530,11 @@ static int set_notify(struct ubus_context *ctx, struct ubus_object *obj, struct 
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -496,9 +570,14 @@ static int adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_re
 	int adv_conn = blobmsg_get_u32(tb[ADV_CONN]);
 	json_object* output = ble_adv(adv_phys, adv_interval_min, adv_interval_max, adv_discover, adv_conn);
 
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -522,9 +601,14 @@ static int adv_data(struct ubus_context *ctx, struct ubus_object *obj, struct ub
 	char* adv_data = blobmsg_get_string(tb[ADV_DATA]);
 	json_object* output = ble_adv_data(adv_data_flag,adv_data);
 
+	static struct blob_buf b;
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 
 	return GL_SUCCESS;
@@ -534,9 +618,14 @@ int stop_adv(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_requ
 {    
     json_object* output = ble_stop_adv();
 
+	static struct blob_buf b;
     blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
     
     return GL_SUCCESS;
@@ -556,6 +645,8 @@ static const struct blobmsg_policy send_noti_policy[SEND_NOTI_MAX] = {
 };
 static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method, struct blob_attr *msg)
 {
+	static struct blob_buf b;
+
 	struct blob_attr *tb[SEND_NOTI_MAX];
 	blobmsg_parse(send_noti_policy, SEND_NOTI_MAX, tb, blob_data(msg), blob_len(msg));
 	json_object* output = NULL;
@@ -577,7 +668,11 @@ static int send_notify(struct ubus_context *ctx, struct ubus_object *obj, struct
 end:
 	blob_buf_init(&b, 0);
 	blobmsg_add_object(&b, output);
+
+	_thread_ctx_mutex_lock(); // get lock
 	ubus_send_reply(ctx, req, b.head);
+	_thread_ctx_mutex_unlock(); // release lock
+
 	json_object_put(output);
 	free(address);
 
@@ -629,14 +724,15 @@ static void ubus_reconn_timer(struct uloop_timeout *timeout)
 	};
 	if(ubus_reconnect(ctx,sock_path) != 0){
 		uloop_timeout_set(&reconn_timer,1000);
-	}
-	else{
+
+	}else{
 		ubus_add_uloop(ctx);
 	}
 }
 
 static void ubus_connection_lost(struct ubus_context *ctx)
 {
+	printf("ubus_connection_lost\n");
 	ubus_reconn_timer(NULL);
 }
 
@@ -694,7 +790,7 @@ int main(int argc, char * argv[])
 
 	/* uloop routine: events monitoring and callback provoking */
 	uloop_run();
- 
+
 	ubus_free(ctx);
 
 	/* Destruct event loop */
