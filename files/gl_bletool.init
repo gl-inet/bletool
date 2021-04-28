@@ -36,7 +36,9 @@ start_service() {
     uci set ble.@bleserial[0].flowcontrol=0
     uci set ble.@bleserial[0].rston='echo 1 > /sys/class/gpio/gpio1/value'
     uci set ble.@bleserial[0].rstoff='echo 0 > /sys/class/gpio/gpio1/value'
-  elif [ $model == xe300 ]; then                                          
+  elif [ $model == xe300 ]; then    
+    # Mask kernel printing
+    echo 1 4 1 7 > /proc/sys/kernel/printk                                      
 	if [ ! -n "$(ls -l /sys/class/gpio/gpio14 2>/dev/null)" ]; then
     	echo 14 > /sys/class/gpio/export
 	fi

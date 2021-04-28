@@ -613,7 +613,7 @@ GL_RET cmd_get_service(int argc, char **argv)
 	printf("%s\n",temp);
 
 	//free(temp);
-	json_object_put(o);
+	json_object_put(obj);
 
 	return GL_SUCCESS;
 }
@@ -690,7 +690,7 @@ GL_RET cmd_get_char(int argc, char **argv)
 	printf("%s\n",temp);
 
 	//free(temp);
-	json_object_put(o);
+	json_object_put(obj);
 
 	return GL_SUCCESS;
 }
@@ -897,7 +897,8 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		json_object_object_add(o, "value", json_object_new_string(data->remote_notify.value));
 		char *temp=json_object_to_json_string(o);
 		printf("%s\n",temp);
-		
+
+		json_object_put(o);
 		break;
 	}
 	case GATT_BLE_REMOTE_WRITE_EVT:
@@ -917,6 +918,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 	case GATT_BLE_REMOTE_SET_EVT:
@@ -935,6 +937,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 
@@ -965,6 +968,7 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 	default:
@@ -994,7 +998,8 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
-		
+
+		json_object_put(o);
 		break;
 	}
 
@@ -1016,6 +1021,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 
@@ -1036,6 +1042,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 
@@ -1053,6 +1060,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 		char *temp = json_object_to_json_string(o);
 		printf("%s\n",temp);
 		
+		json_object_put(o);
 		break;
 	}
 	default:
