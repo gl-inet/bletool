@@ -113,7 +113,7 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
 
 		INIT_LIST_HEAD(&node->linked_list);
 
-		int ret_dev_list = list_empty(&mgr_ctx->dev_list);
+		// int ret_dev_list = list_empty(&mgr_ctx->dev_list);
 
 		list_add_tail(&node->linked_list, &mgr_ctx->dev_list);
 		log_info("Device Join: dev_addr=%s, connection=%d.\n",
@@ -198,6 +198,21 @@ int ble_dev_mgr_update(uint16_t connection) {
         return -1;
     }
     node->ble_dev_desc.connection = connection;
+
+    return GL_SUCCESS;
+}
+
+int ble_dev_mgr_del_all(void)
+{
+    log_err("ble_dev_mgr_del_all\n");
+    ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
+    ble_dev_mgr_node_t *node = NULL;
+
+    list_for_each_entry(node, &mgr_ctx->dev_list, linked_list) {
+        log_err("Del node: %s, connection=%d\n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
+        list_del(&node->linked_list);
+        free(node);
+    }
 
     return GL_SUCCESS;
 }

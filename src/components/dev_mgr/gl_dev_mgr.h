@@ -42,6 +42,7 @@ typedef struct
 
 void ble_dev_mgr_print(void);
 int ble_dev_mgr_init(void);
+int ble_dev_mgr_del_all(void);
 int ble_dev_mgr_add(char *dev_addr, uint16_t connection);
 int ble_dev_mgr_del(uint16_t connection);
 int ble_dev_mgr_update(uint16_t connection);

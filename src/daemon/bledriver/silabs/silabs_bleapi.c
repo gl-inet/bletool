@@ -40,6 +40,9 @@ json_object* silabs_ble_enable(int enable)
     }
     else{
         system(rstoff);
+
+        // clean dev list
+        ble_dev_mgr_del_all();
     }
     json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;
