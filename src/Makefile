@@ -48,27 +48,35 @@ LIB_INCDIRS		:= 	lib \
 					components/thread \
 					components/timestamp \
 					include \
-					daemon/bledriver/util						
+					daemon/bledriver/util \
+					daemon/bledriver/silabs						
 
 LIB_SRCDIRS		:=  lib  \
 					components/dev_mgr \
 					components/log	\
 					components/thread \
 					components/timestamp \
-					daemon/bledriver/util					
+					daemon/bledriver/util \
+					daemon/bledriver/silabs					
 
 UTIL_INCDIRS	:= 	lib \
 					tool \
 					components/dev_mgr \
 					components/log	\
+					components/thread \
+					components/timestamp \
 					include \
-					daemon/bledriver/util
+					daemon/bledriver/util \
+					daemon/bledriver/silabs
 
 UTIL_SRCDIRS	:=  lib  \
 					tool \
 					components/dev_mgr  \
 					components/log	\
-					daemon/bledriver/util
+					components/thread \
+					components/timestamp \
+					daemon/bledriver/util \
+					daemon/bledriver/silabs
 					
 # PROJECT_INCDIRS	:=  lib  \
 # 					project \
@@ -129,8 +137,8 @@ VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 # UTIL_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 # LIB_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json
 
-UTIL_DEPENDS 	+=  -ljson-c -luci
-LIB_DEPENDS 	+=  -ljson-c -lpthread
+UTIL_DEPENDS 	+=  -ljson-c -luci -lpthread
+LIB_DEPENDS 	+=  -ljson-c -luci -lpthread
 # PROJECT_DEPENDS +=  -ljson-c -luci -lpthread
 
 # all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)

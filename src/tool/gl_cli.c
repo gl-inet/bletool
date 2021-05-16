@@ -883,18 +883,17 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	{
 		case GATT_REMOTE_CHARACTERISTIC_VALUE_EVT:
 		{
-			struct ble_remote_characteristic_value_evt_data* remote_char_value = (gl_ble_gatt_data_t *)data->remote_characteristic_value;
-			addr2str(remote_characteristic_value.address, address);
+			addr2str(data->remote_characteristic_value.address, address);
 
 			// json format
 			json_object* o = NULL;
 			o = json_object_new_object();
 			json_object_object_add(o, "type", json_object_new_string("remote_characteristic_value"));
 			json_object_object_add(o, "mac", json_object_new_string(address));
-			json_object_object_add(o, "characteristic", json_object_new_int(remote_characteristic_value.characteristic));
-			json_object_object_add(o, "att_opcode", json_object_new_int(remote_characteristic_value.att_opcode));
-			json_object_object_add(o, "offset", json_object_new_int(remote_characteristic_value.offset));
-			json_object_object_add(o, "value", json_object_new_string(remote_characteristic_value.value));
+			json_object_object_add(o, "characteristic", json_object_new_int(data->remote_characteristic_value.characteristic));
+			json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_characteristic_value.att_opcode));
+			json_object_object_add(o, "offset", json_object_new_int(data->remote_characteristic_value.offset));
+			json_object_object_add(o, "value", json_object_new_string(data->remote_characteristic_value.value));
 			char *temp=json_object_to_json_string(o);
 			printf("%s\n",temp);
 
@@ -903,18 +902,17 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		}
 		case GATT_LOCAL_GATT_ATT_EVT:
 		{
-			struct ble_local_gatt_att_evt_data* local_gatt_att = (gl_ble_gatt_data_t *)data->local_gatt_attribute;
-			addr2str(local_gatt_att.address, address);
+			addr2str(data->local_gatt_attribute.address, address);
 
 			// json format
 			json_object* o = NULL;
 			o = json_object_new_object();
 			json_object_object_add(o, "type", json_object_new_string("local_gatt_attribute"));
 			json_object_object_add(o, "mac", json_object_new_string(address));
-			json_object_object_add(o, "attribute", json_object_new_int(local_gatt_att.attribute));
-			json_object_object_add(o, "att_opcode", json_object_new_int(local_gatt_att.att_opcode));
-			json_object_object_add(o, "offset", json_object_new_int(local_gatt_att.offset));
-			json_object_object_add(o, "value", json_object_new_string(local_gatt_att.value));
+			json_object_object_add(o, "attribute", json_object_new_int(data->local_gatt_attribute.attribute));
+			json_object_object_add(o, "att_opcode", json_object_new_int(data->local_gatt_attribute.att_opcode));
+			json_object_object_add(o, "offset", json_object_new_int(data->local_gatt_attribute.offset));
+			json_object_object_add(o, "value", json_object_new_string(data->local_gatt_attribute.value));
 			char *temp = json_object_to_json_string(o);
 			printf("%s\n",temp);
 			
@@ -923,17 +921,16 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 		}
 		case GATT_LOCAL_CHARACTERISTIC_STATUS_EVT:
 		{
-			struct ble_local_characteristic_status_evt_data* local_char_status = (gl_ble_gatt_data_t *)data->local_characteristic_status;		
-			addr2str(local_char_status.address, address);
+			addr2str(data->local_characteristic_status.address, address);
 
 			// json format
 			json_object* o = NULL;
 			o = json_object_new_object();
 			json_object_object_add(o, "type", json_object_new_string("remote_set"));
 			json_object_object_add(o, "mac", json_object_new_string(address));
-			json_object_object_add(o, "characteristic", json_object_new_int(local_char_status.characteristic));
-			json_object_object_add(o, "status_flags", json_object_new_int(local_char_status.status_flags));
-			json_object_object_add(o, "client_config_flags", json_object_new_int(local_char_status.client_config_flags));
+			json_object_object_add(o, "characteristic", json_object_new_int(data->local_characteristic_status.characteristic));
+			json_object_object_add(o, "status_flags", json_object_new_int(data->local_characteristic_status.status_flags));
+			json_object_object_add(o, "client_config_flags", json_object_new_int(data->local_characteristic_status.client_config_flags));
 			char *temp = json_object_to_json_string(o);
 			printf("%s\n",temp);
 			

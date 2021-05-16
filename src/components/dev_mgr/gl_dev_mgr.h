@@ -47,7 +47,7 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection);
 int ble_dev_mgr_del(uint16_t connection);
 int ble_dev_mgr_update(uint16_t connection);
 uint16_t ble_dev_mgr_get_connection(char *dev_addr, int* connection);
-uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
+uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac);
 int ble_dev_mgr_get_list_size(void);
 
 #endif // !_GL_DEV_MGR_H_

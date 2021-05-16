@@ -246,7 +246,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				return -1;
+				return;
 			}
             str2addr(tmp_address, data.disconnect_data.address);
             
@@ -268,7 +268,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				return -1;
+				return;
 			}
             str2addr(tmp_address, data.remote_characteristic_value.address);
 
@@ -288,7 +288,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				return -1;
+				return;
 			}
             str2addr(tmp_address, data.local_gatt_attribute.address);
 
@@ -307,7 +307,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				return -1;
+				return;
 			}
             str2addr(tmp_address, data.local_characteristic_status.address);
 
@@ -341,7 +341,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				return -1;
+				return;
 			}
             str2addr(tmp_address, data.update_conn_data.address);
 
@@ -359,7 +359,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             data.connect_open_data.conn_role = p->data.evt_le_connection_opened.master;
             data.connect_open_data.advertiser = p->data.evt_le_connection_opened.advertiser;
             data.connect_open_data.ble_addr_type = p->data.evt_le_connection_opened.address_type;
-            memcpy(data.connect_open_data.address, p->data.evt_le_connection_opened.address, 6);
+            memcpy(data.connect_open_data.address, p->data.evt_le_connection_opened.address.addr, 6);
 
             ble_msg_cb.ble_gap_event(GAP_BLE_CONNECT_EVT, &data);
 			break;

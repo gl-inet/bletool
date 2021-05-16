@@ -22,6 +22,7 @@
 #include "gl_common.h"
 #include "gl_hal.h"
 #include "gl_methods.h"
+#include "gl_thread.h"
 
 gl_ble_cbs ble_msg_cb;
 

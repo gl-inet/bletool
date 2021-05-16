@@ -23,6 +23,7 @@
 #include "gl_hal.h"
 #include "bg_types.h"
 #include "gl_errno.h"
+#include "gl_type.h"
 #include "silabs_bleapi.h"
 #include "gl_common.h"
 #include "silabs_msg.h"
@@ -49,7 +50,7 @@ GL_RET silabs_ble_enable(int enable)
 GL_RET silabs_ble_local_mac(BLE_MAC mac)
 {
 
-    gecko_msg_system_get_bt_address_rsp_t* rsp = gecko_cmd_system_get_bt_address();
+    struct gecko_msg_system_get_bt_address_rsp_t* rsp = gecko_cmd_system_get_bt_address();
     if(rsp == NULL)
     {
         return GL_UNKNOW_ERR;
@@ -62,7 +63,7 @@ GL_RET silabs_ble_local_mac(BLE_MAC mac)
 
 GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mode)
 {
-    gecko_msg_le_gap_set_discovery_timing_rsp_t* set_tim_rsp = gecko_cmd_le_gap_set_discovery_timing(phys,interval,window);
+    struct gecko_msg_le_gap_set_discovery_timing_rsp_t* set_tim_rsp = gecko_cmd_le_gap_set_discovery_timing(phys,interval,window);
     if(!set_tim_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -72,7 +73,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
         return (set_tim_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
-    gecko_msg_le_gap_set_discovery_type_rsp_t* set_type_rsp = gecko_cmd_le_gap_set_discovery_type(phys,type);
+    struct gecko_msg_le_gap_set_discovery_type_rsp_t* set_type_rsp = gecko_cmd_le_gap_set_discovery_type(phys,type);
     if(!set_type_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -82,7 +83,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
         return (set_type_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
-    gecko_msg_le_gap_start_discovery_rsp_t* start_rsp = gecko_cmd_le_gap_start_discovery(phys,mode);
+    struct gecko_msg_le_gap_start_discovery_rsp_t* start_rsp = gecko_cmd_le_gap_start_discovery(phys,mode);
     if(!start_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -97,7 +98,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
 
 GL_RET silabs_ble_stop_discovery(void)
 {
-    gecko_msg_le_gap_end_procedure_rsp_t* rsp = gecko_cmd_le_gap_end_procedure();
+    struct gecko_msg_le_gap_end_procedure_rsp_t* rsp = gecko_cmd_le_gap_end_procedure();
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -110,9 +111,9 @@ GL_RET silabs_ble_stop_discovery(void)
     return GL_SUCCESS;
 }
 
-GL_RET silabs_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
+GL_RET silabs_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn)
 {
-    gecko_msg_le_gap_set_advertise_phy_rsp_t* set_phy_rsp = gecko_cmd_le_gap_set_advertise_phy(0, phys, phys);
+    struct gecko_msg_le_gap_set_advertise_phy_rsp_t* set_phy_rsp = gecko_cmd_le_gap_set_advertise_phy(0, phys, phys);
     if(!set_phy_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -122,7 +123,7 @@ GL_RET silabs_ble_adv(int phys, int interval_min, int interval_max, int discover
         return (set_phy_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
-    gecko_msg_le_gap_set_advertise_timing_rsp_t* set_tim_rsp = gecko_cmd_le_gap_set_advertise_timing(0, interval_min, interval_max, 0, 0);
+    struct gecko_msg_le_gap_set_advertise_timing_rsp_t* set_tim_rsp = gecko_cmd_le_gap_set_advertise_timing(0, interval_min, interval_max, 0, 0);
     if(!set_tim_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -132,7 +133,7 @@ GL_RET silabs_ble_adv(int phys, int interval_min, int interval_max, int discover
         return (set_tim_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
-    gecko_msg_le_gap_start_advertising_rsp_t* start_rsp = gecko_cmd_le_gap_start_advertising(0, discover, adv_conn);
+    struct gecko_msg_le_gap_start_advertising_rsp_t* start_rsp = gecko_cmd_le_gap_start_advertising(0, discover, adv_conn);
     if(!start_rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -156,7 +157,7 @@ GL_RET silabs_ble_adv_data(int flag, char *data)
     uint8* adv_data = (uint8*)calloc(len,sizeof(uint8));
     str2array(adv_data,data,len);
 
-    gecko_msg_le_gap_bt5_set_adv_data_rsp_t* rsp = gecko_cmd_le_gap_bt5_set_adv_data(0, flag, len, adv_data);
+    struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t* rsp = gecko_cmd_le_gap_bt5_set_adv_data(0, flag, len, adv_data);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -171,7 +172,7 @@ GL_RET silabs_ble_adv_data(int flag, char *data)
 
 GL_RET silabs_ble_stop_adv(void)
 {
-    gecko_msg_le_gap_stop_advertising_rsp_t* rsp = gecko_cmd_le_gap_stop_advertising(0);
+    struct gecko_msg_le_gap_stop_advertising_rsp_t* rsp = gecko_cmd_le_gap_stop_advertising(0);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -204,7 +205,7 @@ GL_RET silabs_ble_send_notify(BLE_MAC address, int char_handle, char *value)
     uint8* hex_value = (uint8*)calloc(len,sizeof(uint8));
     str2array(hex_value,value,len);
 
-    gecko_msg_gatt_server_send_characteristic_notification_rsp_t* rsp = gecko_cmd_gatt_server_send_characteristic_notification(connection, char_handle, len, hex_value);
+    struct gecko_msg_gatt_server_send_characteristic_notification_rsp_t* rsp = gecko_cmd_gatt_server_send_characteristic_notification(connection, char_handle, len, hex_value);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -227,7 +228,7 @@ GL_RET silabs_ble_connect(BLE_MAC address, int address_type, int phy)
 
     bd_addr addr;
     memcpy(addr.addr, address, 6);
-    gecko_msg_le_gap_connect_rsp_t* rsp = gecko_cmd_le_gap_connect(addr, address_type, phy);
+    struct gecko_msg_le_gap_connect_rsp_t* rsp = gecko_cmd_le_gap_connect(addr, address_type, phy);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -255,7 +256,7 @@ GL_RET silabs_ble_disconnect(BLE_MAC address)
 		return GL_ERR_PARAM;
 	}
 
-    gecko_msg_le_connection_close_rsp_t* rsp = gecko_cmd_le_connection_close(connection);
+    struct gecko_msg_le_connection_close_rsp_t* rsp = gecko_cmd_le_connection_close(connection);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -279,7 +280,7 @@ GL_RET silabs_ble_get_rssi(BLE_MAC address, int32_t *rssi)
 		return GL_ERR_PARAM;
 	}
 
-    gecko_msg_le_connection_get_rssi_rsp_t* rsp = gecko_cmd_le_connection_get_rssi(connection);
+    struct gecko_msg_le_connection_get_rssi_rsp_t* rsp = gecko_cmd_le_connection_get_rssi(connection);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -311,7 +312,7 @@ GL_RET silabs_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC addre
 	}
 
     int wait_time = 200; // >10
-    gecko_msg_gatt_discover_primary_services_rsp_t* rsp = gecko_cmd_gatt_discover_primary_services(connection);
+    struct gecko_msg_gatt_discover_primary_services_rsp_t* rsp = gecko_cmd_gatt_discover_primary_services(connection);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -332,7 +333,6 @@ GL_RET silabs_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC addre
 			if(BGLIB_MSG_ID(e->header) == gecko_evt_gatt_service_id && e->data.evt_gatt_service.connection == connection)
 			{
                 service_list->list[i].handle = e->data.evt_gatt_service.service;
-				memset(value,0,256);
 				reverse_endian(e->data.evt_gatt_service.uuid.data, e->data.evt_gatt_service.uuid.len);
 				hex2str(e->data.evt_gatt_service.uuid.data, e->data.evt_gatt_service.uuid.len,service_list->list[i].uuid);
 			}
@@ -364,7 +364,7 @@ GL_RET silabs_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int s
 		return GL_ERR_PARAM;
 	}
 
-    gecko_msg_gatt_discover_characteristics_rsp_t* rsp = gecko_cmd_gatt_discover_characteristics(connection, service_handle);
+    struct gecko_msg_gatt_discover_characteristics_rsp_t* rsp = gecko_cmd_gatt_discover_characteristics(connection, service_handle);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -384,9 +384,8 @@ GL_RET silabs_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int s
 			struct gecko_cmd_packet* e = &special_evt[i];
 			if(BGLIB_MSG_ID(e->header) == gecko_evt_gatt_characteristic_id && e->data.evt_gatt_characteristic.connection == connection)
 			{
-                char_list->list[i].handle = e->data.evt_gatt_characteristic.characteristic
+                char_list->list[i].handle = e->data.evt_gatt_characteristic.characteristic;
                 char_list->list[i].properties = e->data.evt_gatt_characteristic.properties;
-				memset(value,0,256);
 				reverse_endian(e->data.evt_gatt_characteristic.uuid.data, e->data.evt_gatt_characteristic.uuid.len);
 				hex2str(e->data.evt_gatt_characteristic.uuid.data, e->data.evt_gatt_characteristic.uuid.len,char_list->list[i].uuid);
 			}
@@ -408,7 +407,7 @@ GL_RET silabs_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int s
 
 GL_RET silabs_ble_set_power(int power, int *current_power)
 {
-    gecko_msg_system_set_tx_power_rsp_t* rsp = gecko_cmd_system_set_tx_power(power);
+    struct gecko_msg_system_set_tx_power_rsp_t* rsp = gecko_cmd_system_set_tx_power(power);
     if(rsp == NULL)
     {
         return GL_UNKNOW_ERR;
@@ -430,7 +429,7 @@ GL_RET silabs_ble_read_char(BLE_MAC address, int char_handle)
 		return GL_ERR_PARAM;
 	}
 
-    gecko_msg_gatt_read_characteristic_value_rsp_t* rsp = gecko_cmd_gatt_read_characteristic_value(connection, char_handle);
+    struct gecko_msg_gatt_read_characteristic_value_rsp_t* rsp = gecko_cmd_gatt_read_characteristic_value(connection, char_handle);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
@@ -464,7 +463,7 @@ GL_RET silabs_ble_write_char(BLE_MAC address, int char_handle, char *value, int 
 
     if(res)
     {
-        gecko_msg_gatt_write_characteristic_value_rsp_t* rsp = gecko_cmd_gatt_write_characteristic_value(connection, char_handle, len, data);
+        struct gecko_msg_gatt_write_characteristic_value_rsp_t* rsp = gecko_cmd_gatt_write_characteristic_value(connection, char_handle, len, data);
         if(!rsp)
         {
             return GL_ERR_RESP_MISSING;
@@ -475,7 +474,7 @@ GL_RET silabs_ble_write_char(BLE_MAC address, int char_handle, char *value, int 
 		}
 
     }else{
-        gecko_msg_gatt_write_characteristic_value_without_response_rsp_t* rsp = gecko_cmd_gatt_write_characteristic_value_without_response(connection, char_handle, len, data);
+        struct gecko_msg_gatt_write_characteristic_value_without_response_rsp_t* rsp = gecko_cmd_gatt_write_characteristic_value_without_response(connection, char_handle, len, data);
         if(!rsp)
         {
             return GL_ERR_RESP_MISSING;
@@ -500,7 +499,7 @@ GL_RET silabs_ble_set_notify(BLE_MAC address, int char_handle, int flag)
 		return GL_ERR_PARAM;
 	}
 
-    gecko_msg_gatt_set_characteristic_notification_rsp_t* rsp = gecko_cmd_gatt_set_characteristic_notification(connection, char_handle, flag);
+    struct gecko_msg_gatt_set_characteristic_notification_rsp_t* rsp = gecko_cmd_gatt_set_characteristic_notification(connection, char_handle, flag);
     if(!rsp)
     {
         return GL_ERR_RESP_MISSING;
