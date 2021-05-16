@@ -2764,7 +2764,12 @@ static inline struct gecko_msg_system_get_bt_address_rsp_t* gecko_cmd_system_get
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_system_get_bt_address;
+    if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_system_get_bt_address_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_system_get_bt_address;
 }
 
 /** 
@@ -2822,7 +2827,12 @@ static inline struct gecko_msg_system_set_tx_power_rsp_t* gecko_cmd_system_set_t
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_system_set_tx_power;
+    if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_system_set_tx_power_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_system_set_tx_power;
 }
 
 /** 
@@ -3092,7 +3102,12 @@ static inline struct gecko_msg_le_gap_end_procedure_rsp_t* gecko_cmd_le_gap_end_
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_end_procedure;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_end_procedure_id))
+    {
+        return NULL;
+    }    
+
+    return &gecko_rsp_msg->data.rsp_le_gap_end_procedure;
 }
 
 /** 
@@ -3434,6 +3449,11 @@ static inline struct gecko_msg_le_gap_bt5_set_adv_parameters_rsp_t* gecko_cmd_le
 
 static inline struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t* gecko_cmd_le_gap_bt5_set_adv_data(uint8 handle,uint8 scan_rsp,uint8 adv_data_len, const uint8* adv_data_data)
 {
+    if ((uint16_t)adv_data_len > BGLIB_MSG_MAX_PAYLOAD - 3)
+    {
+        gecko_rsp_msg->data.rsp_le_gap_bt5_set_adv_data.result = bg_err_command_too_long;
+        return &gecko_rsp_msg->data.rsp_le_gap_bt5_set_adv_data;
+    }
 
     gecko_cmd_msg->data.cmd_le_gap_bt5_set_adv_data.handle=handle;
     gecko_cmd_msg->data.cmd_le_gap_bt5_set_adv_data.scan_rsp=scan_rsp;
@@ -3443,7 +3463,12 @@ static inline struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t* gecko_cmd_le_gap_b
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_bt5_set_adv_data;
+    if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_bt5_set_adv_data_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_bt5_set_adv_data;
 }
 
 /** 
@@ -3518,7 +3543,12 @@ static inline struct gecko_msg_le_gap_set_advertise_timing_rsp_t* gecko_cmd_le_g
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_set_advertise_timing;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_set_advertise_timing_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_set_advertise_timing;
 }
 
 /** 
@@ -3614,8 +3644,13 @@ static inline struct gecko_msg_le_gap_set_advertise_phy_rsp_t* gecko_cmd_le_gap_
     gecko_cmd_msg->header=((gecko_cmd_le_gap_set_advertise_phy_id+((3)<<8)));
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
-    
-    return NULL;//.rsp_le_gap_set_advertise_phy;
+
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_set_advertise_phy_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_set_advertise_phy;
 }
 
 /** 
@@ -3733,7 +3768,12 @@ static inline struct gecko_msg_le_gap_start_advertising_rsp_t* gecko_cmd_le_gap_
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_start_advertising;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_start_advertising_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_start_advertising;
 }
 
 /** 
@@ -3754,7 +3794,12 @@ static inline struct gecko_msg_le_gap_stop_advertising_rsp_t* gecko_cmd_le_gap_s
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_stop_advertising;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_stop_advertising_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_stop_advertising;
 }
 
 /** 
@@ -3807,7 +3852,12 @@ static inline struct gecko_msg_le_gap_set_discovery_timing_rsp_t* gecko_cmd_le_g
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_set_discovery_timing;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_set_discovery_timing_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_set_discovery_timing;
 }
 
 /** 
@@ -3839,7 +3889,12 @@ static inline struct gecko_msg_le_gap_set_discovery_type_rsp_t* gecko_cmd_le_gap
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_set_discovery_type;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_set_discovery_type_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_set_discovery_type;
 }
 
 /** 
@@ -3875,7 +3930,7 @@ static inline struct gecko_msg_le_gap_start_discovery_rsp_t* gecko_cmd_le_gap_st
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_start_discovery;
+    return &gecko_rsp_msg->data.rsp_le_gap_start_discovery;
 }
 
 /** 
@@ -3962,7 +4017,12 @@ static inline struct gecko_msg_le_gap_connect_rsp_t* gecko_cmd_le_gap_connect(bd
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_gap_connect;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_gap_connect_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_gap_connect;
 }
 
 /** 
@@ -4247,7 +4307,12 @@ static inline struct gecko_msg_le_connection_get_rssi_rsp_t* gecko_cmd_le_connec
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_connection_get_rssi;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_connection_get_rssi_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_connection_get_rssi;
 }
 
 /** 
@@ -4329,7 +4394,12 @@ static inline struct gecko_msg_le_connection_close_rsp_t* gecko_cmd_le_connectio
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_le_connection_close;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_le_connection_close_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_le_connection_close;
 }
 
 /** 
@@ -4379,7 +4449,12 @@ static inline struct gecko_msg_gatt_discover_primary_services_rsp_t* gecko_cmd_g
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_discover_primary_services;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_discover_primary_services_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_discover_primary_services;
 }
 
 /** 
@@ -4436,7 +4511,12 @@ static inline struct gecko_msg_gatt_discover_characteristics_rsp_t* gecko_cmd_ga
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_discover_characteristics;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_discover_characteristics_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_discover_characteristics;
 }
 
 /** 
@@ -4499,7 +4579,12 @@ static inline struct gecko_msg_gatt_set_characteristic_notification_rsp_t* gecko
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_set_characteristic_notification;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_set_characteristic_notification_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_set_characteristic_notification;
 }
 
 /** 
@@ -4563,7 +4648,12 @@ static inline struct gecko_msg_gatt_read_characteristic_value_rsp_t* gecko_cmd_g
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_read_characteristic_value;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_read_characteristic_value_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_read_characteristic_value;
 }
 
 /** 
@@ -4616,6 +4706,12 @@ static inline struct gecko_msg_gatt_read_characteristic_value_by_uuid_rsp_t* gec
 
 static inline struct gecko_msg_gatt_write_characteristic_value_rsp_t* gecko_cmd_gatt_write_characteristic_value(uint8 connection,uint16 characteristic,uint8 value_len, const uint8* value_data)
 {
+    if ((uint16_t)value_len > BGLIB_MSG_MAX_PAYLOAD - 4)
+    {
+        gecko_rsp_msg->data.rsp_gatt_write_characteristic_value.result = bg_err_command_too_long;
+        return &gecko_rsp_msg->data.rsp_gatt_write_characteristic_value;
+    }
+    
     if(ENDIAN) reverse_endian((uint8*)&characteristic,2);
     
     gecko_cmd_msg->data.cmd_gatt_write_characteristic_value.connection=connection;
@@ -4626,7 +4722,12 @@ static inline struct gecko_msg_gatt_write_characteristic_value_rsp_t* gecko_cmd_
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_write_characteristic_value;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_write_characteristic_value_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_write_characteristic_value;
 }
 
 /** 
@@ -4643,6 +4744,12 @@ static inline struct gecko_msg_gatt_write_characteristic_value_rsp_t* gecko_cmd_
 
 static inline struct gecko_msg_gatt_write_characteristic_value_without_response_rsp_t* gecko_cmd_gatt_write_characteristic_value_without_response(uint8 connection,uint16 characteristic,uint8 value_len, const uint8* value_data)
 {
+    if ((uint16_t)value_len > BGLIB_MSG_MAX_PAYLOAD - 4)
+    {
+        gecko_rsp_msg->data.rsp_gatt_write_characteristic_value_without_response.result = bg_err_command_too_long;
+        return &gecko_rsp_msg->data.rsp_gatt_write_characteristic_value_without_response;
+    }
+    
     if(ENDIAN) reverse_endian((uint8*)&characteristic,2);
     
     gecko_cmd_msg->data.cmd_gatt_write_characteristic_value_without_response.connection=connection;
@@ -4653,7 +4760,12 @@ static inline struct gecko_msg_gatt_write_characteristic_value_without_response_
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_write_characteristic_value_without_response;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_write_characteristic_value_without_response_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_write_characteristic_value_without_response;
 }
 
 /** 
@@ -5112,6 +5224,12 @@ static inline struct gecko_msg_gatt_server_send_user_write_response_rsp_t* gecko
 
 static inline struct gecko_msg_gatt_server_send_characteristic_notification_rsp_t* gecko_cmd_gatt_server_send_characteristic_notification(uint8 connection,uint16 characteristic,uint8 value_len, const uint8* value_data)
 {
+    if ((uint16_t)value_len > BGLIB_MSG_MAX_PAYLOAD - 4)
+    {
+        gecko_rsp_msg->data.rsp_gatt_server_send_characteristic_notification.result = bg_err_command_too_long;
+        return &gecko_rsp_msg->data.rsp_gatt_server_send_characteristic_notification;
+    }
+    
     if(ENDIAN) reverse_endian((uint8*)&characteristic,2);
 
     gecko_cmd_msg->data.cmd_gatt_server_send_characteristic_notification.connection=connection;
@@ -5122,7 +5240,12 @@ static inline struct gecko_msg_gatt_server_send_characteristic_notification_rsp_
     
     gecko_handle_command(gecko_cmd_msg->header,&gecko_cmd_msg->data.payload);
     
-    return NULL;//.rsp_gatt_server_send_characteristic_notification;
+	if((gecko_rsp_msg == NULL) || (BGLIB_MSG_ID(gecko_rsp_msg->header) != gecko_rsp_gatt_server_send_characteristic_notification_id))
+    {
+        return NULL;
+    }
+
+    return &gecko_rsp_msg->data.rsp_gatt_server_send_characteristic_notification;
 }
 
 /** 

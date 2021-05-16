@@ -144,7 +144,6 @@ typedef union {
         BLE_MAC address; 
         gl_ble_addr_type_t ble_addr_type;
         int32_t conn_role;
-        int32_t connection;
         int32_t bonding;
         int32_t advertiser;
     } connect_open_data;
@@ -160,35 +159,67 @@ typedef union {
  * @brief GATT BLE callback event type.
  */
 typedef enum {
-    GATT_BLE_REMOTE_NOTIFY_EVT = 0,
-    GATT_BLE_REMOTE_WRITE_EVT,
-    GATT_BLE_REMOTE_SET_EVT,
+    GATT_REMOTE_CHARACTERISTIC_VALUE_EVT = 0,
+    GATT_LOCAL_GATT_ATT_EVT,
+    GATT_LOCAL_CHARACTERISTIC_STATUS_EVT,
     GATT_EVT_MAX,
 } gl_ble_gatt_event_t;
 
+
+typedef enum {
+    GATT_READ_BY_TYPE_REQ                                       = 0x8,
+    GATT_READ_BY_TYPE_RESP                                      = 0x9,
+    GATT_READ_REQ                                               = 0xa,
+    GATT_READ_RESP                                              = 0xb,
+    GATT_READ_BLOB_REQ                                          = 0xc,
+    GATT_READ_BLOB_RESP                                         = 0xd,
+    GATT_READ_MULTIPLE_REQ                                      = 0xe,
+    GATT_READ_MULTIPLE_RESP                                     = 0xf,
+    GATT_WRITE_REQ                                              = 0x12,
+    GATT_WRITE_RESP                                             = 0x13,
+    GATT_WRITE_CMD                                              = 0x52,
+    GATT_PREPARE_WRITE_REQ                                      = 0x16,
+    GATT_PREPARE_WRITE_RESP                                     = 0x17,
+    GATT_EXECUTE_WRITE_REQ                                      = 0x18,
+    GATT_EXECUTE_WRITE_RESP                                     = 0x19,
+    GATT_HANDLE_VALUE_NOTIFICATION                              = 0x1b,
+    GATT_HANDLE_VALUE_INDICATION                                = 0x1d,
+} gl_ble_att_opcode_t;
+
+typedef enum {
+    GATT_SERVER_CLIENT_CONFIG                                    = 0x1,
+    GATT_SERVER_CONFIRMATION                                     = 0x2,
+} gl_ble_local_characteristic_status_flags_t;
+
+typedef enum {
+    GATT_DISABLE                                                 = 0x0,
+    GATT_NOTIFICATION                                            = 0x1,
+    GATT_INDICATION                                              = 0x2,
+}gl_ble_gatt_client_config_flag_t;
+
 typedef union {
-    struct ble_remote_notify_evt_data {
+    struct ble_remote_characteristic_value_evt_data {
         BLE_MAC address;
         int32_t characteristic;
-        int32_t att_opcode;
+        gl_ble_att_opcode_t att_opcode;
         int32_t offset;
         char value[MAX_VALUE_DATA_LEN];
 
-    } remote_notify;
-    struct ble_remote_write_evt_data {
+    } remote_characteristic_value;
+    struct ble_local_gatt_att_evt_data {
         BLE_MAC address;
         int32_t attribute;
-        int32_t att_opcode;
+        gl_ble_att_opcode_t att_opcode;
         int32_t offset;
         char value[MAX_VALUE_DATA_LEN];
 
-    } remote_write;
-    struct ble_remote_set_evt_data {
+    } local_gatt_attribute;
+    struct ble_local_characteristic_status_evt_data {
         BLE_MAC address;
         int32_t characteristic;
-        int32_t status_flags;
-        int32_t client_config_flags;
-    } remote_set;
+        gl_ble_local_characteristic_status_flags_t status_flags;
+        gl_ble_gatt_client_config_flag_t client_config_flags;
+    } local_characteristic_status;
 
 } gl_ble_gatt_data_t;
 

@@ -881,68 +881,68 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 	char address[BLE_MAC_LEN] = {0};
 	switch (event)
 	{
-	case GATT_BLE_REMOTE_NOTIFY_EVT:
-	{
-		gl_ble_gatt_data_t *remote_notify = (gl_ble_gatt_data_t *)data;
-		addr2str(data->remote_notify.address, address);
+		case GATT_REMOTE_CHARACTERISTIC_VALUE_EVT:
+		{
+			struct ble_remote_characteristic_value_evt_data* remote_char_value = (gl_ble_gatt_data_t *)data->remote_characteristic_value;
+			addr2str(remote_characteristic_value.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("remote_notify"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "characteristic", json_object_new_int(data->remote_notify.characteristic));
-		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_notify.att_opcode));
-		json_object_object_add(o, "offset", json_object_new_int(data->remote_notify.offset));
-		json_object_object_add(o, "value", json_object_new_string(data->remote_notify.value));
-		char *temp=json_object_to_json_string(o);
-		printf("%s\n",temp);
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("remote_characteristic_value"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "characteristic", json_object_new_int(remote_characteristic_value.characteristic));
+			json_object_object_add(o, "att_opcode", json_object_new_int(remote_characteristic_value.att_opcode));
+			json_object_object_add(o, "offset", json_object_new_int(remote_characteristic_value.offset));
+			json_object_object_add(o, "value", json_object_new_string(remote_characteristic_value.value));
+			char *temp=json_object_to_json_string(o);
+			printf("%s\n",temp);
 
-		json_object_put(o);
-		break;
-	}
-	case GATT_BLE_REMOTE_WRITE_EVT:
-	{
-		gl_ble_gatt_data_t *remote_write = (gl_ble_gatt_data_t *)data;
-		addr2str(data->remote_write.address, address);
+			json_object_put(o);
+			break;
+		}
+		case GATT_LOCAL_GATT_ATT_EVT:
+		{
+			struct ble_local_gatt_att_evt_data* local_gatt_att = (gl_ble_gatt_data_t *)data->local_gatt_attribute;
+			addr2str(local_gatt_att.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("remote_write"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "attribute", json_object_new_int(data->remote_write.attribute));
-		json_object_object_add(o, "att_opcode", json_object_new_int(data->remote_write.att_opcode));
-		json_object_object_add(o, "offset", json_object_new_int(data->remote_write.offset));
-		json_object_object_add(o, "value", json_object_new_string(data->remote_write.value));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
-	case GATT_BLE_REMOTE_SET_EVT:
-	{
-		gl_ble_gatt_data_t *remote_set = (gl_ble_gatt_data_t *)data;		
-		addr2str(data->remote_set.address, address);
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("local_gatt_attribute"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "attribute", json_object_new_int(local_gatt_att.attribute));
+			json_object_object_add(o, "att_opcode", json_object_new_int(local_gatt_att.att_opcode));
+			json_object_object_add(o, "offset", json_object_new_int(local_gatt_att.offset));
+			json_object_object_add(o, "value", json_object_new_string(local_gatt_att.value));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
+		case GATT_LOCAL_CHARACTERISTIC_STATUS_EVT:
+		{
+			struct ble_local_characteristic_status_evt_data* local_char_status = (gl_ble_gatt_data_t *)data->local_characteristic_status;		
+			addr2str(local_char_status.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("remote_set"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "characteristic", json_object_new_int(data->remote_set.characteristic));
-		json_object_object_add(o, "status_flags", json_object_new_int(data->remote_set.status_flags));
-		json_object_object_add(o, "client_config_flags", json_object_new_int(data->remote_set.client_config_flags));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("remote_set"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "characteristic", json_object_new_int(local_char_status.characteristic));
+			json_object_object_add(o, "status_flags", json_object_new_int(local_char_status.status_flags));
+			json_object_object_add(o, "client_config_flags", json_object_new_int(local_char_status.client_config_flags));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
 
-	default:
-		break;
+		default:
+			break;
 	}
 }
 
@@ -950,29 +950,29 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 {
 	switch (event)
 	{
-	case MODULE_BLE_SYSTEM_BOOT_EVT:
-	{
-		gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
+		case MODULE_BLE_SYSTEM_BOOT_EVT:
+		{
+			gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("module_start"));
-		json_object_object_add(o, "major", json_object_new_int(data->system_boot_data.major));
-		json_object_object_add(o, "minor", json_object_new_int(data->system_boot_data.minor));
-		json_object_object_add(o, "patch", json_object_new_int(data->system_boot_data.patch));
-		json_object_object_add(o, "build", json_object_new_int(data->system_boot_data.build));
-		json_object_object_add(o, "bootloader", json_object_new_int(data->system_boot_data.bootloader));
-		json_object_object_add(o, "hw", json_object_new_int(data->system_boot_data.hw));
-		json_object_object_add(o, "ble_hash", json_object_new_string(data->system_boot_data.ble_hash));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
-	default:
-		break;
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("module_start"));
+			json_object_object_add(o, "major", json_object_new_int(data->system_boot_data.major));
+			json_object_object_add(o, "minor", json_object_new_int(data->system_boot_data.minor));
+			json_object_object_add(o, "patch", json_object_new_int(data->system_boot_data.patch));
+			json_object_object_add(o, "build", json_object_new_int(data->system_boot_data.build));
+			json_object_object_add(o, "bootloader", json_object_new_int(data->system_boot_data.bootloader));
+			json_object_object_add(o, "hw", json_object_new_int(data->system_boot_data.hw));
+			json_object_object_add(o, "ble_hash", json_object_new_string(data->system_boot_data.ble_hash));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
+		default:
+			break;
 	}
 }
 
@@ -981,90 +981,90 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	char address[BLE_MAC_LEN] = {0};
 	switch (event)
 	{
-	case GAP_BLE_SCAN_RESULT_EVT:
-	{
-		gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
-		addr2str(data->scan_rst.address, address);
+		case GAP_BLE_SCAN_RESULT_EVT:
+		{
+			gl_ble_gap_data_t *scan_result = (gl_ble_gap_data_t *)data;
+			addr2str(data->scan_rst.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("scan_result"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "address_type", json_object_new_int(data->scan_rst.ble_addr_type));
-		json_object_object_add(o, "rssi", json_object_new_int(data->scan_rst.rssi));
-		json_object_object_add(o, "packet_type", json_object_new_int(data->scan_rst.packet_type));
-		json_object_object_add(o, "bonding", json_object_new_int(data->scan_rst.bonding));
-		json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("scan_result"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "address_type", json_object_new_int(data->scan_rst.ble_addr_type));
+			json_object_object_add(o, "rssi", json_object_new_int(data->scan_rst.rssi));
+			json_object_object_add(o, "packet_type", json_object_new_int(data->scan_rst.packet_type));
+			json_object_object_add(o, "bonding", json_object_new_int(data->scan_rst.bonding));
+			json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
 
-		json_object_put(o);
-		break;
-	}
+			json_object_put(o);
+			break;
+		}
 
-	case GAP_BLE_UPDATE_CONN_EVT:
-	{
-		gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
-		addr2str(data->update_conn_data.address, address);
+		case GAP_BLE_UPDATE_CONN_EVT:
+		{
+			gl_ble_gap_data_t *update_conn = (gl_ble_gap_data_t *)data;
+			addr2str(data->update_conn_data.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("connect_update"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "interval", json_object_new_int(data->update_conn_data.interval));
-		json_object_object_add(o, "latency", json_object_new_int(data->update_conn_data.latency));
-		json_object_object_add(o, "timeout", json_object_new_int(data->update_conn_data.timeout));
-		json_object_object_add(o, "security_mode", json_object_new_int(data->update_conn_data.security_mode));
-		json_object_object_add(o, "txsize", json_object_new_int(data->update_conn_data.txsize));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("connect_update"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "interval", json_object_new_int(data->update_conn_data.interval));
+			json_object_object_add(o, "latency", json_object_new_int(data->update_conn_data.latency));
+			json_object_object_add(o, "timeout", json_object_new_int(data->update_conn_data.timeout));
+			json_object_object_add(o, "security_mode", json_object_new_int(data->update_conn_data.security_mode));
+			json_object_object_add(o, "txsize", json_object_new_int(data->update_conn_data.txsize));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
 
-	case GAP_BLE_CONNECT_EVT:
-	{
-		gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
-		addr2str(data->connect_open_data.address, address);
+		case GAP_BLE_CONNECT_EVT:
+		{
+			gl_ble_gap_data_t *connect = (gl_ble_gap_data_t *)data;
+			addr2str(data->connect_open_data.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("connect_open"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "address_type", json_object_new_int(data->connect_open_data.ble_addr_type));
-		json_object_object_add(o, "connect_role", json_object_new_int(data->connect_open_data.conn_role));
-		json_object_object_add(o, "bonding", json_object_new_int(data->connect_open_data.bonding));
-		json_object_object_add(o, "advertiser", json_object_new_int(data->connect_open_data.advertiser));
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("connect_open"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "address_type", json_object_new_int(data->connect_open_data.ble_addr_type));
+			json_object_object_add(o, "connect_role", json_object_new_int(data->connect_open_data.conn_role));
+			json_object_object_add(o, "bonding", json_object_new_int(data->connect_open_data.bonding));
+			json_object_object_add(o, "advertiser", json_object_new_int(data->connect_open_data.advertiser));
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
 
-	case GAP_BLE_DISCONNECT_EVT:
-	{
-		gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
-		addr2str(data->disconnect_data.address, address);
+		case GAP_BLE_DISCONNECT_EVT:
+		{
+			gl_ble_gap_data_t *disconnect = (gl_ble_gap_data_t *)data;
+			addr2str(data->disconnect_data.address, address);
 
-		// json format
-		json_object* o = NULL;
-		o = json_object_new_object();
-		json_object_object_add(o, "type", json_object_new_string("connect_close"));
-		json_object_object_add(o, "mac", json_object_new_string(address));
-		json_object_object_add(o, "reason", json_object_new_int(data->disconnect_data.reason));	
-		char *temp = json_object_to_json_string(o);
-		printf("%s\n",temp);
-		
-		json_object_put(o);
-		break;
-	}
-	default:
-		break;
+			// json format
+			json_object* o = NULL;
+			o = json_object_new_object();
+			json_object_object_add(o, "type", json_object_new_string("connect_close"));
+			json_object_object_add(o, "mac", json_object_new_string(address));
+			json_object_object_add(o, "reason", json_object_new_int(data->disconnect_data.reason));	
+			char *temp = json_object_to_json_string(o);
+			printf("%s\n",temp);
+			
+			json_object_put(o);
+			break;
+		}
+		default:
+			break;
 	}
 }
 

@@ -26,7 +26,6 @@
 #include "silabs_bleapi.h"
 
 #define ble_run							silabs_run
-#define ble_transfer_func				silabs_init_transfer_func
 
 #define ble_enable                      silabs_ble_enable
 #define ble_local_mac                   silabs_ble_local_mac

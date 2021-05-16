@@ -30,6 +30,13 @@
 #include <json-c/json.h>
 
 /**
+ *  @brief  This function will init ble thread. 
+ * 
+ *  @retval  GL-RETURN-CODE
+ */
+GL_RET gl_ble_init(void);
+
+/**
  *  @brief  This function will subscribe events generate from BLE module. 
  * 
  *  @warning  Note that it is a loop , it will continuously pass events to function callback.

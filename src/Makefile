@@ -16,7 +16,7 @@
 
 
 # Targets	                                                       
-DAEMON			?=  bledaemon
+# DAEMON			?=  bledaemon
 UTIL 			?=  bletool
 LIBRARIES 		?=  libglbleapi.so
 PROJECT			?=  bledemo
@@ -26,21 +26,21 @@ CC	 			:=  gcc
 CFLAG			:=  -g -Wall
 
 # Directories and files
-DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
-					daemon/bledriver/util	\
-					components/dev_mgr \
-					components/log \
-					components/thread \
-					components/timestamp \
-					include
+# DAEMON_INCDIRS	:= 	daemon/bledriver/silabs \
+# 					daemon/bledriver/util	\
+# 					components/dev_mgr \
+# 					components/log \
+# 					components/thread \
+# 					components/timestamp \
+# 					include
 
-DAEMON_SRCDIRS	:=  daemon  \
-					daemon/bledriver/util	\
-					daemon/bledriver/silabs  \
-					components/dev_mgr  \
-					components/log  \
-					components/timestamp \
-					components/thread
+# DAEMON_SRCDIRS	:=  daemon  \
+# 					daemon/bledriver/util	\
+# 					daemon/bledriver/silabs  \
+# 					components/dev_mgr  \
+# 					components/log  \
+# 					components/timestamp \
+# 					components/thread
 
 LIB_INCDIRS		:= 	lib \
 					components/dev_mgr \
@@ -70,74 +70,80 @@ UTIL_SRCDIRS	:=  lib  \
 					components/log	\
 					daemon/bledriver/util
 					
-PROJECT_INCDIRS	:=  lib  \
-					project \
-					include \
-					components/thread \
-					components/dev_mgr \
-					components/log	\
-					daemon/bledriver/util
+# PROJECT_INCDIRS	:=  lib  \
+# 					project \
+# 					include \
+# 					components/thread \
+# 					components/dev_mgr \
+# 					components/log	\
+# 					daemon/bledriver/util
 
-PROJECT_SRCDIRS	:=  lib  \
-					project \
-					components/thread \
-					components/dev_mgr  \
-					components/log	\
-					daemon/bledriver/util
+# PROJECT_SRCDIRS	:=  lib  \
+# 					project \
+# 					components/thread \
+# 					components/dev_mgr  \
+# 					components/log	\
+# 					daemon/bledriver/util
 
 # Objects directories 
-DAEMON_DIR 		=	daemonbuild
+# DAEMON_DIR 		=	daemonbuild
 UTIL_DIR 		=	utilbuild
 LIB_DIR 		=	libbuild
-PROJECT_DIR		=	projectbuild
+# PROJECT_DIR		=	projectbuild
 EXE_DIR 		=	exe
 
 NULLDEVICE := /dev/null
-$(shell mkdir $(DAEMON_DIR)>$(NULLDEVICE) 2>&1)
+# $(shell mkdir $(DAEMON_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(UTIL_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(LIB_DIR)>$(NULLDEVICE) 2>&1)
-$(shell mkdir $(PROJECT_DIR)>$(NULLDEVICE) 2>&1)
+# $(shell mkdir $(PROJECT_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(EXE_DIR)>$(NULLDEVICE) 2>&1)
 
 # Rules
-DAEMON_INCLUD 	:=  $(patsubst %, -I %, $(DAEMON_INCDIRS))
+# DAEMON_INCLUD 	:=  $(patsubst %, -I %, $(DAEMON_INCDIRS))
 LIB_INCLUD	 	:=  $(patsubst %, -I %, $(LIB_INCDIRS))		
 UTIL_INCLUD 	:=  $(patsubst %, -I %, $(UTIL_INCDIRS))	
-PROJECT_INCLID	:=  $(patsubst %, -I %, $(PROJECT_INCDIRS))
+# PROJECT_INCLID	:=  $(patsubst %, -I %, $(PROJECT_INCDIRS))
 
-DAEMON_CFILES	:=  $(foreach dir, $(DAEMON_SRCDIRS), $(wildcard $(dir)/*.c))
+# DAEMON_CFILES	:=  $(foreach dir, $(DAEMON_SRCDIRS), $(wildcard $(dir)/*.c))
 UTIL_CFILES		:=  $(foreach dir, $(UTIL_SRCDIRS), $(wildcard $(dir)/*.c))
 LIB_CFILES		:=  $(foreach dir, $(LIB_SRCDIRS), $(wildcard $(dir)/*.c))
-PROJECT_CFILES	:=  $(foreach dir, $(PROJECT_SRCDIRS), $(wildcard $(dir)/*.c))
-$(info DAEMON_CFILES = $(DAEMON_CFILES))
+# PROJECT_CFILES	:=  $(foreach dir, $(PROJECT_SRCDIRS), $(wildcard $(dir)/*.c))
+# $(info DAEMON_CFILES = $(DAEMON_CFILES))
 
-DAEMON_OBJS 	:=  $(patsubst %.c, $(DAEMON_DIR)/%.o, $(notdir $(DAEMON_CFILES)))
+# DAEMON_OBJS 	:=  $(patsubst %.c, $(DAEMON_DIR)/%.o, $(notdir $(DAEMON_CFILES)))
 UTIL_OBJS	 	:=  $(patsubst %.c, $(UTIL_DIR)/%.o, $(notdir $(UTIL_CFILES)))
 LIB_OBJS	 	:=  $(patsubst %.c, $(LIB_DIR)/%.o, $(notdir $(LIB_CFILES)))
-PROJECT_OBJS	:=  $(patsubst %.c, $(PROJECT_DIR)/%.o, $(notdir $(PROJECT_CFILES)))
-$(info DAEMON_OBJS = $(DAEMON_OBJS))
+# PROJECT_OBJS	:=  $(patsubst %.c, $(PROJECT_DIR)/%.o, $(notdir $(PROJECT_CFILES)))
+# $(info DAEMON_OBJS = $(DAEMON_OBJS))
 
-VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)  $(PROJECT_SRCDIRS)
+# VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)  $(PROJECT_SRCDIRS)
+VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS) 
+
 
 # Dependences               
-DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
-UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json -luci
-LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
-PROJECT_DEPENDS +=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
+# DAEMON_DEPENDS	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
+# UTIL_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json -luci
+# LIB_DEPENDS 	+=  -lubox -lubus -ljson-c -lblobmsg_json
+# PROJECT_DEPENDS +=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
 # UTIL_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 # LIB_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json
 
+UTIL_DEPENDS 	+=  -ljson-c -luci
+LIB_DEPENDS 	+=  -ljson-c -lpthread
+# PROJECT_DEPENDS +=  -ljson-c -luci -lpthread
 
-all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)
+# all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)
+all:	$(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) 
 
 # Create bledaemon
-$(DAEMON_DIR)/%.o : %.c
-	@echo "Building file: $<"
-	$(CC) -c $(CFLAG) $(DAEMON_INCLUD) ${DAEMON_DEPENDS}  $< -o $@ 
+# $(DAEMON_DIR)/%.o : %.c
+# 	@echo "Building file: $<"
+# 	$(CC) -c $(CFLAG) $(DAEMON_INCLUD) ${DAEMON_DEPENDS}  $< -o $@ 
 
-$(EXE_DIR)/$(DAEMON): $(DAEMON_OBJS)
-	@echo "Linking target: $@"
-	$(CC) $^ -o $@ $(DAEMON_DEPENDS)
+# $(EXE_DIR)/$(DAEMON): $(DAEMON_OBJS)
+# 	@echo "Linking target: $@"
+# 	$(CC) $^ -o $@ $(DAEMON_DEPENDS)
 
 # Create shared lib
 $(LIB_DIR)/%.o : %.c
@@ -158,14 +164,15 @@ $(EXE_DIR)/$(UTIL): $(UTIL_OBJS)
 	$(CC) $^ -o $@ $(UTIL_DEPENDS)	
 
 # Create demo project
-$(PROJECT_DIR)/%.o : %.c
-	@echo "Project building file: $<"
-	$(CC) -c $(CFLAG) ${PROJECT_INCLID}  $(PROJECT_DEPENDS) $< -o $@ 
+# $(PROJECT_DIR)/%.o : %.c
+# 	@echo "Project building file: $<"
+# 	$(CC) -c $(CFLAG) ${PROJECT_INCLID}  $(PROJECT_DEPENDS) $< -o $@ 
 
-$(EXE_DIR)/$(PROJECT): $(PROJECT_OBJS)
-	@echo "Linking target: $@"
-	$(CC) $^ -o $@ $(PROJECT_DEPENDS)	
+# $(EXE_DIR)/$(PROJECT): $(PROJECT_OBJS)
+# 	@echo "Linking target: $@"
+# 	$(CC) $^ -o $@ $(PROJECT_DEPENDS)	
 
 .PHONY: clean
 clean:
-	rm -rf $(DAEMON_DIR) $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR) $(PROJECT)
+	rm -rf $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR)
+# rm -rf $(DAEMON_DIR) $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR) $(PROJECT)

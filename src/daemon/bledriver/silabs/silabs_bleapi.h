@@ -20,26 +20,42 @@
 #ifndef _SILABS_BLEAPI_H
 #define _SILABS_BLEAPI_H
 
-#include <json-c/json.h>
+#include "gl_errno.h"
 
 void* silabs_run(void* arg);
 
-json_object* silabs_ble_enable(int);
-json_object* silabs_ble_local_mac(void);
-json_object* silabs_ble_discovery(int phys,int interval,int window,int type,int mode);
-json_object* silabs_ble_stop_discovery(void);
-json_object* silabs_ble_adv(int adv_phys,int adv_interval_min,int adv_interval_max,int adv_discover,int adv_conn);
-json_object* silabs_ble_adv_data(int adv_data_flag,char* adv_data);
-json_object* silabs_ble_stop_adv(void);
-json_object* silabs_ble_send_notify(int send_noti_conn,int send_noti_char,char* send_noti_value);
-json_object* silabs_ble_connect(char* address,int address_type,int conn_phy);
-json_object* silabs_ble_disconnect(int connection);
-json_object* silabs_ble_get_rssi(int connection);
-json_object* silabs_ble_get_service(int connection);
-json_object* silabs_ble_get_char(int connection,int service_handle);
-json_object* silabs_ble_set_power(int power);
-json_object* silabs_ble_read_char(int connection,int char_handle);
-json_object* silabs_ble_write_char(int connection,int char_handle,char* value,int write_res);
-json_object* silabs_ble_set_notify(int connection,int char_handle,int flag);
+GL_RET silabs_ble_enable(int);
+
+GL_RET silabs_ble_local_mac(void);
+
+GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mode);
+
+GL_RET silabs_ble_stop_discovery(void);
+
+GL_RET silabs_ble_adv(int phys, int interval_min, int interval_max, int discover, int adv_conn);
+
+GL_RET silabs_ble_adv_data(int flag, char *data);
+
+GL_RET silabs_ble_stop_adv(void);
+
+GL_RET silabs_ble_send_notify(BLE_MAC address, int char_handle, char *value);
+
+GL_RET silabs_ble_connect(BLE_MAC address, int address_type, int phy);
+
+GL_RET silabs_ble_disconnect(BLE_MAC address);
+
+GL_RET silabs_ble_get_rssi(BLE_MAC address, int32_t *rssi);
+
+GL_RET silabs_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC address);
+
+GL_RET silabs_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int service_handle);
+
+GL_RET silabs_ble_set_power(int power, int *current_power);
+
+GL_RET silabs_ble_read_char(BLE_MAC address, int char_handle);
+
+GL_RET silabs_ble_write_char(BLE_MAC address, int char_handle, char *value, int res);
+
+GL_RET silabs_ble_set_notify(BLE_MAC address, int char_handle, int flag);
 
 #endif

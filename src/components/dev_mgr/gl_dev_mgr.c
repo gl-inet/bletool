@@ -148,7 +148,7 @@ int ble_dev_mgr_del(uint16_t connection) {
     return GL_SUCCESS;
 }
 
-uint16_t ble_dev_mgr_get_address(uint16_t connection, char **mac) {
+uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
     ble_dev_mgr_node_t *node = NULL;
 
     if (connection == 0) {
@@ -160,7 +160,9 @@ uint16_t ble_dev_mgr_get_address(uint16_t connection, char **mac) {
         return GL_ERR_MSG;
     }
 
-	*mac = node->ble_dev_desc.dev_addr;
+	// *mac = node->ble_dev_desc.dev_addr;
+    memcpy(mac, node->ble_dev_desc.dev_addr, MAC_STR_LEN);
+    
     return GL_SUCCESS;
 }
 

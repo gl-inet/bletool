@@ -1,10 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <libubox/uloop.h>
-#include <json-c/json.h>
-#include <libubox/blobmsg.h>
-#include <libubox/blobmsg_json.h>
-#include <libubus.h>
 
 #include "silabs_msg.h"
 #include "gl_common.h"
@@ -16,10 +11,12 @@
 #include "gl_log.h"
 #include "gl_dev_mgr.h"
 #include "silabs_bleapi.h"
+#include "gl_type.h"
 
 
 BGLIB_DEFINE();
 
+extern gl_ble_cbs ble_msg_cb;
 
 struct gecko_cmd_packet* evt = NULL;
 
@@ -217,185 +214,154 @@ void gecko_handle_command(uint32_t hdr, void* data)
 
 
 
-char* target_dev_address = NULL;
 /*
  *	module events report 
  */
 void silabs_event_handler(struct gecko_cmd_packet *p)
 {
-    json_object* o = NULL;
-    char value[256] = {0};
-    char addr[18] = {0};
-	char* change_mac_addr = NULL;
-
 	// printf("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
 
-    // Do not handle any events until system is booted up properly.
-    // if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id)
-    //     && !appBooted) {
-        // #if defined(DEBUG)
-        // #endif
-    //     usleep(50000);
-    //     return;
-    // }
-
     switch(BGLIB_MSG_ID(p->header)){
-		case gecko_rsp_le_gap_connect_id:
-		{
-			// as master start to connect slave device
-			if(target_dev_address == NULL)
-			{
-				log_err("As master start to connect device, but target device mac lost!");
-				return ;
-			}
-			ble_dev_mgr_add(target_dev_address, p->data.rsp_le_gap_connect.connection);
-			break;
-		}
         case gecko_evt_system_boot_id:
 		{
-			// appBooted = true;
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(SYSTEM_BOOT));
-			json_object_object_add(o,"major",json_object_new_int(p->data.evt_system_boot.major));
-			json_object_object_add(o,"minor",json_object_new_int(p->data.evt_system_boot.minor));
-			json_object_object_add(o,"patch",json_object_new_int(p->data.evt_system_boot.patch));
-			json_object_object_add(o,"build",json_object_new_int(p->data.evt_system_boot.build));
-			json_object_object_add(o,"bootloader",json_object_new_int(p->data.evt_system_boot.bootloader));
-			json_object_object_add(o,"hw",json_object_new_int(p->data.evt_system_boot.hw));
-			hex2str((uint8*)&p->data.evt_system_boot.hash,sizeof(uint32),value);
-			json_object_object_add(o,"hash",json_object_new_string(value));
+            gl_ble_module_data_t data;
+            data.system_boot_data.major = p->data.evt_system_boot.major;
+            data.system_boot_data.minor = p->data.evt_system_boot.minor;
+            data.system_boot_data.patch = p->data.evt_system_boot.patch;
+            data.system_boot_data.build = p->data.evt_system_boot.build;
+            data.system_boot_data.bootloader = p->data.evt_system_boot.bootloader;
+            data.system_boot_data.hw = p->data.evt_system_boot.hw;
+            hex2str((uint8*)&p->data.evt_system_boot.hash,sizeof(uint32),data.system_boot_data.ble_hash);
+
+            ble_msg_cb.ble_module_event(MODULE_BLE_SYSTEM_BOOT_EVT, &data);
+
 			break;
 		}
         case gecko_evt_le_connection_closed_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(CONN_CLOSE));
-			json_object_object_add(o,"reason",json_object_new_int(p->data.evt_le_connection_closed.reason));
-
-			// get target device mac
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, &change_mac_addr);
+            gl_ble_gap_data_t data;
+            data.disconnect_data.reason = p->data.evt_le_connection_closed.reason;
+            char tmp_address[MAC_STR_LEN] = {0};
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				json_object_object_add(o,"code",json_object_new_int(ret));
 				return -1;
 			}
-			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
-
+            str2addr(tmp_address, data.disconnect_data.address);
+            
 			// delete from dev-list
 			ble_dev_mgr_del(p->data.evt_le_connection_closed.connection);
+            ble_msg_cb.ble_gap_event(GAP_BLE_DISCONNECT_EVT, &data);
 			break;
 		}
         case gecko_evt_gatt_characteristic_value_id:
 		{
-			// if(p->data.evt_gatt_characteristic_value.att_opcode == gatt_handle_value_notification){
-				o = json_object_new_object();
-				json_object_object_add(o,"type",json_object_new_string(REMOTE_NOTIFY));
-				json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_characteristic_value.characteristic));
-				json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_characteristic_value.att_opcode));
-				json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_characteristic_value.offset));
-				hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,value);
-				json_object_object_add(o,"value",json_object_new_string(value));
+            gl_ble_gatt_data_t data;
+            data.remote_characteristic_value.offset = p->data.evt_gatt_characteristic_value.offset;
+            data.remote_characteristic_value.att_opcode = p->data.evt_gatt_characteristic_value.att_opcode;
+            data.remote_characteristic_value.characteristic = p->data.evt_gatt_characteristic_value.characteristic;
+            hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,data.remote_characteristic_value.value);
+            
+            char tmp_address[MAC_STR_LEN] = {0};
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
+			if(ret != 0)
+			{
+				log_err("get dev mac from dev-list failed!\n");
+				return -1;
+			}
+            str2addr(tmp_address, data.remote_characteristic_value.address);
 
-				// get target device mac
-				uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_characteristic_value.connection, &change_mac_addr);
-				if(ret != 0)
-				{
-					log_err("get dev mac from dev-list failed!\n");
-					json_object_object_add(o,"code",json_object_new_int(ret));
-					return -1;
-				}
-				json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
-			// }
+            ble_msg_cb.ble_gatt_event(GATT_REMOTE_CHARACTERISTIC_VALUE_EVT, &data);
 			break;
 		}
         case gecko_evt_gatt_server_attribute_value_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(REMOTE_WRITE));
-			json_object_object_add(o,"attribute",json_object_new_int(p->data.evt_gatt_server_attribute_value.attribute));
-			json_object_object_add(o,"att_opcode",json_object_new_int(p->data.evt_gatt_server_attribute_value.att_opcode));
-			json_object_object_add(o,"offset",json_object_new_int(p->data.evt_gatt_server_attribute_value.offset));
-			hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,value);
-			json_object_object_add(o,"value",json_object_new_string(value));
-
-			// get target device mac
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_attribute_value.connection, &change_mac_addr);
+            gl_ble_gatt_data_t data;
+            data.local_gatt_attribute.offset = p->data.evt_gatt_server_attribute_value.offset;
+            data.local_gatt_attribute.attribute = p->data.evt_gatt_server_attribute_value.attribute;
+            data.local_gatt_attribute.att_opcode = p->data.evt_gatt_server_attribute_value.att_opcode;
+            hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,data.local_gatt_attribute.value);
+			
+            char tmp_address[MAC_STR_LEN] = {0};
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				json_object_object_add(o,"code",json_object_new_int(ret));
 				return -1;
 			}
-			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
+            str2addr(tmp_address, data.local_gatt_attribute.address);
+
+            ble_msg_cb.ble_gatt_event(GATT_LOCAL_GATT_ATT_EVT, &data);
 			break;
 		}
         case gecko_evt_gatt_server_characteristic_status_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(REMOTE_SET));
-			json_object_object_add(o,"characteristic",json_object_new_int(p->data.evt_gatt_server_characteristic_status.characteristic));
-			json_object_object_add(o,"status_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.status_flags));
-			json_object_object_add(o,"client_config_flags",json_object_new_int(p->data.evt_gatt_server_characteristic_status.client_config_flags));
-			
-			// get target device mac
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_characteristic_status.connection, &change_mac_addr);
+            gl_ble_gatt_data_t data;
+            data.local_characteristic_status.status_flags = p->data.evt_gatt_server_characteristic_status.status_flags;
+            data.local_characteristic_status.characteristic = p->data.evt_gatt_server_characteristic_status.characteristic;
+            data.local_characteristic_status.client_config_flags = p->data.evt_gatt_server_characteristic_status.client_config_flags;
+
+            char tmp_address[MAC_STR_LEN] = {0};
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				json_object_object_add(o,"code",json_object_new_int(ret));
 				return -1;
 			}
-			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
+            str2addr(tmp_address, data.local_characteristic_status.address);
+
+            ble_msg_cb.ble_gatt_event(GATT_LOCAL_CHARACTERISTIC_STATUS_EVT, &data);
 			break;
 		}
         case gecko_evt_le_gap_scan_response_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(ADV_PKG));
-			json_object_object_add(o,"rssi",json_object_new_int(p->data.evt_le_gap_scan_response.rssi));
-			json_object_object_add(o,"packet_type",json_object_new_int(p->data.evt_le_gap_scan_response.packet_type));
-			addr2str(p->data.evt_le_gap_scan_response.address.addr,addr);
-			json_object_object_add(o,"address",json_object_new_string(addr));
-			json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_gap_scan_response.address_type));
-			json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_gap_scan_response.bonding));
-			hex2str(p->data.evt_le_gap_scan_response.data.data, p->data.evt_le_gap_scan_response.data.len,value);
-			json_object_object_add(o,"data",json_object_new_string(value));
+            gl_ble_gap_data_t data;
+            data.scan_rst.rssi = p->data.evt_le_gap_scan_response.rssi;
+            data.scan_rst.bonding = p->data.evt_le_gap_scan_response.bonding;
+            data.scan_rst.packet_type = p->data.evt_le_gap_scan_response.packet_type;
+            data.scan_rst.ble_addr_type = p->data.evt_le_gap_scan_response.address_type;
+			hex2str(p->data.evt_le_gap_scan_response.data.data, p->data.evt_le_gap_scan_response.data.len,data.scan_rst.ble_adv);
+            memcpy(data.scan_rst.address, p->data.evt_le_gap_scan_response.address.addr, 6);
+
+            ble_msg_cb.ble_gap_event(GAP_BLE_SCAN_RESULT_EVT, &data);
 			break;
 		}
         case gecko_evt_le_connection_parameters_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(CONN_UPDATE));
-			json_object_object_add(o,"interval",json_object_new_int(p->data.evt_le_connection_parameters.interval));
-			json_object_object_add(o,"latency",json_object_new_int(p->data.evt_le_connection_parameters.latency));
-			json_object_object_add(o,"timeout",json_object_new_int(p->data.evt_le_connection_parameters.timeout));
-			json_object_object_add(o,"security_mode",json_object_new_int(p->data.evt_le_connection_parameters.security_mode));
-			json_object_object_add(o,"txsize",json_object_new_int(p->data.evt_le_connection_parameters.txsize));
+            gl_ble_gap_data_t data;
+            data.update_conn_data.txsize = p->data.evt_le_connection_parameters.txsize;
+            data.update_conn_data.latency = p->data.evt_le_connection_parameters.latency;
+            data.update_conn_data.timeout = p->data.evt_le_connection_parameters.timeout;
+            data.update_conn_data.interval = p->data.evt_le_connection_parameters.interval;
+            data.update_conn_data.security_mode = p->data.evt_le_connection_parameters.security_mode;
 
-			// get target device mac
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_parameters.connection, &change_mac_addr);
+            char tmp_address[MAC_STR_LEN] = {0};
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
-				json_object_object_add(o,"code",json_object_new_int(ret));
 				return -1;
 			}
-			json_object_object_add(o, "address", json_object_new_string(change_mac_addr));
+            str2addr(tmp_address, data.update_conn_data.address);
+
+            ble_msg_cb.ble_gap_event(GAP_BLE_UPDATE_CONN_EVT, &data);
 			break;
 		}
         case gecko_evt_le_connection_opened_id:
 		{
-			o = json_object_new_object();
-			json_object_object_add(o,"type",json_object_new_string(CONN_OPEN));
+            char addr[MAC_STR_LEN] = {0};
 			addr2str(p->data.evt_le_connection_opened.address.addr,addr);
-			json_object_object_add(o,"address",json_object_new_string(addr));
-			json_object_object_add(o,"address_type",json_object_new_int(p->data.evt_le_connection_opened.address_type));
-			json_object_object_add(o,"master",json_object_new_int(p->data.evt_le_connection_opened.master));
-			json_object_object_add(o,"bonding",json_object_new_int(p->data.evt_le_connection_opened.bonding));
-			json_object_object_add(o,"advertiser",json_object_new_int(p->data.evt_le_connection_opened.advertiser));
-
 			ble_dev_mgr_add(addr, p->data.evt_le_connection_opened.connection);
+
+            gl_ble_gap_data_t data;
+            data.connect_open_data.bonding = p->data.evt_le_connection_opened.bonding;
+            data.connect_open_data.conn_role = p->data.evt_le_connection_opened.master;
+            data.connect_open_data.advertiser = p->data.evt_le_connection_opened.advertiser;
+            data.connect_open_data.ble_addr_type = p->data.evt_le_connection_opened.address_type;
+            memcpy(data.connect_open_data.address, p->data.evt_le_connection_opened.address, 6);
+
+            ble_msg_cb.ble_gap_event(GAP_BLE_CONNECT_EVT, &data);
 			break;
 		}
 		case gecko_evt_gatt_service_id:
@@ -410,23 +376,6 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             break;
     }
 
-	if(!o)
-	{
-		return ;
-	}
-	// else{
-	// 	printf("object %s\n",json_object_to_json_string(o));
-	// }
-
-	static struct blob_buf evt_b;
-	blob_buf_init(&evt_b, 0);
-	blobmsg_add_object(&evt_b, o);
-
-	_thread_ctx_mutex_lock(); // get lock
-	int notify_ret = ubus_notify(ctx, &ble_obj, "Notify", evt_b.head, -1);
-	_thread_ctx_mutex_unlock(); // release lock
-
-	json_object_put(o);
     return ;
 }
 

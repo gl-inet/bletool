@@ -29,7 +29,6 @@ extern int    gecko_queue_r;
 #define SPE_EVT_MAX				50
 extern struct gecko_cmd_packet special_evt[SPE_EVT_MAX];
 extern int special_evt_num;
-extern char* target_dev_address;
 
 
 

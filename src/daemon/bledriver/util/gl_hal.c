@@ -19,6 +19,7 @@
 
 #include "gl_uart.h"
 #include <uci.h>
+#include "gl_log.h"
 #include "gl_hal.h"
 
 unsigned char ENDIAN;
@@ -37,10 +38,10 @@ static int check_endian(void)
   if(*((char *)&x) == 1) 
   {
 	ENDIAN = 0;   //little endian
-	printf("little endian\n");
+	log_debug("little endian\n");
   }else{
 	ENDIAN = 1;   //big endian
-	printf("big endian\n");
+	log_debug("big endian\n");
   }
 
   return 0;
