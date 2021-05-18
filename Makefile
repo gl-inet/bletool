@@ -16,7 +16,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gl-bletool
-PKG_VERSION:=4.0.0
+PKG_VERSION:=0.0.0
 
 
 include $(INCLUDE_DIR)/package.mk
@@ -24,8 +24,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gl-bletool
 	SECTION:=base
 	CATEGORY:=gl-inet
-	TITLE:=GL inet BLE driver
-	DEPENDS:=  +libjson-c +libuci +libpthread
+	TITLE:=GL inet BLE driver(debug only)
+	DEPENDS:=  +libjson-c +libuci +libpthread +libreadline +libncurses
 endef
 
 define Build/Prepare

@@ -16,6 +16,7 @@
 
 #include "gl_log.h"
 #include <stdarg.h>
+
 #ifdef SYSLOG
 #include <syslog.h>
 #endif

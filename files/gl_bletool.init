@@ -6,8 +6,6 @@ USE_PROCD=1
 start_service() {
   . /lib/functions.sh
   . /lib/functions/gl_util.sh
-  # board=$(board_name)
-  # model="${board#*-}"
   model=$(get_model)
   if [ ! -f "/etc/config/ble" ]; then
   touch "/etc/config/ble"
@@ -107,8 +105,4 @@ start_service() {
   fi
   uci commit ble
 
-  procd_open_instance
-  procd_set_param command "bledaemon"
-  procd_set_param respawn
-  procd_close_instance
 }

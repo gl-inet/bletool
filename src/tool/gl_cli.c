@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <json-c/json.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <unistd.h>
 #include <signal.h>
@@ -39,20 +41,21 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
+static bool hold_loop = true;
+
 /* System functions */
 GL_RET cmd_enable(int argc, char **argv)
 {
 	int enable = 0;
-	if (argc < 3) {
+	if (argc != 2) 
+	{
 		enable = 1;
-	}
-	else {
-		enable = atoi(argv[2]);
+	}else {
+		enable = atoi(argv[1]);
 	}
 
 	GL_RET ret  = gl_ble_enable(enable);
 
-	// json format
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o,"code",json_object_new_int(ret));
@@ -92,12 +95,12 @@ GL_RET cmd_set_power(int argc, char **argv)
 {
 	int power = 0;
 	int current_p = 0;
-	if (argc < 3) {
+	if (argc < 2) {
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
 	else {
-		power = atoi(argv[2]);
+		power = atoi(argv[1]);
 	}
 
 	GL_RET ret = gl_ble_set_power(power, &current_p);
@@ -119,53 +122,24 @@ GL_RET cmd_set_power(int argc, char **argv)
 	return GL_SUCCESS;
 }
 
-
-GL_RET cmd_listen(int argc, char **argv)
-{
-	gl_ble_cbs ble_cb;
-	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
-
-	ble_cb.ble_gap_event = ble_gap_cb;
-	ble_cb.ble_gatt_event = ble_gatt_cb;
-	ble_cb.ble_module_event = ble_module_cb;
-
-	gl_ble_subscribe(&ble_cb);
-}
-
 /*BLE slave functions */
 GL_RET cmd_adv(int argc, char **argv)
 {
-	int ch, phys = 1, interval_min = 160, interval_max = 160, discover = 2, adv_conn = 2;
+	int phys = 1, interval_min = 160, interval_max = 160, discover = 2, adv_conn = 2;
 
-	struct option long_options[] = {
-		{"phys", required_argument, NULL, 'p'},
-		{"interval_min", required_argument, NULL, 'n'},
-		{"interval_max", required_argument, NULL, 'x'},
-		{"discover", required_argument, NULL, 'd'},
-		{"adv_conn", required_argument, NULL, 'c'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "p:n:x:d:c:", long_options, &option_index)) != -1)
+	if((argc != 1) && (argc != 6))
 	{
-		switch (ch)
-		{
-		case 'p':
-			phys = atoi(optarg);
-			break;
-		case 'n':
-			interval_min = atoi(optarg);
-			break;
-		case 'x':
-			interval_max = atoi(optarg);
-			break;
-		case 'd':
-			discover = atoi(optarg);
-			break;
-		case 'c':
-			adv_conn = atoi(optarg);
-			break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
+	}
+
+	if(argc != 0)
+	{
+		phys = atoi(argv[1]);
+		interval_min = atoi(argv[2]);
+		interval_max = atoi(argv[3]);
+		discover = atoi(argv[4]);
+		adv_conn = atoi(argv[5]);
 	}
 
 	if (interval_max < interval_min)
@@ -193,24 +167,13 @@ GL_RET cmd_adv_data(int argc, char **argv)
 	int ch, flag = -1;
 	char *value = NULL;
 
-	struct option long_options[] = {
-		{"flag", required_argument, NULL, 'f'},
-		{"value", required_argument, NULL, 'v'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "f:v:", long_options, &option_index)) != -1)
+	if(argc != 3)
 	{
-		switch (ch)
-		{
-		case 'f':
-			flag = atoi(optarg);
-			break;
-		case 'v':
-			value = optarg;
-			break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	flag = atoi(argv[1]);
+	value = argv[2];
 
 	if (flag < 0 || !value) {
 		printf(PARA_MISSING);
@@ -235,7 +198,6 @@ GL_RET cmd_adv_stop(int argc, char **argv)
 {
 	GL_RET ret = gl_ble_stop_adv();
 
-	// json format
 	json_object* o = NULL;
 	o = json_object_new_object();
 	json_object_object_add(o, "code", json_object_new_int(ret));
@@ -254,28 +216,14 @@ GL_RET cmd_send_notify(int argc, char **argv)
 	char *value = NULL, *str = NULL;
 	char *address = NULL;	
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{"char_handle", required_argument, NULL, 'h'},
-		{"value", required_argument, NULL, 'v'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "a:h:v:", long_options, &option_index)) != -1)
+	if(argc != 4)
 	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-			case 'h':
-				char_handle = atoi(optarg);
-				break;
-			case 'v':
-				value = optarg;
-				break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	address = argv[1];
+	char_handle = atoi(argv[2]);
+	value = argv[3];
 
 	if(address == NULL)
 	{
@@ -311,35 +259,19 @@ GL_RET cmd_send_notify(int argc, char **argv)
 GL_RET cmd_discovery(int argc, char **argv)
 {
 	int ch, phys = 1, interval = 16, window = 16, type = 0, mode = 1;
-	struct option long_options[] = {
-		{"phys", required_argument, NULL, 'p'},
-		{"interval", required_argument, NULL, 'i'},
-		{"window", required_argument, NULL, 'w'},
-		{"type", required_argument, NULL, 't'},
-		{"mode", required_argument, NULL, 'm'},
-		{0, 0, 0, 0}};
-	int option_index;
 
-	while ((ch = getopt_long(argc, argv, "p:i:w:t:m:", long_options, &option_index)) != -1)
+	if((argc != 1) && (argc != 6))
 	{
-		switch (ch)
-		{
-		case 'p':
-			phys = atoi(optarg);
-			break;
-		case 'i':
-			interval = atoi(optarg);
-			break;
-		case 'w':
-			window = atoi(optarg);
-			break;
-		case 't':
-			type = atoi(optarg);
-			break;
-		case 'm':
-			mode = atoi(optarg);
-			break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
+	}
+	if(argc == 6)
+	{
+		phys = atoi(argv[1]);
+		interval = atoi(argv[2]);
+		window = atoi(argv[3]);
+		type = atoi(argv[4]);
+		mode = atoi(argv[5]);
 	}
 
 	GL_RET ret = gl_ble_discovery(phys, interval, window, type, mode);
@@ -376,31 +308,17 @@ GL_RET cmd_stop(int argc, char **argv)
 
 GL_RET cmd_connect(int argc, char **argv)
 {
-	int ch, phy = 1, address_type = -1, option_index;
+	int ch, phy = 1, address_type = -1, option_index = 0;
 	char *address = NULL;
 
-	struct option long_options[] = {
-		{"phys", required_argument, NULL, 'p'},
-		{"address_type", required_argument, NULL, 't'},
-		{"address", required_argument, NULL, 'a'},
-		{0, 0, 0, 0}
-	};
-
-	while ((ch = getopt_long(argc, argv, "p:t:a:", long_options, &option_index)) != -1)
+	if(argc != 4)
 	{
-		switch (ch)
-		{
-		case 'p':
-			phy = atoi(optarg);
-			break;
-		case 't':
-			address_type = atoi(optarg);
-			break;
-		case 'a':
-			address = optarg;
-			break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	phy = atoi(argv[1]);
+	address_type = atoi(argv[2]);
+	address = argv[3];
 
 	if(address == NULL)
 	{
@@ -434,22 +352,14 @@ GL_RET cmd_connect(int argc, char **argv)
 GL_RET cmd_disconnect(int argc, char **argv)
 {
 	char *address = NULL;
-	int ch, option_index;
+	int ch, option_index = 0;
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{0, 0, 0, 0}
-	};
-
-	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
+	if(argc != 2)
 	{
-		switch (ch)
-		{
-		case 'a':
-			address = optarg;
-			break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	address = argv[1];
 
 	if(address == NULL)
 	{
@@ -484,28 +394,15 @@ GL_RET cmd_disconnect(int argc, char **argv)
 
 GL_RET cmd_get_rssi(int argc, char **argv)
 {
-	int ch, option_index;
+	int ch, option_index = 0;
 	char *address = NULL;
 
-	struct option long_options[] = {
-	{"address", required_argument, NULL, 'a'},
-	{0}};
-	
-	if (argc < 4)
+	if(argc != 2)
 	{
 		printf(PARA_MISSING);
-		return GL_ERR_PARAM_MISSING;
+		return GL_ERR_PARAM;
 	}
-
-	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
-	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-		}
-	}
+	address = argv[1];
 
 	if(address == NULL)
 	{
@@ -545,28 +442,16 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 
 GL_RET cmd_get_service(int argc, char **argv)
 {
-	int ch, option_index;
+	int ch, option_index = 0;
 	char *address = NULL;
 
-	struct option long_options[] = {
-	{"address", required_argument, NULL, 'a'},
-	{0}};
-	
-	if (argc < 4)
+	if (argc != 2)
 	{
 		printf(PARA_MISSING);
 		return GL_ERR_PARAM_MISSING;
 	}
+	address = argv[1];
 
-	while ((ch = getopt_long(argc, argv, "a:", long_options, &option_index)) != -1)
-	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-		}
-	}
 
 	if(address == NULL)
 	{
@@ -621,28 +506,18 @@ GL_RET cmd_get_service(int argc, char **argv)
 GL_RET cmd_get_char(int argc, char **argv)
 {
 	int ch, service_handle = -1;
-	int option_index;
+	int option_index = 0;
 	char *str = NULL;
 	char *address = NULL;	
 	uint8_t addr_len;
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{"service_handle", required_argument, NULL, 'h'},
-		{0, 0, 0, 0}};
-	
-	while ((ch = getopt_long(argc, argv, "a:h:", long_options, &option_index)) != -1)
+	if (argc != 3)
 	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-			case 'h':
-				service_handle = atoi(optarg);
-				break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM_MISSING;
 	}
+	address = argv[1];
+	service_handle = atoi(argv[2]);
 
 	if(address == NULL)
 	{
@@ -701,28 +576,14 @@ GL_RET cmd_set_notify(int argc, char **argv)
 	char *address = NULL;	
 	uint8_t addr_len;
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{"char_handle", required_argument, NULL, 'h'},
-		{"flag", required_argument, NULL, 'f'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "a:h:f:", long_options, &option_index)) != -1)
+	if (argc != 4)
 	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-			case 'h':
-				char_handle = atoi(optarg);
-				break;
-			case 'f':
-				flag = atoi(optarg);
-				break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM_MISSING;
 	}
+	address = argv[1];
+	char_handle = atoi(argv[2]);
+	flag = atoi(argv[3]);
 
 	if(address == NULL)
 	{
@@ -761,24 +622,14 @@ GL_RET cmd_read_value(int argc, char **argv)
 	char *str = NULL, *address = NULL;
 	uint8_t addr_len;
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{"char_handle", required_argument, NULL, 'h'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "a:h:", long_options, &option_index)) != -1)
+	if(argc != 3)
 	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-			case 'h':
-				char_handle = atoi(optarg);
-				break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	address = argv[1];
+	char_handle = atoi(argv[2]);
+
 	if(address == NULL)
 	{
 		printf(PARA_MISSING);
@@ -818,32 +669,15 @@ GL_RET cmd_write_value(int argc, char **argv)
 	char *address = NULL;	
 	uint8_t addr_len;
 
-	struct option long_options[] = {
-		{"address", required_argument, NULL, 'a'},
-		{"char_handle", required_argument, NULL, 'h'},
-		{"res", required_argument, NULL, 'r'},
-		{"value", required_argument, NULL, 'v'},
-		{0, 0, 0, 0}};
-	int option_index;
-
-	while ((ch = getopt_long(argc, argv, "a:h:r:v:", long_options, &option_index)) != -1)
+	if(argc != 5)
 	{
-		switch (ch)
-		{
-			case 'a':
-				address = optarg;
-				break;
-			case 'h':
-				char_handle = atoi(optarg);
-				break;
-			case 'r':
-				res = atoi(optarg);
-				break;
-			case 'v':
-				value = optarg;
-				break;
-		}
+		printf(PARA_MISSING);
+		return GL_ERR_PARAM;
 	}
+	address = argv[1];
+	char_handle = atoi(argv[2]);
+	res = atoi(argv[3]);
+	value = argv[4];
 
 	if(address == NULL)
 	{
@@ -895,7 +729,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 			json_object_object_add(o, "offset", json_object_new_int(data->remote_characteristic_value.offset));
 			json_object_object_add(o, "value", json_object_new_string(data->remote_characteristic_value.value));
 			char *temp=json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GATT_CB_MSG >> %s\n",temp);
 
 			json_object_put(o);
 			break;
@@ -914,7 +748,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 			json_object_object_add(o, "offset", json_object_new_int(data->local_gatt_attribute.offset));
 			json_object_object_add(o, "value", json_object_new_string(data->local_gatt_attribute.value));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GATT_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -932,7 +766,7 @@ static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 			json_object_object_add(o, "status_flags", json_object_new_int(data->local_characteristic_status.status_flags));
 			json_object_object_add(o, "client_config_flags", json_object_new_int(data->local_characteristic_status.client_config_flags));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GATT_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -963,7 +797,7 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 			json_object_object_add(o, "hw", json_object_new_int(data->system_boot_data.hw));
 			json_object_object_add(o, "ble_hash", json_object_new_string(data->system_boot_data.ble_hash));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("MODULE_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -994,7 +828,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 			json_object_object_add(o, "bonding", json_object_new_int(data->scan_rst.bonding));
 			json_object_object_add(o, "data", json_object_new_string(data->scan_rst.ble_adv));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GAP_CB_MSG >> %s\n",temp);
 
 			json_object_put(o);
 			break;
@@ -1016,7 +850,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 			json_object_object_add(o, "security_mode", json_object_new_int(data->update_conn_data.security_mode));
 			json_object_object_add(o, "txsize", json_object_new_int(data->update_conn_data.txsize));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GAP_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -1037,7 +871,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 			json_object_object_add(o, "bonding", json_object_new_int(data->connect_open_data.bonding));
 			json_object_object_add(o, "advertiser", json_object_new_int(data->connect_open_data.advertiser));
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GAP_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -1055,7 +889,7 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 			json_object_object_add(o, "mac", json_object_new_string(address));
 			json_object_object_add(o, "reason", json_object_new_int(data->disconnect_data.reason));	
 			char *temp = json_object_to_json_string(o);
-			printf("%s\n",temp);
+			printf("GAP_CB_MSG >> %s\n",temp);
 			
 			json_object_put(o);
 			break;
@@ -1065,19 +899,26 @@ static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 	}
 }
 
-
-static struct
+GL_RET cmd_quite(int argc, char **argv)
 {
-	const char *name;
-	int (*cb)(int argc, char **argv);
+	hold_loop = false;
+}
+
+GL_RET cmd_help(int argc, char **argv);
+
+typedef struct {
+	char *name;
+	int (*func)(int argc, char **argv);
 	char *doc;
-} commands[] = {
+} command_t;
+
+command_t command_list[] = {
 	/* System functions */
+	{"quit", cmd_quite, "Quit bletool"},
+	{"help", cmd_help, "Help"},
 	{"enable", cmd_enable, "Enable or disable the module"},
-	// {"print_format", cmd_print_format, "Specify log print information: JSON format(default) or debug format"},
 	{"set_power", cmd_set_power, "Set the tx power level"},
 	{"local_address", cmd_local_address, "Get local Bluetooth module public address"},
-	{"listen", cmd_listen, "Listen BLE event"},
 	/*BLE slave functions */
 	{"adv_data", cmd_adv_data, "Set adv data"},
 	{"adv", cmd_adv, "Set and Start advertising"},
@@ -1094,14 +935,15 @@ static struct
 	{"set_notify", cmd_set_notify, "Enable or disable the notifications and indications"},
 	{"read_value", cmd_read_value, "Read specified characteristic value"},
 	{"write_value", cmd_write_value, "Write characteristic value"},
-	{NULL, NULL, 0}};
+	{NULL, NULL, 0}
+};
 
-static int usage(void)
+GL_RET cmd_help(int argc, char **argv)
 {
 	int i = 0;
 	while (1) {
-		if (commands[i].name) {
-			printf("%-25s      %s\n", commands[i].name, commands[i].doc);
+		if (command_list[i].name) {
+			printf("%-25s      %s\n", command_list[i].name, command_list[i].doc);
 		}
 		else {
 			break;
@@ -1111,22 +953,136 @@ static int usage(void)
 	return GL_SUCCESS;
 }
 
+
+/*****************************************************************************************************************************************/
+static char *getCmdByIndex(unsigned int CmdIndex);
+static char *cmdGenerator(const char *pszText, int State);
+static char **cmdcompletion (const char *pszText, int Start, int End);
+static void interactive_input(char* str);
+static int match_cmd(int argc, char **argv);
+
+#define CMD_MAP_NUM     ((sizeof(command_list)/sizeof(command_t)) - 1)
+
+static char cmdprompt[] = "bletool >> ";
+
 int main(int argc, char *argv[])
 {
-	if (argc < 2) {
-		usage();
-		return GL_ERR_PARAM_MISSING;
-	}
+	gl_ble_init();
 
-	int i = 0;
-	while (commands[i].name) {
-		if (strlen(commands[i].name) == strlen(argv[1]) && 0 == strcmp(commands[i].name, argv[1]))
+	gl_ble_cbs ble_cb;
+	memset(&ble_cb, 0, sizeof(gl_ble_cbs));
+
+	ble_cb.ble_gap_event = ble_gap_cb;
+	ble_cb.ble_gatt_event = ble_gatt_cb;
+	ble_cb.ble_module_event = ble_module_cb;
+	gl_ble_subscribe(&ble_cb);
+
+	readLineInit();
+	char* inputstr = NULL;
+
+	while(hold_loop)
+	{
+		inputstr = readline(cmdprompt);
+		if((inputstr == NULL)||(*inputstr == '\0'))
 		{
-			return commands[i].cb(argc, argv);
+			free(inputstr);
+			inputstr = NULL;
+			continue;
 		}
-		i++;
-	}
-	usage();
 
-	return GL_SUCCESS;
+		add_history(inputstr);
+
+		interactive_input(inputstr);
+		
+		free(inputstr);
+		inputstr = NULL;
+	}
+}
+
+static char *getCmdByIndex(unsigned int CmdIndex)
+{
+	if(CmdIndex >= CMD_MAP_NUM)
+		return NULL;
+	return command_list[CmdIndex].name;
+}
+
+static char *cmdGenerator(const char *pszText, int State)
+{
+	static int ListIdx = 0, TextLen = 0;
+	if(!State)
+	{
+		ListIdx = 0;
+		TextLen = strlen(pszText);
+	}
+
+	const char *pszName = NULL;
+	while((pszName = getCmdByIndex(ListIdx)))
+	{
+		ListIdx++;
+		if(!strncmp (pszName, pszText, TextLen))
+		{
+			return strdup(pszName);
+		}
+	}
+	return NULL;
+}
+
+static char **cmdcompletion (const char *pszText, int Start, int End)
+{
+	char **pMatches = NULL;
+	if(0 == Start)
+		pMatches = rl_completion_matches(pszText, cmdGenerator);
+	return pMatches;
+}
+
+int readLineInit(void)
+{
+	rl_attempted_completion_function = cmdcompletion;
+}
+
+static int match_cmd(int argc, char **argv)
+{
+	int i;
+	if(0 == argc)
+	{
+		printf("Command missing.\n");
+		return -1;
+	}
+
+	for(i = 0; command_list[i].name;i++)
+	{
+		if((strlen(command_list[i].name) == strlen(argv[0])) && (0 == strcmp(command_list[i].name, argv[0])))
+		{
+			return command_list[i].func(argc, argv);
+		}
+	}
+
+	printf("Command not support. Please input help to get more.\n");
+	return -1;
+
+}
+
+static void interactive_input(char* str)
+{
+	char ptr[128] = {0};
+	strcpy(ptr,str);
+	char* parameter[20];
+	int num = 0;
+	char* token;
+	token = strtok(ptr," ");
+	while(token)
+	{
+		parameter[num] = (char*)calloc(64,sizeof(char));
+		strncpy(parameter[num++],token,(strlen(token)>64?64:strlen(token)));
+		token = strtok(NULL," ");
+	}
+
+	match_cmd(num,parameter);
+
+	while(num)
+	{
+		num--;
+		free(parameter[num]);
+	}
+	return ;
 }

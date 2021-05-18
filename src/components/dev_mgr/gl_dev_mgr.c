@@ -38,11 +38,11 @@ void ble_dev_mgr_print(void) {
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL, *next_node = NULL;
 
-    log_info("\nConnected devices: \n");
+    log_debug("\nConnected devices: \n");
 
     list_for_each_entry_safe(node, next_node, &mgr_ctx->dev_list, linked_list) {
         if (node != NULL) {
-            log_info("dev_addr = %s, connection = %d \n",
+            log_debug("dev_addr = %s, connection = %d \n",
                    node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
         } else
             log_err("No device connection\n");
@@ -116,11 +116,11 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
 		// int ret_dev_list = list_empty(&mgr_ctx->dev_list);
 
 		list_add_tail(&node->linked_list, &mgr_ctx->dev_list);
-		log_info("Device Join: dev_addr=%s, connection=%d.\n",
+		log_debug("Device Join: dev_addr=%s, connection=%d.\n",
 			node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
 	}else{
 		node->ble_dev_desc.connection = connection;
-		log_info("Device update: dev_addr=%s, connection=%d.\n",
+		log_debug("Device update: dev_addr=%s, connection=%d.\n",
 			node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
 	}
 
@@ -141,7 +141,7 @@ int ble_dev_mgr_del(uint16_t connection) {
 
     list_del(&node->linked_list);
 
-    log_info("Device Leave: dev_addr=%s, connection=%d\n",
+    log_debug("Device Leave: dev_addr=%s, connection=%d\n",
              node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
     free(node);
 

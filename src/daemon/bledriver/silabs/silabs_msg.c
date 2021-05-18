@@ -264,7 +264,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,data.remote_characteristic_value.value);
             
             char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_characteristic_value.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
@@ -284,7 +284,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,data.local_gatt_attribute.value);
 			
             char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_attribute_value.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
@@ -303,7 +303,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             data.local_characteristic_status.client_config_flags = p->data.evt_gatt_server_characteristic_status.client_config_flags;
 
             char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_characteristic_status.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
@@ -337,7 +337,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
             data.update_conn_data.security_mode = p->data.evt_le_connection_parameters.security_mode;
 
             char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
+			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_parameters.connection, tmp_address);
 			if(ret != 0)
 			{
 				log_err("get dev mac from dev-list failed!\n");
