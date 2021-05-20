@@ -42,6 +42,8 @@ static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gatt_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
 
 static bool hold_loop = true;
+static bool start_discovery = false;
+
 
 /* System functions */
 GL_RET cmd_enable(int argc, char **argv)
@@ -164,7 +166,7 @@ GL_RET cmd_adv(int argc, char **argv)
 
 GL_RET cmd_adv_data(int argc, char **argv)
 {
-	int ch, flag = -1;
+	int flag = -1;
 	char *value = NULL;
 
 	if(argc != 3)
@@ -212,7 +214,7 @@ GL_RET cmd_adv_stop(int argc, char **argv)
 
 GL_RET cmd_send_notify(int argc, char **argv)
 {
-	int ch = 0, char_handle = -1;
+	int char_handle = -1;
 	char *value = NULL, *str = NULL;
 	char *address = NULL;	
 
@@ -258,7 +260,7 @@ GL_RET cmd_send_notify(int argc, char **argv)
 
 GL_RET cmd_discovery(int argc, char **argv)
 {
-	int ch, phys = 1, interval = 16, window = 16, type = 0, mode = 1;
+	int phys = 1, interval = 16, window = 16, type = 0, mode = 1;
 
 	if((argc != 1) && (argc != 6))
 	{
@@ -286,6 +288,8 @@ GL_RET cmd_discovery(int argc, char **argv)
 	//free(temp);
 	json_object_put(o);
 
+	start_discovery = true;
+
 	return GL_SUCCESS;
 }
 
@@ -308,7 +312,7 @@ GL_RET cmd_stop(int argc, char **argv)
 
 GL_RET cmd_connect(int argc, char **argv)
 {
-	int ch, phy = 1, address_type = -1, option_index = 0;
+	int phy = 1, address_type = -1;
 	char *address = NULL;
 
 	if(argc != 4)
@@ -352,7 +356,6 @@ GL_RET cmd_connect(int argc, char **argv)
 GL_RET cmd_disconnect(int argc, char **argv)
 {
 	char *address = NULL;
-	int ch, option_index = 0;
 
 	if(argc != 2)
 	{
@@ -394,7 +397,6 @@ GL_RET cmd_disconnect(int argc, char **argv)
 
 GL_RET cmd_get_rssi(int argc, char **argv)
 {
-	int ch, option_index = 0;
 	char *address = NULL;
 
 	if(argc != 2)
@@ -442,7 +444,6 @@ GL_RET cmd_get_rssi(int argc, char **argv)
 
 GL_RET cmd_get_service(int argc, char **argv)
 {
-	int ch, option_index = 0;
 	char *address = NULL;
 
 	if (argc != 2)
@@ -505,8 +506,7 @@ GL_RET cmd_get_service(int argc, char **argv)
 
 GL_RET cmd_get_char(int argc, char **argv)
 {
-	int ch, service_handle = -1;
-	int option_index = 0;
+	int service_handle = -1;
 	char *str = NULL;
 	char *address = NULL;	
 	uint8_t addr_len;
@@ -571,7 +571,7 @@ GL_RET cmd_get_char(int argc, char **argv)
 }
 GL_RET cmd_set_notify(int argc, char **argv)
 {
-	int ch, char_handle = -1, flag = -1;
+	int char_handle = -1, flag = -1;
 	char *str = NULL;
 	char *address = NULL;	
 	uint8_t addr_len;
@@ -618,7 +618,7 @@ GL_RET cmd_set_notify(int argc, char **argv)
 
 GL_RET cmd_read_value(int argc, char **argv)
 {
-	int ch, char_handle = -1;
+	int char_handle = -1;
 	char *str = NULL, *address = NULL;
 	uint8_t addr_len;
 
@@ -664,7 +664,7 @@ GL_RET cmd_read_value(int argc, char **argv)
 
 GL_RET cmd_write_value(int argc, char **argv)
 {
-	int ch, char_handle = -1, res = 0;
+	int char_handle = -1, res = 0;
 	char *value = NULL, *str = NULL;
 	char *address = NULL;	
 	uint8_t addr_len;
@@ -904,6 +904,25 @@ GL_RET cmd_quite(int argc, char **argv)
 	hold_loop = false;
 }
 
+GL_RET cmd_stop_current_discovery(int argc, char **argv)
+{
+	if(!start_discovery)
+	{
+		printf("Command not support. Please input help to get more.\n");
+		return GL_SUCCESS;
+	}
+
+
+	GL_RET ret = gl_ble_stop_discovery();
+	if(ret == GL_SUCCESS)
+	{
+		start_discovery = false;
+	}
+
+	return ret;
+}
+
+
 GL_RET cmd_help(int argc, char **argv);
 
 typedef struct {
@@ -935,6 +954,7 @@ command_t command_list[] = {
 	{"set_notify", cmd_set_notify, "Enable or disable the notifications and indications"},
 	{"read_value", cmd_read_value, "Read specified characteristic value"},
 	{"write_value", cmd_write_value, "Write characteristic value"},
+	{"q", cmd_stop_current_discovery, ""},
 	{NULL, NULL, 0}
 };
 
@@ -942,10 +962,11 @@ GL_RET cmd_help(int argc, char **argv)
 {
 	int i = 0;
 	while (1) {
-		if (command_list[i].name) {
+		if ((command_list[i].name) && (0 != strcmp(command_list[i].name, "q")))
+		{
 			printf("%-25s      %s\n", command_list[i].name, command_list[i].doc);
-		}
-		else {
+
+		}else {
 			break;
 		}
 		i++;

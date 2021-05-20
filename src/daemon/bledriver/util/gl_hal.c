@@ -17,17 +17,30 @@
  limitations under the License.
  ******************************************************************************/
 
-#include "gl_uart.h"
 #include <uci.h>
+#include <unistd.h>   
+#include <fcntl.h>   
+#include "gl_uart.h"
 #include "gl_log.h"
 #include "gl_hal.h"
+#include "gl_hw_cfg.h"
+#include "gl_errno.h"
 
 unsigned char ENDIAN;
 
 char rston[64] = {0};
 char rstoff[64] = {0};
 
-struct uci_context* guci2_init();
+char model[20] = {0};
+hw_cfg_t* ble_hw_cfg = NULL;
+
+static int check_endian(void);
+static int serial_init(void);
+static GL_RET get_model_hw_cfg(void);
+static GL_RET normal_check_rst_io(void);
+static GL_RET qsdk_check_ver(void);
+
+struct uci_context* guci2_init(void);
 int guci2_free(struct uci_context* ctx);
 int guci2_get(struct uci_context* ctx, const char* section_or_key, char value[]);
 
@@ -37,76 +50,168 @@ static int check_endian(void)
   int x = 1;
   if(*((char *)&x) == 1) 
   {
-	ENDIAN = 0;   //little endian
+	ENDIAN = 0;   
 	log_debug("little endian\n");
   }else{
-	ENDIAN = 1;   //big endian
+	ENDIAN = 1;   
 	log_debug("big endian\n");
   }
 
   return 0;
 }
+
+static GL_RET normal_check_rst_io(void)
+{
+	if(!ble_hw_cfg)
+	{
+		log_err("HW cfg lost!\n");
+		exit(-1);
+	}
+
+	char io[32] = {0};
+	sprintf(io, "/sys/class/gpio/gpio%d", ble_hw_cfg->rst_gpio);
+
+	char create_io[64] = {0};   
+	sprintf(create_io, "echo %d > /sys/class/gpio/export", ble_hw_cfg->rst_gpio);
+
+	int i = 0;
+	while((access(io, F_OK)) != 0)
+	{
+		log_debug("Ble rst io: %s not exist. Now trying create ... Time: %d\n", io, i+1);   
+		system(create_io);
+
+		i++;
+		usleep(300000);
+
+		if(i > 5)
+		{   
+			log_err("Creating ble RST IO failed!\n");
+			exit(-1); 
+		}
+	}
+
+	log_debug("Ble rst io: %s exist.\n", io);  
+
+	return GL_SUCCESS;
+}
+
+/* Check special openwrt version
+	QSDK in open source openwrt will have a special io base num.
+	If "/sys/class/gpio/gpiochip412" exist, all io shoule add 412.
+*/
+#define SPECIAL_CHIP_IO 		"/sys/class/gpio/gpiochip412"
+static GL_RET qsdk_check_ver(void)
+{
+	if(!ble_hw_cfg)
+	{
+		log_err("HW cfg lost!\n");
+		exit(-1);
+	}
+
+	if((access(SPECIAL_CHIP_IO, F_OK)) != -1)
+	{
+		log_debug("QSDK gpiochip412 exist.\n");
+		ble_hw_cfg->rst_gpio += 412;
+	}
+
+	return GL_SUCCESS;
+}
+
 static int serial_init(void)
 {
-    char uart_port[64] = {0};
-    uint32_t baud_rate;
-    uint32_t flowcontrol;
+	if(!ble_hw_cfg)
+	{
+		log_err("HW cfg lost!\n");
+		exit(-1);
+	}
 
+	if(ble_hw_cfg->rst_trigger == 1)
+	{
+		sprintf(rston, "echo 1 > /sys/class/gpio/gpio%d/value", ble_hw_cfg->rst_gpio);
+		sprintf(rstoff, "echo 0 > /sys/class/gpio/gpio%d/value", ble_hw_cfg->rst_gpio);
+
+	}else if(ble_hw_cfg->rst_trigger == 0){
+		sprintf(rston, "echo 0 > /sys/class/gpio/gpio%d/value", ble_hw_cfg->rst_gpio);
+		sprintf(rstoff, "echo 1 > /sys/class/gpio/gpio%d/value", ble_hw_cfg->rst_gpio);
+
+	}else{
+		log_err("hw rst trigger cfg error!\n");
+		exit(-1);
+	}
+
+    return uartOpen((int8_t*)ble_hw_cfg->port, ble_hw_cfg->baudRate, ble_hw_cfg->flowcontrol, 100);
+}
+
+static GL_RET get_model_hw_cfg(void)
+{
     struct uci_context* ctx = guci2_init();
-    char value[64] = {0};
+	if(!ctx)
+	{
+		log_err("open uci handle error\n");
+		return GL_UNKNOW_ERR;
+	}
 
-    /*Init port*/
-    if(guci2_get(ctx,"ble.@bleserial[0].port",value) < 0)
+    if(guci2_get(ctx,"glconfig.general.model",model) < 0)
     {
-        fprintf(stderr,"BLE: serial config missing.\n");
+		guci2_free(ctx);
+        log_err("zigbee: serial config missing.\n");
         return -1;
     }
-    strcpy(uart_port,value);
-    memset(value,0,64);
 
-    /*Init baudrate*/
-    if(guci2_get(ctx,"ble.@bleserial[0].baudrate",value) < 0)
-    {
-        fprintf(stderr,"BLE: serial config missing.\n");
-        return -1;
-    }
-    baud_rate = atoi(value);
-    memset(value,0,64);
+	guci2_free(ctx);
 
-    /*Init flowcontrol*/
-    if(guci2_get(ctx,"ble.@bleserial[0].flowcontrol",value) < 0)
-    {
-        fprintf(stderr,"BLE: serial config missing.\n");
-        return -1;
-    }
-    flowcontrol = atoi(value);
-    memset(value,0,64);
 
-    /*Init rston*/
-    if(guci2_get(ctx,"ble.@bleserial[0].rston",value) < 0)
-    {
-        fprintf(stderr,"BLE: serial config missing.\n");
-        return -1;
-    }
-    strcpy(rston,value);
-    memset(value,0,64);
+	log_debug("Get model: %s\n", model);
 
-    /*Init rstoff*/
-    if(guci2_get(ctx,"ble.@bleserial[0].rstoff",value) < 0)
-    {
-        fprintf(stderr,"BLE: serial config missing.\n");
-        return -1;
-    }
-    strcpy(rstoff,value);
+	if(0 == strcmp(model, "s1300"))
+	{
+		ble_hw_cfg = &S1300_BLE_HW_CFG;
+		qsdk_check_ver();
 
-    guci2_free(ctx);
+	}else if(0 == strcmp(model, "x750")){
+		ble_hw_cfg = &X750_BLE_HW_CFG;
+		// mark kernel log
+		system("echo 1 4 1 7 > /proc/sys/kernel/printk");
 
-    return uartOpen((int8_t*)uart_port, baud_rate, flowcontrol, 100);
+	}else if(0 == strcmp(model, "xe300")){
+		ble_hw_cfg = &XE300_BLE_HW_CFG;
+		// mark kernel log
+		system("echo 1 4 1 7 > /proc/sys/kernel/printk");
+
+	}else if(0 == strcmp(model, "mt300n-v2")){
+		ble_hw_cfg = &MT300N_V2_BLE_HW_CFG; 
+
+	}else if(0 == strcmp(model, "x300b")){
+		ble_hw_cfg = &X300B_BLE_HW_CFG;
+		// mark kernel log
+		system("echo 1 4 1 7 > /proc/sys/kernel/printk");
+
+	}else if(0 == strcmp(model, "ap1300")){
+		ble_hw_cfg = &AP1300_BLE_HW_CFG;
+		qsdk_check_ver();
+
+	}else if(0 == strcmp(model, "b2200")){
+		ble_hw_cfg = &B2200_BLE_HW_CFG;
+		qsdk_check_ver();
+
+	}else if(0 == strcmp(model, "e750")){
+		ble_hw_cfg = &E750_BLE_HW_CFG;
+
+	}else{
+		log_err("Unknow model!\n");
+		exit(-1);
+	}
+
+	normal_check_rst_io();
+
+	return GL_SUCCESS;
 }
 
 int hal_init(void)
 {
     check_endian();
+
+	get_model_hw_cfg();
 
     int serialFd = serial_init();
     if( serialFd < 0 )
@@ -116,6 +221,7 @@ int hal_init(void)
     }
 
 	// reset module
+	log_debug("Reset ble chip!\n");
 	system(rstoff); 
 	usleep(500000);
 	system(rston); 
@@ -123,7 +229,9 @@ int hal_init(void)
     return serialFd;
 }
 
-struct uci_context* guci2_init()
+
+
+struct uci_context* guci2_init(void)
 {
 	
 	struct uci_context* ctx = uci_alloc_context();

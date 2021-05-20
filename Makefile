@@ -25,7 +25,7 @@ define Package/gl-bletool
 	SECTION:=base
 	CATEGORY:=gl-inet
 	TITLE:=GL inet BLE driver(debug only)
-	DEPENDS:=  +libjson-c +libuci +libpthread +libreadline +libncurses
+	DEPENDS:=  +libjson-c +libuci +libpthread +libreadline +libncurses +libuci
 endef
 
 define Build/Prepare
@@ -48,7 +48,7 @@ define Package/gl-bletool/install
 	$(INSTALL_DIR) $(1)/usr/lib/gl
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exe/libglbleapi.so $(1)/usr/lib/gl
 	$(LN) /usr/lib/gl/libglbleapi.so $(1)/usr/lib/
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/gl_bletool.init $(1)/etc/init.d/bledaemon
+	# $(INSTALL_DIR) $(1)/etc/init.d
+	# $(INSTALL_BIN) ./files/gl_bletool.init $(1)/etc/init.d/bledaemon
 endef
 $(eval $(call BuildPackage,gl-bletool))

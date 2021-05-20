@@ -24,6 +24,15 @@
 extern char rston[];
 extern char rstoff[];
 
+typedef struct {
+    char model[20];
+    char port[32];
+    uint32_t baudRate;
+    uint32_t flowcontrol;
+    uint8_t rst_trigger;
+    uint8_t rst_gpio;
+}hw_cfg_t;
+
 /*Initilize the hal*/
 int hal_init(void);
 

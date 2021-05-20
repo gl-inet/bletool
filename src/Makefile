@@ -22,7 +22,7 @@ PROJECT			?=  bledemo
 
 # Defines
 DEFINES += \
-	# -DENABLE_DEBUG
+	-DENABLE_DEBUG
 
 # Flags		                                                       
 CC	 			:=  gcc
@@ -30,6 +30,7 @@ CFLAG			:=  -g -Wall $(DEFINES)
 
 # Directories and files
 LIB_INCDIRS		:= 	lib \
+					model_hw_cfg \
 					components/dev_mgr \
 					components/log \
 					components/thread \
@@ -48,6 +49,7 @@ LIB_SRCDIRS		:=  lib  \
 
 UTIL_INCDIRS	:= 	lib \
 					tool \
+					model_hw_cfg \
 					components/dev_mgr \
 					components/log	\
 					components/thread \
@@ -115,8 +117,8 @@ VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS)
 # UTIL_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
 # LIB_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json
 
-UTIL_DEPENDS 	+=  -ljson-c -luci -lpthread -lreadline -lncurses
-LIB_DEPENDS 	+=  -ljson-c -luci -lpthread
+UTIL_DEPENDS 	+=  -ljson-c -luci -lpthread -lreadline -lncurses 
+LIB_DEPENDS 	+=  -ljson-c -luci -lpthread -luci
 # PROJECT_DEPENDS +=  -ljson-c -luci -lpthread
 
 # all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)
