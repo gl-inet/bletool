@@ -219,6 +219,15 @@ static int32_t uartOpenSerial(int8_t* device, uint32_t bps, uint32_t dataBits, u
     goto error;
   }
 
+  /* Clean last time recevice message */
+  if(-1 == tcflush(serial, TCIFLUSH))
+  {
+    fprintf(stderr, "Error clean serial port message %s - %s(%d).\n",
+            (char*)device,
+            strerror(errno), errno);
+  }
+
+
   /* Note that open() follows POSIX semantics: multiple open() calls to the same file will succeed
    * unless the TIOCEXCL ioctl is issued. This will prevent additional opens except by root-owned
    * processes. */

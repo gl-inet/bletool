@@ -14,6 +14,7 @@
  limitations under the License.
  ******************************************************************************/
 
+#include <pthread.h>
 #include "gl_dev_mgr.h"
 
 #include <json-c/json.h>
@@ -32,9 +33,89 @@ uint32_t HAL_TimeStamp(void) {
     return tv.tv_sec;
 }
 
-ble_dev_mgr_ctx_t *_ble_dev_mgr_get_ctx(void) { return &g_ble_dev_mgr; }
+static void dev_list_MutexLock(void)
+{
+    log_debug("dev_list_MutexLock\n");
+
+    if(!g_ble_dev_mgr.dev_list_mutex)
+    {
+        log_err("dev_list_mutex NULL!\n");
+        return ;
+    }
+
+    int err_num;
+    if (0 != (err_num = pthread_mutex_lock((pthread_mutex_t *)g_ble_dev_mgr.dev_list_mutex))) {
+        log_err("lock mutex failed: - '%s' (%d)\n", strerror(err_num), err_num);
+    }
+}
+
+static int dev_list_MutexTryLock(void)
+{
+    log_debug("dev_list_MutexTryLock\n");
+
+    if(!g_ble_dev_mgr.dev_list_mutex)
+    {
+        log_err("dev_list_mutex NULL!\n");
+        return ;
+    }
+    
+    int err_num;
+    return pthread_mutex_trylock((pthread_mutex_t *)g_ble_dev_mgr.dev_list_mutex);
+}
+
+static void dev_list_MutexUnlock(void)
+{
+    log_debug("dev_list_MutexUnlock\n");
+    
+    if(!g_ble_dev_mgr.dev_list_mutex)
+    {
+        log_err("dev_list_mutex NULL!\n");
+        return ;
+    }
+
+    int err_num;
+    if (0 != (err_num = pthread_mutex_unlock((pthread_mutex_t *)g_ble_dev_mgr.dev_list_mutex))) {
+        log_err("unlock mutex failed - '%s' (%d)\n", strerror(err_num), err_num);
+    }
+}
+
+
+ble_dev_mgr_ctx_t *_ble_dev_mgr_get_ctx(void) 
+{
+    return &g_ble_dev_mgr; 
+}
+
+
+int ble_dev_mgr_init(void) {
+
+    // get list handle
+    ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
+    memset(mgr_ctx, 0, sizeof(ble_dev_mgr_ctx_t));
+    
+    // init mutex
+    int err_num;
+    mgr_ctx->dev_list_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    if (NULL == mgr_ctx->dev_list_mutex) {
+        log_err("create ble dev list mutex failed!\n");
+        return -1;
+    }
+
+    if (0 != (err_num = pthread_mutex_init(mgr_ctx->dev_list_mutex, NULL))) {
+        printf("init mutex failed\n");
+        free(mgr_ctx->dev_list_mutex);
+        return -1;
+    }
+
+    // init Device List
+    INIT_LIST_HEAD(&mgr_ctx->dev_list);
+
+    return GL_SUCCESS;
+}
 
 void ble_dev_mgr_print(void) {
+    // get lock 
+    dev_list_MutexLock();
+
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL, *next_node = NULL;
 
@@ -47,6 +128,9 @@ void ble_dev_mgr_print(void) {
         } else
             log_err("No device connection\n");
     }
+
+    // release lock
+    dev_list_MutexUnlock();
 }
 
 static int search_ble_dev_by_addr(char *dev_addr, ble_dev_mgr_node_t **node) {
@@ -80,23 +164,19 @@ static int search_ble_dev_by_connection(uint16_t connection,
     return GL_ERR_MSG;
 }
 
-int ble_dev_mgr_init(void) {
-    ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
-    memset(mgr_ctx, 0, sizeof(ble_dev_mgr_ctx_t));
 
-    /* Init Device List */
-    INIT_LIST_HEAD(&mgr_ctx->dev_list);
-
-    return GL_SUCCESS;
-}
 
 int ble_dev_mgr_add(char *dev_addr, uint16_t connection) 
 {
+    // get lock 
+    dev_list_MutexLock();
+    
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
 	ble_dev_mgr_node_t *search_node = NULL;
 
     list_for_each_entry(search_node, &mgr_ctx->dev_list, linked_list) {
+        log_debug("list node: %s ---- Join node: %s\n", search_node->ble_dev_desc.dev_addr, dev_addr);
         if (!strcmp(search_node->ble_dev_desc.dev_addr, dev_addr)) {
 			node = search_node;
             break;
@@ -124,10 +204,17 @@ int ble_dev_mgr_add(char *dev_addr, uint16_t connection)
 			node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
 	}
 
+    // release lock
+    dev_list_MutexUnlock();
+
     return GL_SUCCESS;
 }
 
 int ble_dev_mgr_del(uint16_t connection) {
+
+    // get lock 
+    dev_list_MutexLock();
+
     ble_dev_mgr_node_t *node = NULL;
 
     if (connection == 0) {
@@ -145,10 +232,17 @@ int ble_dev_mgr_del(uint16_t connection) {
              node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
     free(node);
 
+    // release lock
+    dev_list_MutexUnlock();
+
     return GL_SUCCESS;
 }
 
 uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
+
+    // get lock 
+    dev_list_MutexLock();
+
     ble_dev_mgr_node_t *node = NULL;
 
     if (connection == 0) {
@@ -163,10 +257,17 @@ uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
 	// *mac = node->ble_dev_desc.dev_addr;
     memcpy(mac, node->ble_dev_desc.dev_addr, MAC_STR_LEN);
     
+    // release lock
+    dev_list_MutexUnlock();
+    
     return GL_SUCCESS;
 }
 
 uint16_t ble_dev_mgr_get_connection(char *dev_addr, int* connection) {
+
+    // get lock 
+    dev_list_MutexLock();
+
     ble_dev_mgr_node_t *node = NULL;
 
     if (dev_addr == NULL) {
@@ -180,20 +281,33 @@ uint16_t ble_dev_mgr_get_connection(char *dev_addr, int* connection) {
     }
 
 	*connection = node->ble_dev_desc.connection;
+
+    // release lock
+    dev_list_MutexUnlock();
+
     return GL_SUCCESS;
 }
 
 int ble_dev_mgr_get_list_size(void) {
+    // get lock 
+    dev_list_MutexLock();
+
     int index = 0;
     ble_dev_mgr_ctx_t *ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
 
     list_for_each_entry(node, &ctx->dev_list, linked_list) { index++; }
 
+    // release lock
+    dev_list_MutexUnlock();
+
     return index;
 }
 
 int ble_dev_mgr_update(uint16_t connection) {
+    // get lock 
+    dev_list_MutexLock();
+    
     ble_dev_mgr_node_t *node = NULL;
 
     if (search_ble_dev_by_connection(connection, &node) != 0) {
@@ -201,20 +315,30 @@ int ble_dev_mgr_update(uint16_t connection) {
     }
     node->ble_dev_desc.connection = connection;
 
+    // release lock
+    dev_list_MutexUnlock();
+
     return GL_SUCCESS;
 }
 
 int ble_dev_mgr_del_all(void)
 {
-    log_err("ble_dev_mgr_del_all\n");
+    // get lock 
+    dev_list_MutexLock();
+
+    // log_debug("ble_dev_mgr_del_all\n");
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
-
-    list_for_each_entry(node, &mgr_ctx->dev_list, linked_list) {
+    ble_dev_mgr_node_t *next_node = NULL;
+    
+    list_for_each_entry_safe(node, next_node, &mgr_ctx->dev_list, linked_list) {
         log_err("Del node: %s, connection=%d\n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
         list_del(&node->linked_list);
         free(node);
     }
+
+    // release lock
+    dev_list_MutexUnlock();
 
     return GL_SUCCESS;
 }

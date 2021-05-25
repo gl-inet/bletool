@@ -37,6 +37,7 @@ typedef struct
 
 typedef struct
 {
+    void* dev_list_mutex;
     struct list_head dev_list;
 } ble_dev_mgr_ctx_t;
 

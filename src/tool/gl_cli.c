@@ -917,11 +917,50 @@ GL_RET cmd_stop_current_discovery(int argc, char **argv)
 	if(ret == GL_SUCCESS)
 	{
 		start_discovery = false;
+	}else{
+		printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+		printf("gl_ble_stop_discovery return %d\n", ret);
+		exit(0);
 	}
 
 	return ret;
 }
 
+GL_RET cmd_test(int argc, char **argv)
+{
+	printf(" Start test!!!\n");
+	GL_RET ret;
+
+	int MAX_INT = ((unsigned)(-1))>>1;
+	int time = 0;
+
+	while(time < MAX_INT)
+	{
+		ret = gl_ble_discovery(1, 16, 16, 0, 1);
+		if(ret != GL_SUCCESS)
+		{
+			printf("gl_ble_discovery return %d\n", ret);
+			exit(0);
+		}
+
+		sleep(3);
+
+		ret = gl_ble_stop_discovery();
+		if(ret != GL_SUCCESS)
+		{
+			printf("gl_ble_stop_discovery return %d\n", ret);
+			exit(0);
+		}
+
+		printf("**********************************************************************\n");
+		printf("TEST TIME: %d\n", time+1);
+		printf("**********************************************************************\n");
+
+		time++;
+
+		sleep(1);
+	}
+}
 
 GL_RET cmd_help(int argc, char **argv);
 
@@ -954,6 +993,7 @@ command_t command_list[] = {
 	{"set_notify", cmd_set_notify, "Enable or disable the notifications and indications"},
 	{"read_value", cmd_read_value, "Read specified characteristic value"},
 	{"write_value", cmd_write_value, "Write characteristic value"},
+	{"test", cmd_test, "test"},
 	{"q", cmd_stop_current_discovery, ""},
 	{NULL, NULL, 0}
 };
