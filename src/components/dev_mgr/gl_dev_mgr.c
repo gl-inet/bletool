@@ -208,7 +208,7 @@ int ble_dev_mgr_del_all(void)
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
 
-    list_for_each_entry(node, &mgr_ctx->dev_list, linked_list) {
+    list_for_each_entry_safe(node, next_node, &mgr_ctx->dev_list, linked_list) {
         log_err("Del node: %s, connection=%d\n", node->ble_dev_desc.dev_addr, node->ble_dev_desc.connection);
         list_del(&node->linked_list);
         free(node);
