@@ -6,8 +6,6 @@ USE_PROCD=1
 start_service() {
   . /lib/functions.sh
   . /lib/functions/gl_util.sh
-  # board=$(board_name)
-  # model="${board#*-}"
   model=$(get_model)
   if [ ! -f "/etc/config/ble" ]; then
   touch "/etc/config/ble"
@@ -26,6 +24,7 @@ start_service() {
     uci set ble.@bleserial[0].rston="echo 1 > /sys/class/gpio/gpio${S1300_GPIO}/value"
     uci set ble.@bleserial[0].rstoff="echo 0 > /sys/class/gpio/gpio${S1300_GPIO}/value"
   elif [ $model == x750 ]; then
+    echo 1 4 1 7 > /proc/sys/kernel/printk 
 	if [ ! -n "$(ls -l /sys/class/gpio/gpio1 2>/dev/null)" ]; then
     	echo 1 > /sys/class/gpio/export
 	fi
