@@ -135,7 +135,7 @@ GL_RET cmd_adv(int argc, char **argv)
 		return GL_ERR_PARAM;
 	}
 
-	if(argc != 0)
+	if(argc == 6)
 	{
 		phys = atoi(argv[1]);
 		interval_min = atoi(argv[2]);
