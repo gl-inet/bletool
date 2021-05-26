@@ -219,10 +219,12 @@ int ble_dev_mgr_del(uint16_t connection) {
 
     if (connection == 0) {
         log_err("Connection is null");
+        dev_list_MutexUnlock();
         return GL_ERR_PARAM;
     }
     if (search_ble_dev_by_connection(connection, &node) != 0) {
         log_err("The device is not in the list");
+        dev_list_MutexUnlock();
         return GL_ERR_MSG;
     }
 
@@ -240,17 +242,18 @@ int ble_dev_mgr_del(uint16_t connection) {
 
 uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
 
-    // get lock 
-    dev_list_MutexLock();
-
     ble_dev_mgr_node_t *node = NULL;
-
     if (connection == 0) {
         log_err("Connection is null");
         return GL_ERR_PARAM;
     }
+
+    // get lock 
+    dev_list_MutexLock();
+
     if (search_ble_dev_by_connection(connection, &node) != 0) {
         log_err("The device is not in the list");
+        dev_list_MutexUnlock();
         return GL_ERR_MSG;
     }
 
@@ -265,18 +268,18 @@ uint16_t ble_dev_mgr_get_address(uint16_t connection, char *mac) {
 
 uint16_t ble_dev_mgr_get_connection(char *dev_addr, int* connection) {
 
-    // get lock 
-    dev_list_MutexLock();
-
     ble_dev_mgr_node_t *node = NULL;
-
     if (dev_addr == NULL) {
         log_err("Address is null");
         return GL_ERR_PARAM;
     }
 
+    // get lock 
+    dev_list_MutexLock();
+
     if (search_ble_dev_by_addr(dev_addr, &node) != 0) {
         log_err("The device is not in the list");
+        dev_list_MutexUnlock();
         return GL_ERR_MSG;
     }
 
@@ -311,6 +314,7 @@ int ble_dev_mgr_update(uint16_t connection) {
     ble_dev_mgr_node_t *node = NULL;
 
     if (search_ble_dev_by_connection(connection, &node) != 0) {
+        dev_list_MutexUnlock();
         return -1;
     }
     node->ble_dev_desc.connection = connection;
@@ -326,7 +330,6 @@ int ble_dev_mgr_del_all(void)
     // get lock 
     dev_list_MutexLock();
 
-    // log_debug("ble_dev_mgr_del_all\n");
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
     ble_dev_mgr_node_t *node = NULL;
     ble_dev_mgr_node_t *next_node = NULL;

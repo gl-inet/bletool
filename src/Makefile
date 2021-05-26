@@ -22,7 +22,7 @@ PROJECT			?=  bledemo
 
 # Defines
 DEFINES += \
-	# -DENABLE_DEBUG
+	-DENABLE_DEBUG
 
 # Flags		                                                       
 CC	 			:=  gcc
