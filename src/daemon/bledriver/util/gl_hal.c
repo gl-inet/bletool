@@ -74,6 +74,10 @@ static GL_RET normal_check_rst_io(void)
 	char create_io[64] = {0};   
 	sprintf(create_io, "echo %d > /sys/class/gpio/export", ble_hw_cfg->rst_gpio);
 
+	char create_io_direction[80] = {0};   
+	sprintf(create_io_direction, "echo out > /sys/class/gpio/gpio%d/direction", ble_hw_cfg->rst_gpio);
+
+	// create IO
 	int i = 0;
 	while((access(io, F_OK)) != 0)
 	{
@@ -90,7 +94,10 @@ static GL_RET normal_check_rst_io(void)
 		}
 	}
 
-	log_debug("Ble rst io: %s exist.\n", io);  
+	// set IO direction
+	system(create_io_direction);
+
+	log_debug("Ble rst io: %s exist.\n", io);
 
 	return GL_SUCCESS;
 }
