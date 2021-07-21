@@ -85,6 +85,16 @@ int32_t uartClose(void)
   return uartCloseSerial(serialHandle);
 }
 
+int32_t uartCacheClean(void)
+{  
+  uint8_t buf[4];
+  while (uartRxNonBlocking(4, buf) == 4) {
+  }
+
+  return 0;
+}
+
+
 int32_t uartRx(uint32_t dataLength, uint8_t* data)
 {
   /** The amount of bytes read. */

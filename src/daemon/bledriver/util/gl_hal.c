@@ -220,18 +220,15 @@ int hal_init(void)
 
 	get_model_hw_cfg();
 
+	// Manual clean uart cache: fix tcflush() not work on some model
+	uartCacheClean();
+
     int serialFd = serial_init();
     if( serialFd < 0 )
     {
         fprintf(stderr,"Hal initilized failed.\n");
         exit(1);
     }
-
-	// reset module
-	log_debug("Reset ble chip!\n");
-	system(rstoff); 
-	usleep(500000);
-	system(rston); 
 
     return serialFd;
 }

@@ -36,6 +36,8 @@
 #define PARA_MISSING 	"Parameter missing\n"
 #define PARA_ERROR 		"Parameter error\n"
 
+// static bool module_work = false;
+
 static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data);
 static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_gap_test_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
@@ -47,6 +49,30 @@ static bool start_discovery = false;
 
 /* System functions */
 GL_RET cmd_enable(int argc, char **argv)
+{
+	int enable = 0;
+	if (argc != 2) 
+	{
+		enable = 1;
+	}else {
+		enable = atoi(argv[1]);
+	}
+
+	GL_RET ret  = gl_ble_enable(enable);
+
+	json_object* o = NULL;
+	o = json_object_new_object();
+	json_object_object_add(o,"code",json_object_new_int(ret));
+	char *temp=json_object_to_json_string(o);
+	printf("%s\n",temp);
+
+	//free(temp);
+	json_object_put(o);
+	
+	return GL_SUCCESS;
+}
+
+GL_RET cmd_reset(int argc, char **argv)
 {
 	int enable = 0;
 	if (argc != 2) 
@@ -783,6 +809,7 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 	{
 		case MODULE_BLE_SYSTEM_BOOT_EVT:
 		{
+			// module_work = true;
 			gl_ble_module_data_t *system_boot = (gl_ble_module_data_t *)data;
 
 			// json format
@@ -931,10 +958,10 @@ GL_RET cmd_test(int argc, char **argv)
 	printf(" Start test!!!\n");
 	GL_RET ret;
 
-	int MAX_INT = ((unsigned)(-1))>>1;
+	// int MAX_INT = ((unsigned)(-1))>>1;
 	int time = 0;
 
-	while(time < MAX_INT)
+	while(time < 10000)
 	{
 		ret = gl_ble_discovery(1, 16, 16, 0, 1);
 		if(ret != GL_SUCCESS)
@@ -943,14 +970,14 @@ GL_RET cmd_test(int argc, char **argv)
 			exit(0);
 		}
 
-		sleep(3);
+		sleep(1);
 
-		ret = gl_ble_stop_discovery();
-		if(ret != GL_SUCCESS)
-		{
-			printf("gl_ble_stop_discovery return %d\n", ret);
-			exit(0);
-		}
+		// ret = gl_ble_stop_discovery();
+		// if(ret != GL_SUCCESS)
+		// {
+		// 	printf("gl_ble_stop_discovery return %d\n", ret);
+		// 	exit(0);
+		// }
 
 		printf("**********************************************************************\n");
 		printf("TEST TIME: %d\n", time+1);
@@ -958,7 +985,14 @@ GL_RET cmd_test(int argc, char **argv)
 
 		time++;
 
-		sleep(1);
+		// module_work = false;
+		gl_ble_hard_reset();
+
+		// gl_ble_enable(0);
+		// sleep(1);
+		// gl_ble_enable(1);
+		// while(!module_work);
+
 	}
 }
 
@@ -1058,6 +1092,8 @@ int main(int argc, char *argv[])
 		free(inputstr);
 		inputstr = NULL;
 	}
+
+	return 0;
 }
 
 static char *getCmdByIndex(unsigned int CmdIndex)

@@ -28,6 +28,10 @@ gl_ble_cbs ble_msg_cb;
 
 static void create_module_thread(void);
 
+static int32_t ble_gap_evt_default_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
+static int32_t ble_gatt_evt_default_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
+static int32_t ble_module_evt_default_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data);
+
 /************************************************************************************************************************************/
 
 static void create_module_thread(void)
@@ -53,11 +57,22 @@ GL_RET gl_ble_init(void)
 	/* Init device manage */
 	ble_dev_mgr_init();
 	
+	// init callback
+	ble_msg_cb.ble_module_event = ble_module_evt_default_cb;
+	ble_msg_cb.ble_gap_event = ble_gap_evt_default_cb;
+	ble_msg_cb.ble_gatt_event = ble_gatt_evt_default_cb;
+
+	// turn off ble chip
+	log_debug("Reset ble chip!\n");
+	system(rstoff); 
+
 	// init hal
 	hal_init();
 
 	// create a thread to recv module message
 	create_module_thread();
+
+	system(rston); 
 
 	return GL_SUCCESS;
 }
@@ -83,21 +98,21 @@ GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 
 }
 
-int32_t ble_gap_evt_default_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
+static int32_t ble_gap_evt_default_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
 {
 	/*          do nothing            */
 	log_debug("ble_gap_evt_default_cb\n");
 	return 0;
 }
 
-int32_t ble_gatt_evt_default_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
+static int32_t ble_gatt_evt_default_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
 {
 	/*          do nothing            */
 	log_debug("ble_gatt_evt_default_cb\n");
 	return 0;
 }
 
-int32_t ble_module_evt_default_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data)
+static int32_t ble_module_evt_default_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data)
 {
 	/*          do nothing            */
 	log_debug("ble_module_evt_default_cb\n");
@@ -116,6 +131,12 @@ GL_RET gl_ble_unsubscribe(void)
 GL_RET gl_ble_enable(int32_t enable)
 {
 	return ble_enable(enable);
+}
+
+
+GL_RET gl_ble_hard_reset(void)
+{
+	return ble_hard_reset();
 }
 
 GL_RET gl_ble_get_mac(BLE_MAC mac)

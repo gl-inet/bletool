@@ -12,10 +12,13 @@
 #include "gl_dev_mgr.h"
 #include "silabs_bleapi.h"
 #include "gl_type.h"
+#include "gl_hal.h"
 
 
 BGLIB_DEFINE();
 bool appBooted = false; // App booted flag
+
+bool wait_reset_flag = false;
 
 extern gl_ble_cbs ble_msg_cb;
 
@@ -29,8 +32,6 @@ int special_evt_num = 0;
 struct gecko_cmd_packet* gecko_get_event(int block);
 struct gecko_cmd_packet* gecko_wait_event(void);
 struct gecko_cmd_packet* gecko_wait_message(void); //wait for event from system
-
-// bool appBooted = false; // App booted flag
 
 // ubus value
 extern struct ubus_object ble_obj;
@@ -52,7 +53,6 @@ void* silabs_run(void* arg)
 
         // Run application and event handler.
         silabs_event_handler(evt);
-
     }
 
 }
@@ -79,17 +79,29 @@ struct gecko_cmd_packet* gecko_get_event(int block)
             gecko_queue_r = (gecko_queue_r + 1) % BGLIB_QUEUE_LEN;
             return p;
         }
-        //if not blocking and nothing in uart -> out
-        // if (!block) {
-        //     return NULL;
-        // }
 
-        //read more messages from device
-        if ((p = gecko_wait_message())) {
+        // reset
+        if(wait_reset_flag)
+        {
+            system(rstoff);
+
+            // clean dev list
+            ble_dev_mgr_del_all();
+
+            // clean uart cache
+            usleep(100*1000);
+            uartCacheClean();
+        
+            appBooted = false;
+            wait_reset_flag = false;
+        }
+
+        p = gecko_wait_message();
+        if (p) {
             return p;
         }
 
-        usleep(100);
+        // usleep(10);
     }
 }
 
@@ -101,22 +113,66 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     struct gecko_cmd_packet *pck, *retVal = NULL;
     int ret;
 
-    // get lock
-    // _thread_ctx_mutex_lock();
-    ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
+    // printf("gecko_wait_message: uartRx header\n");
+    int dataToRead = BGLIB_MSG_HEADER_LEN;
+    uint8_t* header_p = (uint8_t*)&header;
+
+
+    if(!appBooted)
+    {
+        while(1)
+        {
+            ret = uartRxNonBlocking(1, header_p);
+            if(ret == 1)
+            {
+                if(*header_p == 0xa0)
+                {
+                    break;
+                }
+            }
+
+            if(wait_reset_flag)
+            {
+                return 0;
+            }
+
+        }
+
+        dataToRead--;
+        header_p++;
+    }
+
+    while(dataToRead)
+    {
+        ret = uartRxNonBlocking(dataToRead, header_p);
+        if(ret != -1)
+        {
+            dataToRead -= ret;
+            header_p += ret;
+        }else{
+            return 0;
+        }
+
+        if(wait_reset_flag)
+        {
+            return 0;
+        }
+    }
+
+    // ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
+
+    // printf("gecko_wait_message: uartRx header end  %08x\n", header);
     if(ENDIAN){
         reverse_endian((uint8_t*)&header,BGLIB_MSG_HEADER_LEN);
     } 
 
 	if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko){
-        // _thread_ctx_mutex_unlock();
         return 0;
     }
 
     msg_length = BGLIB_MSG_LEN(header);
 
     if (msg_length > BGLIB_MSG_MAX_PAYLOAD) {
-        // _thread_ctx_mutex_unlock();
         return 0;
     }
 
@@ -128,17 +184,14 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
                 uint8 tmp_payload[BGLIB_MSG_MAX_PAYLOAD];
                 uartRx(msg_length, tmp_payload);
             }
-            // _thread_ctx_mutex_unlock();
             return 0; //NO ROOM IN QUEUE
         }
         pck = &gecko_queue[gecko_queue_w];
         gecko_queue_w = (gecko_queue_w + 1) % BGLIB_QUEUE_LEN;
     } else if ((header & 0xf8) == gecko_dev_type_gecko ) { //response
         retVal = pck = gecko_rsp_msg;
-		// log_debug("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
     } else {
         //fail
-        // _thread_ctx_mutex_unlock();
         return 0;
     }
     pck->header = header;
@@ -147,15 +200,23 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
    * Read the payload data if required and store it after the header.
    */
     if (msg_length > 0) {
+
+        // printf("gecko_wait_message: uartRx body\n");
         ret = uartRx(msg_length, payload);
+        // printf("gecko_wait_message: uartRx body end\n");
+        // int tmp_i = 0;
+        // printf("body: ");
+        // for(;tmp_i < msg_length; tmp_i++)
+        // {
+        //     printf("%02x", payload[tmp_i]);
+        // }
+        // printf("\n");
+
         if (ret < 0) {
-			log_err("recv fail\n");
-            // _thread_ctx_mutex_unlock();
+			// log_err("recv fail\n");
             return 0;
         }
     }
-
-    // _thread_ctx_mutex_unlock();
 
 	if(ENDIAN)  
 	{
@@ -170,20 +231,26 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
 
 int rx_peek_timeout(int ms)
 {
-    int timeout = ms;
+    int timeout = ms*10;
     while (timeout) {
         timeout--;
-        if (uartRxPeek() > 0) {
-			if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
-			{
-	            return 0;
-			}
+        // if (uartRxPeek() > 0) {
+		// 	if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
+		// 	{
+	    //         return 0;
+		// 	}
+        // }
+        if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
+        {
+            return 0;
         }
-        usleep(1000);
+        usleep(100);
     }
 
     return -1;
 }
+
+
 void gecko_handle_command(uint32_t hdr, void* data)
 {
 	uint32_t send_msg_length = BGLIB_MSG_HEADER_LEN + BGLIB_MSG_LEN(gecko_cmd_msg->header);
@@ -193,27 +260,21 @@ void gecko_handle_command(uint32_t hdr, void* data)
 	}
 	gecko_rsp_msg->header = 0;
 
-	// _thread_ctx_mutex_lock(); // get lock
 	uartTx(send_msg_length, (uint8_t*)gecko_cmd_msg); // send cmd msg
-	// _thread_ctx_mutex_unlock(); // release lock
-	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
 
-	rx_peek_timeout(200); // wait for response
+	rx_peek_timeout(300); // wait for response
 }
 
+void gecko_handle_command_noresponse(uint32_t hdr,void* data)
+{
+	uint32_t send_msg_length = BGLIB_MSG_HEADER_LEN + BGLIB_MSG_LEN(gecko_cmd_msg->header);
+	if(ENDIAN) 
+	{
+		reverse_endian((uint8_t*)&gecko_cmd_msg->header,BGLIB_MSG_HEADER_LEN);
+	}
 
-
-
-
-
-
-
-
-
-
-
-
-
+	uartTx(send_msg_length, (uint8_t*)gecko_cmd_msg); // send cmd msg
+}
 
 /*
  *	module events report 
@@ -226,7 +287,7 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
     if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id) && !appBooted) 
     {
         log_debug("Wait for system boot ... \n");
-        usleep(50000);
+        // usleep(50000);
         return;
     }
 

@@ -26,6 +26,8 @@ void* silabs_run(void* arg);
 
 GL_RET silabs_ble_enable(int);
 
+GL_RET silabs_ble_hard_reset(void);
+
 GL_RET silabs_ble_local_mac(BLE_MAC mac);
 
 GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mode);
@@ -57,5 +59,6 @@ GL_RET silabs_ble_read_char(BLE_MAC address, int char_handle);
 GL_RET silabs_ble_write_char(BLE_MAC address, int char_handle, char *value, int res);
 
 GL_RET silabs_ble_set_notify(BLE_MAC address, int char_handle, int flag);
+
 
 #endif

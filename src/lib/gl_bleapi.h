@@ -69,6 +69,16 @@ GL_RET gl_ble_unsubscribe(void);
 GL_RET gl_ble_enable(int enable);
 
 /**
+ *  @brief  Hardware reset the ble modele
+ * 
+ *  @note   Every time when the ble chip start, "ble_module_event" callback will receive
+ *  			a "MODULE_BLE_SYSTEM_BOOT_EVT" event.
+ * 
+ *  @retval  GL-RETURN-CODE
+ */
+GL_RET gl_ble_hard_reset(void);
+
+/**
  *  @brief  This command can be used to read the Bluetooth public address used by the device. 
  * 
  *  @param mac: Device's BLE MAC address.

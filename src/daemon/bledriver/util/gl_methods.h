@@ -28,6 +28,7 @@
 #define ble_run							silabs_run
 
 #define ble_enable                      silabs_ble_enable
+#define ble_hard_reset                  silabs_ble_hard_reset
 #define ble_local_mac                   silabs_ble_local_mac
 #define ble_set_power                   silabs_ble_set_power
 #define ble_discovery                   silabs_ble_discovery

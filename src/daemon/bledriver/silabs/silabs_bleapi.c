@@ -30,6 +30,8 @@
 #include "gl_dev_mgr.h"
 
 extern struct gecko_cmd_packet* evt;
+extern bool wait_reset_flag;
+extern bool appBooted; 
 
 GL_RET silabs_ble_enable(int enable)
 {
@@ -38,13 +40,61 @@ GL_RET silabs_ble_enable(int enable)
         system(rston);
     }
     else{
-        system(rstoff);
-
-        // clean dev list
-        ble_dev_mgr_del_all();
+        // wait sub thread recv end
+        wait_reset_flag = true;
+        // usleep(100*1000);
+        while(wait_reset_flag)
+        {
+            usleep(10*1000);
+        }
     }
 
     return GL_SUCCESS;
+}
+
+GL_RET silabs_ble_hard_reset(void)
+{
+    int reset_time = 0;
+    int wait_s = 30; // 3s = 30 * 100ms
+    int wait_off = 300; // 3s = 300 * 10ms
+    while(reset_time < 3)
+    {
+        reset_time++;
+        wait_reset_flag = true;
+
+        while((wait_reset_flag) && (wait_off > 0))
+        {
+            wait_off--;
+            usleep(10*1000);
+        }
+
+        if((appBooted) || (wait_off <= 0))
+        {
+            // error
+            continue;
+        }
+
+        usleep(500*1000); //wait 500 ms
+        system(rston);
+
+        while((!appBooted) && (wait_s > 0))
+        {
+            wait_s--;
+            usleep(100*1000);
+        }
+
+        if(appBooted)
+        {
+            break;
+        }
+    }
+
+    if(reset_time <= 3)
+    {
+        return GL_SUCCESS;
+    }else{
+        return GL_UNKNOW_ERR;
+    }
 }
 
 GL_RET silabs_ble_local_mac(BLE_MAC mac)
@@ -70,6 +120,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
     }
     if(set_tim_rsp->result)
     {
+        // printf("gecko_cmd_le_gap_set_discovery_timing: %d\n", set_tim_rsp->result);
         return (set_tim_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
@@ -80,6 +131,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
     }
     if(set_type_rsp->result)
     {
+        // printf("gecko_cmd_le_gap_set_discovery_type: %d\n", set_type_rsp->result);
         return (set_type_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
@@ -90,6 +142,7 @@ GL_RET silabs_ble_discovery(int phys, int interval, int window, int type, int mo
     }
     if(start_rsp->result)
     {
+        // printf("gecko_cmd_le_gap_start_discovery: %d\n", start_rsp->result);
         return (start_rsp->result + MANUFACTURER_ERR_BASE);       
     }
 
