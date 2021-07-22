@@ -55,41 +55,55 @@ GL_RET silabs_ble_enable(int enable)
 GL_RET silabs_ble_hard_reset(void)
 {
     int reset_time = 0;
-    int wait_s = 30; // 3s = 30 * 100ms
-    int wait_off = 300; // 3s = 300 * 10ms
+    int wait_s; 
+    int wait_off; 
+
+    // max retry 3 times
     while(reset_time < 3)
     {
-        reset_time++;
-        wait_reset_flag = true;
+        wait_s = 30; // 3s = 30 * 100ms
+        wait_off = 300; // 3s = 300 * 10ms
 
+        wait_reset_flag = true;
+        // wait for turn off ble module
         while((wait_reset_flag) && (wait_off > 0))
         {
             wait_off--;
             usleep(10*1000);
         }
 
+        // check turn off end
         if((appBooted) || (wait_off <= 0))
         {
             // error
+            reset_time++;
             continue;
         }
+        
+        //wait 500 ms
+        usleep(500*1000);
 
-        usleep(500*1000); //wait 500 ms
+        // turn on ble module
         system(rston);
-
+        
+        // wait for ble module start
         while((!appBooted) && (wait_s > 0))
         {
             wait_s--;
             usleep(100*1000);
         }
 
+        // if ble module start success, break loop
         if(appBooted)
         {
             break;
         }
+
+        // ble module start timeout
+        reset_time++;
     }
 
-    if(reset_time <= 3)
+    if(reset_time < 3)
     {
         return GL_SUCCESS;
     }else{
