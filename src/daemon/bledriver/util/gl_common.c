@@ -35,6 +35,15 @@ int str2array(uint8_t* dst, char* src, int len) {
 }
 int hex2str(uint8_t* head, int len, char* value) {
     int i = 0;
+
+    // fix bug(?): (kernel don't mask all uart print) When wifi network up/down, it will recv a big message
+    if(len >= 256/2)    
+    {    
+        strcpy(value,"00");
+        // printf("recv a err msg! err len = %d\n",len);
+        return -1;
+    }
+    
     while (i < len) {
         sprintf(value + i * 2, "%02x", head[i]);
         i++;
