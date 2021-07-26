@@ -406,13 +406,17 @@ GL_RET silabs_ble_get_service(gl_ble_service_list_t *service_list, BLE_MAC addre
 			i++;
 		}
 	}else{
+        special_evt_num = 0;
+		// evt->header = 0;
 		return GL_ERR_EVENT_MISSING;
 	}
 
+    // clean evt count
+    special_evt_num = 0;
+
 	if(BGLIB_MSG_ID(evt->header) == gecko_evt_gatt_procedure_completed_id)
 	{
-		special_evt_num = 0;
-		evt->header = 0;
+        evt->header = 0;
 		return GL_SUCCESS;
 	}else{
 		return GL_ERR_EVENT_MISSING;
@@ -459,13 +463,17 @@ GL_RET silabs_ble_get_char(gl_ble_char_list_t *char_list, BLE_MAC address, int s
 			i++;
 		}
 	}else{
+        special_evt_num = 0;
+		// evt->header = 0;
 		return GL_ERR_EVENT_MISSING;
 	}
 
+    // clean evt count
+    special_evt_num = 0;
+    
 	if(BGLIB_MSG_ID(evt->header) == gecko_evt_gatt_procedure_completed_id)
 	{
-		special_evt_num = 0;
-		evt->header = 0;
+        evt->header = 0;
 		return GL_SUCCESS;
 	}else{
 		return GL_ERR_EVENT_MISSING;
