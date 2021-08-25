@@ -16,10 +16,14 @@
 #include "gl_log.h"
 #include "gl_dev_mgr.h"
 #include "silabs_bleapi.h"
+#include "gl_type.h"
+#include "gl_hal.h"
 
 
 BGLIB_DEFINE();
+bool appBooted = false; // App booted flag
 
+bool wait_reset_flag = false;
 
 struct gecko_cmd_packet* evt = NULL;
 
@@ -31,8 +35,6 @@ int special_evt_num = 0;
 struct gecko_cmd_packet* gecko_get_event(int block);
 struct gecko_cmd_packet* gecko_wait_event(void);
 struct gecko_cmd_packet* gecko_wait_message(void); //wait for event from system
-
-// bool appBooted = false; // App booted flag
 
 // ubus value
 extern struct ubus_object ble_obj;
@@ -54,8 +56,6 @@ void* silabs_run(void* arg)
 
         // Run application and event handler.
         silabs_event_handler(evt);
-
-		usleep(100);
     }
 
 }
@@ -82,13 +82,25 @@ struct gecko_cmd_packet* gecko_get_event(int block)
             gecko_queue_r = (gecko_queue_r + 1) % BGLIB_QUEUE_LEN;
             return p;
         }
-        //if not blocking and nothing in uart -> out
-        // if (!block) {
-        //     return NULL;
-        // }
 
-        //read more messages from device
-        if ((p = gecko_wait_message())) {
+        // reset
+        if(wait_reset_flag)
+        {
+            system(rstoff);
+
+            // clean dev list
+            ble_dev_mgr_del_all();
+
+            // clean uart cache
+            usleep(100*1000);
+            uartCacheClean();
+        
+            appBooted = false;
+            wait_reset_flag = false;
+        }
+
+        p = gecko_wait_message();
+        if (p) {
             return p;
         }
     }
@@ -97,23 +109,58 @@ struct gecko_cmd_packet* gecko_get_event(int block)
 struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
 {
     uint32_t msg_length;
-    uint32_t header;
+    uint32_t header = 0;
     uint8_t* payload;
     struct gecko_cmd_packet *pck, *retVal = NULL;
     int ret;
-    //sync to header byte
 
-	/* fix bug(2021.2.18): big endian recv bug*/
-    // ret = uartRx(1, (uint8_t*)&header);
-    // if (ret < 0 || (header & 0x78) != gecko_dev_type_gecko) {
-    //     return 0;
-    // }
-    // ret = uartRx(BGLIB_MSG_HEADER_LEN - 1, &((uint8_t*)&header)[1]);
-    // if (ret < 0) {
-    //     return 0;
-    // }
+    // printf("gecko_wait_message: uartRx header\n");
+    int dataToRead = BGLIB_MSG_HEADER_LEN;
+    uint8_t* header_p = (uint8_t*)&header;
 
-    ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
+
+    if(!appBooted)
+    {
+        while(1)
+        {
+            ret = uartRxNonBlocking(1, header_p);
+            if(ret == 1)
+            {
+                if(*header_p == 0xa0)
+                {
+                    break;
+                }
+            }
+
+            if(wait_reset_flag)
+            {
+                return 0;
+            }
+
+        }
+
+        dataToRead--;
+        header_p++;
+    }
+
+    while(dataToRead)
+    {
+        ret = uartRxNonBlocking(dataToRead, header_p);
+        if(ret != -1)
+        {
+            dataToRead -= ret;
+            header_p += ret;
+        }else{
+            return 0;
+        }
+
+        if(wait_reset_flag)
+        {
+            return 0;
+        }
+    }
+
+    // ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
     if(ENDIAN){
         reverse_endian((uint8_t*)&header,BGLIB_MSG_HEADER_LEN);
     } 
@@ -152,10 +199,12 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     /**
    * Read the payload data if required and store it after the header.
    */
-    if (msg_length) {
+    if (msg_length > 0) {
+
+        // printf("gecko_wait_message: uartRx body\n");
         ret = uartRx(msg_length, payload);
         if (ret < 0) {
-			log_err("recv fail\n");
+			// log_err("recv fail\n");
             return 0;
         }
     }
@@ -173,16 +222,20 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
 
 int rx_peek_timeout(int ms)
 {
-    int timeout = ms;
+    int timeout = ms*10;
     while (timeout) {
         timeout--;
-        if (uartRxPeek() > 0) {
-			if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
-			{
-	            return 0;
-			}
+        // if (uartRxPeek() > 0) {
+		// 	if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
+		// 	{
+	    //         return 0;
+		// 	}
+        // }
+        if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
+        {
+            return 0;
         }
-        usleep(1000);
+        usleep(100);
     }
 
     return -1;
@@ -200,19 +253,19 @@ void gecko_handle_command(uint32_t hdr, void* data)
 	// _thread_ctx_mutex_unlock(); // release lock
 	// printf("FILE: %d, LINE: %d FUNC: %s /n\n", __FILE__, __LINE__, __FUNCTION__);
 
-	rx_peek_timeout(200); // wait for response
+	rx_peek_timeout(300); // wait for response
 }
 
+void gecko_handle_command_noresponse(uint32_t hdr,void* data)
+{
+	uint32_t send_msg_length = BGLIB_MSG_HEADER_LEN + BGLIB_MSG_LEN(gecko_cmd_msg->header);
+	if(ENDIAN) 
+	{
+		reverse_endian((uint8_t*)&gecko_cmd_msg->header,BGLIB_MSG_HEADER_LEN);
+	}
 
-
-
-
-
-
-
-
-
-
+	uartTx(send_msg_length, (uint8_t*)gecko_cmd_msg); // send cmd msg
+}
 
 
 
@@ -231,29 +284,17 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
 	// printf("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
 
     // Do not handle any events until system is booted up properly.
-    // if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id)
-    //     && !appBooted) {
-        // #if defined(DEBUG)
-        // #endif
-    //     usleep(50000);
-    //     return;
-    // }
+    if ((BGLIB_MSG_ID(evt->header) != gecko_evt_system_boot_id) && !appBooted) 
+    {
+        log_debug("Wait for system boot ... \n");
+        // usleep(50000);
+        return;
+    }
 
     switch(BGLIB_MSG_ID(p->header)){
-		case gecko_rsp_le_gap_connect_id:
-		{
-			// as master start to connect slave device
-			if(target_dev_address == NULL)
-			{
-				log_err("As master start to connect device, but target device mac lost!");
-				return ;
-			}
-			ble_dev_mgr_add(target_dev_address, p->data.rsp_le_gap_connect.connection);
-			break;
-		}
         case gecko_evt_system_boot_id:
 		{
-			// appBooted = true;
+            appBooted = true;
 			o = json_object_new_object();
 			json_object_object_add(o,"type",json_object_new_string(SYSTEM_BOOT));
 			json_object_object_add(o,"major",json_object_new_int(p->data.evt_system_boot.major));

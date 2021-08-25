@@ -85,6 +85,16 @@ int32_t uartClose(void)
   return uartCloseSerial(serialHandle);
 }
 
+int32_t uartCacheClean(void)
+{  
+  uint8_t buf[4];
+  while (uartRxNonBlocking(4, buf) == 4) {
+  }
+
+  return 0;
+}
+
+
 int32_t uartRx(uint32_t dataLength, uint8_t* data)
 {
   /** The amount of bytes read. */
@@ -218,6 +228,15 @@ static int32_t uartOpenSerial(int8_t* device, uint32_t bps, uint32_t dataBits, u
             strerror(errno), errno);
     goto error;
   }
+
+  /* Clean last time recevice message */
+  if(-1 == tcflush(serial, TCIFLUSH))
+  {
+    fprintf(stderr, "Error clean serial port message %s - %s(%d).\n",
+            (char*)device,
+            strerror(errno), errno);
+  }
+
 
   /* Note that open() follows POSIX semantics: multiple open() calls to the same file will succeed
    * unless the TIOCEXCL ioctl is issued. This will prevent additional opens except by root-owned

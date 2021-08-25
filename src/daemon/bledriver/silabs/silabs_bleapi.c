@@ -29,7 +29,8 @@
 #include "gl_dev_mgr.h"
 
 extern struct gecko_cmd_packet* evt;
-
+extern bool wait_reset_flag;
+extern bool appBooted; 
 
 json_object* silabs_ble_enable(int enable)
 {
@@ -39,10 +40,13 @@ json_object* silabs_ble_enable(int enable)
         system(rston);
     }
     else{
-        system(rstoff);
-
-        // clean dev list
-        ble_dev_mgr_del_all();
+        // wait sub thread recv end
+        wait_reset_flag = true;
+        // usleep(100*1000);
+        while(wait_reset_flag)
+        {
+            usleep(10*1000);
+        }
     }
     json_object_object_add(obj,"code",json_object_new_int(GL_SUCCESS));
     return obj;

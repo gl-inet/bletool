@@ -74,4 +74,7 @@ int32_t uartRxPeek(void);
  **************************************************************************************************/
 int32_t uartTx(uint32_t dataLength, uint8_t* data);
 
+
+int32_t uartCacheClean(void);
+
 #endif
