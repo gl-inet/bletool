@@ -161,7 +161,7 @@ static GL_RET get_model_hw_cfg(void)
     if(guci2_get(ctx,"glconfig.general.model",model) < 0)
     {
 		guci2_free(ctx);
-        log_err("zigbee: serial config missing.\n");
+        log_err("serial config missing.\n");
         return -1;
     }
 

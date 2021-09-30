@@ -18,11 +18,11 @@
 # Targets	                                                       
 UTIL 			?=  bletool
 LIBRARIES 		?=  libglbleapi.so
-PROJECT			?=  bledemo
+PROJECT			?=  bleScanner
 
 # Defines
 DEFINES += \
-	-DENABLE_DEBUG
+	# -DENABLE_DEBUG
 
 # Flags		                                                       
 CC	 			:=  gcc
@@ -67,62 +67,62 @@ UTIL_SRCDIRS	:=  lib  \
 					daemon/bledriver/util \
 					daemon/bledriver/silabs
 					
-# PROJECT_INCDIRS	:=  lib  \
-# 					project \
-# 					include \
-# 					components/thread \
-# 					components/dev_mgr \
-# 					components/log	\
-# 					daemon/bledriver/util
+PROJECT_INCDIRS	:=  lib  \
+					project \
+					include \
+					model_hw_cfg \
+					components/thread \
+					components/dev_mgr \
+					components/log	\
+					components/timestamp \
+					daemon/bledriver/util \
+					daemon/bledriver/silabs
 
-# PROJECT_SRCDIRS	:=  lib  \
-# 					project \
-# 					components/thread \
-# 					components/dev_mgr  \
-# 					components/log	\
-# 					daemon/bledriver/util
+PROJECT_SRCDIRS	:=  lib  \
+					project \
+					components/thread \
+					components/dev_mgr  \
+					components/log	\
+					components/timestamp \
+					daemon/bledriver/util \
+					daemon/bledriver/silabs
 
 # Objects directories 
 UTIL_DIR 		=	utilbuild
 LIB_DIR 		=	libbuild
-# PROJECT_DIR		=	projectbuild
+PROJECT_DIR		=	projectbuild
 EXE_DIR 		=	exe
 
 NULLDEVICE := /dev/null
 $(shell mkdir $(UTIL_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(LIB_DIR)>$(NULLDEVICE) 2>&1)
-# $(shell mkdir $(PROJECT_DIR)>$(NULLDEVICE) 2>&1)
+$(shell mkdir $(PROJECT_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(EXE_DIR)>$(NULLDEVICE) 2>&1)
 
 # Rules
 LIB_INCLUD	 	:=  $(patsubst %, -I %, $(LIB_INCDIRS))		
 UTIL_INCLUD 	:=  $(patsubst %, -I %, $(UTIL_INCDIRS))	
-# PROJECT_INCLID	:=  $(patsubst %, -I %, $(PROJECT_INCDIRS))
+PROJECT_INCLID	:=  $(patsubst %, -I %, $(PROJECT_INCDIRS))
 
 UTIL_CFILES		:=  $(foreach dir, $(UTIL_SRCDIRS), $(wildcard $(dir)/*.c))
 LIB_CFILES		:=  $(foreach dir, $(LIB_SRCDIRS), $(wildcard $(dir)/*.c))
-# PROJECT_CFILES	:=  $(foreach dir, $(PROJECT_SRCDIRS), $(wildcard $(dir)/*.c))
+PROJECT_CFILES	:=  $(foreach dir, $(PROJECT_SRCDIRS), $(wildcard $(dir)/*.c))
 
-# DAEMON_OBJS 	:=  $(patsubst %.c, $(DAEMON_DIR)/%.o, $(notdir $(DAEMON_CFILES)))
 UTIL_OBJS	 	:=  $(patsubst %.c, $(UTIL_DIR)/%.o, $(notdir $(UTIL_CFILES)))
 LIB_OBJS	 	:=  $(patsubst %.c, $(LIB_DIR)/%.o, $(notdir $(LIB_CFILES)))
-# PROJECT_OBJS	:=  $(patsubst %.c, $(PROJECT_DIR)/%.o, $(notdir $(PROJECT_CFILES)))
+PROJECT_OBJS	:=  $(patsubst %.c, $(PROJECT_DIR)/%.o, $(notdir $(PROJECT_CFILES)))
 
-# VPATH			:= 	$(DAEMON_SRCDIRS)  $(UTIL_SRCDIRS)  $(LIB_SRCDIRS)  $(PROJECT_SRCDIRS)
-VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS) 
+# VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS) 
+VPATH			:= 	$(UTIL_SRCDIRS)  $(LIB_SRCDIRS)  $(PROJECT_SRCDIRS)
 
 
 # Dependences               
-# PROJECT_DEPENDS +=  -lubox -lubus -ljson-c -lblobmsg_json -luci -lpthread
-# UTIL_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json -luci
-# LIB_DEPENDS 	:=  -lubox -lubus -ljson-c -lblobmsg_json
-
 UTIL_DEPENDS 	+=  -ljson-c -luci -lpthread -lreadline -lncurses 
-LIB_DEPENDS 	+=  -ljson-c -luci -lpthread -luci
-# PROJECT_DEPENDS +=  -ljson-c -luci -lpthread
+LIB_DEPENDS 	+=  -ljson-c -luci -lpthread
+PROJECT_DEPENDS +=  -ljson-c -lpthread -luci
 
-# all:	$(EXE_DIR)/$(DAEMON) $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)
-all:	$(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) 
+# all:	$(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) 
+all:  $(EXE_DIR)/$(UTIL) $(EXE_DIR)/$(LIBRARIES) $(EXE_DIR)/$(PROJECT)
 
 # Create shared lib
 $(LIB_DIR)/%.o : %.c
@@ -143,15 +143,14 @@ $(EXE_DIR)/$(UTIL): $(UTIL_OBJS)
 	$(CC) $^ -o $@ $(UTIL_DEPENDS)	
 
 # Create demo project
-# $(PROJECT_DIR)/%.o : %.c
-# 	@echo "Project building file: $<"
-# 	$(CC) -c $(CFLAG) ${PROJECT_INCLID}  $(PROJECT_DEPENDS) $< -o $@ 
+$(PROJECT_DIR)/%.o : %.c
+	@echo "Project building file: $<"
+	$(CC) -c $(CFLAG) ${PROJECT_INCLID}  $(PROJECT_DEPENDS) $< -o $@ 
 
-# $(EXE_DIR)/$(PROJECT): $(PROJECT_OBJS)
-# 	@echo "Linking target: $@"
-# 	$(CC) $^ -o $@ $(PROJECT_DEPENDS)	
+$(EXE_DIR)/$(PROJECT): $(PROJECT_OBJS)
+	@echo "Linking target: $@"
+	$(CC) $^ -o $@ $(PROJECT_DEPENDS)	
 
 .PHONY: clean
 clean:
-	rm -rf $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR)
-# rm -rf $(DAEMON_DIR) $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR) $(PROJECT)
+	rm -rf $(UTIL_DIR) $(LIB_DIR) $(EXE_DIR) $(PROJECT)
