@@ -1,0 +1,7 @@
+Ver: 0.1.0
+Staus: debug
+Build: 2021.10.12
+Changes:
+	1. Update the code framework
+	2. Add function: gl_ble_destroy(); gl_ble_unsubscribe();
+	3. Update bletool and bleScanner
