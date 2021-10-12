@@ -114,7 +114,8 @@ int ble_dev_mgr_init(void) {
     return GL_SUCCESS;
 }
 
-int ble_dev_mgr_destroy(void) {
+int ble_dev_mgr_destroy(void) 
+{
 
     // get list handle
     ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();

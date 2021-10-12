@@ -1,3 +1,13 @@
+Ver: 0.1.1
+Staus: debug
+Build: 2021.10.12
+Changes:
+	1. Fix bugs£º
+		gl_ble_destroy(): Add releasing msqid memory
+		gl_ble_unsubscribe(): Add setting ble_watcher_thread_ctx as NULL
+
+
+----------------------------------------------------------------------------------
 Ver: 0.1.0
 Staus: debug
 Build: 2021.10.12

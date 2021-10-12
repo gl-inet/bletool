@@ -129,6 +129,8 @@ GL_RET gl_ble_destroy(void)
 		log_err("msgctl error");
 		return GL_UNKNOW_ERR;
 	}
+	free(msqid);
+	msqid = NULL;
 
 	return GL_SUCCESS;
 }
@@ -179,6 +181,7 @@ GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 GL_RET gl_ble_unsubscribe(void)
 {
 	HAL_ThreadDelete(ble_watcher_thread_ctx);
+	ble_watcher_thread_ctx = NULL;
 
 	// free watcher_param_t
 	free(_watcher_param);
