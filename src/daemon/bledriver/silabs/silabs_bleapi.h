@@ -22,7 +22,6 @@
 
 #include "gl_errno.h"
 
-void* silabs_run(void* arg);
 
 GL_RET silabs_ble_enable(int);
 

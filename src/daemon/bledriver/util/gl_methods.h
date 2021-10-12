@@ -24,8 +24,10 @@
 #ifdef SILABS_EFR32
 
 #include "silabs_bleapi.h"
+#include "silabs_msg.h"
 
-#define ble_run							silabs_run
+#define ble_driver						silabs_driver
+#define ble_watcher                     silabs_watcher
 
 #define ble_enable                      silabs_ble_enable
 #define ble_hard_reset                  silabs_ble_hard_reset

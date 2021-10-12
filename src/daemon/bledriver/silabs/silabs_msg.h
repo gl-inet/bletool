@@ -1,3 +1,6 @@
+#ifndef _SILABS_MSG_H_
+#define _SILABS_MSG_H_
+
 #include "host_gecko.h"
 
 #ifndef BGLIB_QUEUE_LEN
@@ -36,3 +39,13 @@ extern int special_evt_num;
 #define BGLIB_INITIALIZE(OFUNC, IFUNC) bglib_output = OFUNC; bglib_input = IFUNC; bglib_peek = NULL;
 
 int wait_rsp_evt(uint32_t evt_id, uint32_t timeout);
+
+
+typedef struct{
+  int evt_msgid;
+}driver_param_t;
+
+void* silabs_driver(void* arg);
+
+
+#endif

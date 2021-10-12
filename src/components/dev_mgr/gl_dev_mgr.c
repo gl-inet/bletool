@@ -80,6 +80,8 @@ static void dev_list_MutexUnlock(void)
 }
 
 
+/*************************************************************************************************************/
+
 ble_dev_mgr_ctx_t *_ble_dev_mgr_get_ctx(void) 
 {
     return &g_ble_dev_mgr; 
@@ -108,6 +110,25 @@ int ble_dev_mgr_init(void) {
 
     // init Device List
     INIT_LIST_HEAD(&mgr_ctx->dev_list);
+
+    return GL_SUCCESS;
+}
+
+int ble_dev_mgr_destroy(void) {
+
+    // get list handle
+    ble_dev_mgr_ctx_t *mgr_ctx = _ble_dev_mgr_get_ctx();
+    
+    int err_num;
+
+    // delete all node
+    ble_dev_mgr_del_all();
+
+    // free mutex
+    if (0 != (err_num = pthread_mutex_destroy((pthread_mutex_t *)mgr_ctx->dev_list_mutex))) {
+        log_err("destroy mutex failed\n");
+    }
+    free(mgr_ctx->dev_list_mutex);
 
     return GL_SUCCESS;
 }

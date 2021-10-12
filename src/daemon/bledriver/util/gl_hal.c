@@ -65,7 +65,7 @@ static GL_RET normal_check_rst_io(void)
 	if(!ble_hw_cfg)
 	{
 		log_err("HW cfg lost!\n");
-		exit(-1);
+		return GL_UNKNOW_ERR;
 	}
 
 	char io[32] = {0};
@@ -90,7 +90,7 @@ static GL_RET normal_check_rst_io(void)
 		if(i > 5)
 		{   
 			log_err("Creating ble RST IO failed!\n");
-			exit(-1); 
+			return GL_UNKNOW_ERR; 
 		}
 	}
 
@@ -112,7 +112,7 @@ static GL_RET qsdk_check_ver(void)
 	if(!ble_hw_cfg)
 	{
 		log_err("HW cfg lost!\n");
-		exit(-1);
+		return GL_UNKNOW_ERR;
 	}
 
 	if((access(SPECIAL_CHIP_IO, F_OK)) != -1)
@@ -129,7 +129,7 @@ static int serial_init(void)
 	if(!ble_hw_cfg)
 	{
 		log_err("HW cfg lost!\n");
-		exit(-1);
+		return GL_UNKNOW_ERR;
 	}
 
 	if(ble_hw_cfg->rst_trigger == 1)
@@ -143,7 +143,7 @@ static int serial_init(void)
 
 	}else{
 		log_err("hw rst trigger cfg error!\n");
-		exit(-1);
+		return GL_UNKNOW_ERR;
 	}
 
     return uartOpen((int8_t*)ble_hw_cfg->port, ble_hw_cfg->baudRate, ble_hw_cfg->flowcontrol, 100);
@@ -206,7 +206,7 @@ static GL_RET get_model_hw_cfg(void)
 
 	}else{
 		log_err("Unknow model!\n");
-		exit(-1);
+		return GL_UNKNOW_ERR;
 	}
 
 	normal_check_rst_io();
@@ -227,12 +227,16 @@ int hal_init(void)
     if( serialFd < 0 )
     {
         fprintf(stderr,"Hal initilized failed.\n");
-        exit(1);
+        return GL_UNKNOW_ERR;
     }
 
     return serialFd;
 }
 
+int hal_destroy(void)
+{
+	return uartClose();
+}
 
 
 struct uci_context* guci2_init(void)

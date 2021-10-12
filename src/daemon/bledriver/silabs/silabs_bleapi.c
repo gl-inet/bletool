@@ -80,8 +80,8 @@ GL_RET silabs_ble_hard_reset(void)
             continue;
         }
         
-        //wait 500 ms
-        usleep(500*1000);
+        //wait 300 ms
+        usleep(300*1000);
 
         // turn on ble module
         system(rston);

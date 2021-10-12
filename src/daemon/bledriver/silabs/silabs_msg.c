@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "silabs_msg.h"
 #include "gl_common.h"
@@ -13,6 +18,7 @@
 #include "silabs_bleapi.h"
 #include "gl_type.h"
 #include "gl_hal.h"
+#include "silabs_evt.h"
 
 
 BGLIB_DEFINE();
@@ -20,42 +26,41 @@ bool appBooted = false; // App booted flag
 
 bool wait_reset_flag = false;
 
-extern gl_ble_cbs ble_msg_cb;
-
 struct gecko_cmd_packet* evt = NULL;
 
 // save resp data evt
 struct gecko_cmd_packet special_evt[SPE_EVT_MAX];
 int special_evt_num = 0;
 
-
 struct gecko_cmd_packet* gecko_get_event(int block);
 struct gecko_cmd_packet* gecko_wait_event(void);
 struct gecko_cmd_packet* gecko_wait_message(void); //wait for event from system
 
-// ubus value
-extern struct ubus_object ble_obj;
-extern struct ubus_context *ctx;
-
-
 void silabs_event_handler(struct gecko_cmd_packet *p);
 static void reverse_rev_payload(struct gecko_cmd_packet* pck);
 
+static int evt_msqid;
 
-
-void* silabs_run(void* arg)
+void* silabs_driver(void* arg)
 {
-    int fd = (int*)arg;
+    driver_param_t driver_param = *((driver_param_t*)arg);
+    evt_msqid = driver_param.evt_msgid;
 
     while (1) {
+
         // Check for stack event.
 		evt = gecko_wait_event();
 
         // Run application and event handler.
         silabs_event_handler(evt);
+
+        // set cancellation point 
+        pthread_testcancel();
     }
 
+    return NULL;
 }
+
 
 /*
 * wait for module events
@@ -101,7 +106,6 @@ struct gecko_cmd_packet* gecko_get_event(int block)
             return p;
         }
 
-        // usleep(10);
     }
 }
 
@@ -113,10 +117,8 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     struct gecko_cmd_packet *pck, *retVal = NULL;
     int ret;
 
-    // printf("gecko_wait_message: uartRx header\n");
     int dataToRead = BGLIB_MSG_HEADER_LEN;
     uint8_t* header_p = (uint8_t*)&header;
-
 
     if(!appBooted)
     {
@@ -159,9 +161,6 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
         }
     }
 
-    // ret = uartRx(BGLIB_MSG_HEADER_LEN, (uint8_t*)&header);
-
-    // printf("gecko_wait_message: uartRx header end  %08x\n", header);
     if(ENDIAN){
         reverse_endian((uint8_t*)&header,BGLIB_MSG_HEADER_LEN);
     } 
@@ -188,7 +187,8 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
         }
         pck = &gecko_queue[gecko_queue_w];
         gecko_queue_w = (gecko_queue_w + 1) % BGLIB_QUEUE_LEN;
-    } else if ((header & 0xf8) == gecko_dev_type_gecko ) { //response
+    } else if ((header & 0xf8) == gecko_dev_type_gecko ) { 
+        //response
         retVal = pck = gecko_rsp_msg;
     } else {
         //fail
@@ -196,22 +196,11 @@ struct gecko_cmd_packet* gecko_wait_message(void) //wait for event from system
     }
     pck->header = header;
     payload = (uint8_t*)&pck->data.payload;
-    /**
-   * Read the payload data if required and store it after the header.
-   */
+
+   // Read the payload data if required and store it after the header.
     if (msg_length > 0) {
 
-        // printf("gecko_wait_message: uartRx body\n");
         ret = uartRx(msg_length, payload);
-        // printf("gecko_wait_message: uartRx body end\n");
-        // int tmp_i = 0;
-        // printf("body: ");
-        // for(;tmp_i < msg_length; tmp_i++)
-        // {
-        //     printf("%02x", payload[tmp_i]);
-        // }
-        // printf("\n");
-
         if (ret < 0) {
 			// log_err("recv fail\n");
             return 0;
@@ -234,12 +223,6 @@ int rx_peek_timeout(int ms)
     int timeout = ms*10;
     while (timeout) {
         timeout--;
-        // if (uartRxPeek() > 0) {
-		// 	if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
-		// 	{
-	    //         return 0;
-		// 	}
-        // }
         if (BGLIB_MSG_ID(gecko_cmd_msg->header) == BGLIB_MSG_ID(gecko_rsp_msg->header))
         {
             return 0;
@@ -279,6 +262,8 @@ void gecko_handle_command_noresponse(uint32_t hdr,void* data)
 /*
  *	module events report 
  */
+static silabs_msg_queue_t msg_data;
+static int msg_evt_len;
 void silabs_event_handler(struct gecko_cmd_packet *p)
 {
 	// printf("Event handler: 0x%04x\n", BGLIB_MSG_ID(evt->header));
@@ -295,147 +280,27 @@ void silabs_event_handler(struct gecko_cmd_packet *p)
         case gecko_evt_system_boot_id:
 		{
             appBooted = true;
-
-            gl_ble_module_data_t data;
-            data.system_boot_data.major = p->data.evt_system_boot.major;
-            data.system_boot_data.minor = p->data.evt_system_boot.minor;
-            data.system_boot_data.patch = p->data.evt_system_boot.patch;
-            data.system_boot_data.build = p->data.evt_system_boot.build;
-            data.system_boot_data.bootloader = p->data.evt_system_boot.bootloader;
-            data.system_boot_data.hw = p->data.evt_system_boot.hw;
-            hex2str((uint8*)&p->data.evt_system_boot.hash,sizeof(uint32),data.system_boot_data.ble_hash);
-
-            ble_msg_cb.ble_module_event(MODULE_BLE_SYSTEM_BOOT_EVT, &data);
-
-			break;
 		}
         case gecko_evt_le_connection_closed_id:
-		{
-            gl_ble_gap_data_t data;
-            data.disconnect_data.reason = p->data.evt_le_connection_closed.reason;
-            char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_closed.connection, tmp_address);
-			if(ret != 0)
-			{
-				log_err("get dev mac from dev-list failed!\n");
-				return;
-			}
-            str2addr(tmp_address, data.disconnect_data.address);
-            
-			// delete from dev-list
-			ble_dev_mgr_del(p->data.evt_le_connection_closed.connection);
-            ble_msg_cb.ble_gap_event(GAP_BLE_DISCONNECT_EVT, &data);
-			break;
-		}
         case gecko_evt_gatt_characteristic_value_id:
-		{
-            gl_ble_gatt_data_t data;
-            data.remote_characteristic_value.offset = p->data.evt_gatt_characteristic_value.offset;
-            data.remote_characteristic_value.att_opcode = p->data.evt_gatt_characteristic_value.att_opcode;
-            data.remote_characteristic_value.characteristic = p->data.evt_gatt_characteristic_value.characteristic;
-            hex2str(p->data.evt_gatt_characteristic_value.value.data,p->data.evt_gatt_characteristic_value.value.len,data.remote_characteristic_value.value);
-            
-            char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_characteristic_value.connection, tmp_address);
-			if(ret != 0)
-			{
-				log_err("get dev mac from dev-list failed!\n");
-				return;
-			}
-            str2addr(tmp_address, data.remote_characteristic_value.address);
-
-            ble_msg_cb.ble_gatt_event(GATT_REMOTE_CHARACTERISTIC_VALUE_EVT, &data);
-			break;
-		}
         case gecko_evt_gatt_server_attribute_value_id:
-		{
-            gl_ble_gatt_data_t data;
-            data.local_gatt_attribute.offset = p->data.evt_gatt_server_attribute_value.offset;
-            data.local_gatt_attribute.attribute = p->data.evt_gatt_server_attribute_value.attribute;
-            data.local_gatt_attribute.att_opcode = p->data.evt_gatt_server_attribute_value.att_opcode;
-            hex2str(p->data.evt_gatt_server_attribute_value.value.data,p->data.evt_gatt_server_attribute_value.value.len,data.local_gatt_attribute.value);
-			
-            char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_attribute_value.connection, tmp_address);
-			if(ret != 0)
-			{
-				log_err("get dev mac from dev-list failed!\n");
-				return;
-			}
-            str2addr(tmp_address, data.local_gatt_attribute.address);
-
-            ble_msg_cb.ble_gatt_event(GATT_LOCAL_GATT_ATT_EVT, &data);
-			break;
-		}
         case gecko_evt_gatt_server_characteristic_status_id:
-		{
-            gl_ble_gatt_data_t data;
-            data.local_characteristic_status.status_flags = p->data.evt_gatt_server_characteristic_status.status_flags;
-            data.local_characteristic_status.characteristic = p->data.evt_gatt_server_characteristic_status.characteristic;
-            data.local_characteristic_status.client_config_flags = p->data.evt_gatt_server_characteristic_status.client_config_flags;
-
-            char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_gatt_server_characteristic_status.connection, tmp_address);
-			if(ret != 0)
-			{
-				log_err("get dev mac from dev-list failed!\n");
-				return;
-			}
-            str2addr(tmp_address, data.local_characteristic_status.address);
-
-            ble_msg_cb.ble_gatt_event(GATT_LOCAL_CHARACTERISTIC_STATUS_EVT, &data);
-			break;
-		}
         case gecko_evt_le_gap_scan_response_id:
-		{
-            gl_ble_gap_data_t data;
-            data.scan_rst.rssi = p->data.evt_le_gap_scan_response.rssi;
-            data.scan_rst.bonding = p->data.evt_le_gap_scan_response.bonding;
-            data.scan_rst.packet_type = p->data.evt_le_gap_scan_response.packet_type;
-            data.scan_rst.ble_addr_type = p->data.evt_le_gap_scan_response.address_type;
-			hex2str(p->data.evt_le_gap_scan_response.data.data, p->data.evt_le_gap_scan_response.data.len,data.scan_rst.ble_adv);
-            memcpy(data.scan_rst.address, p->data.evt_le_gap_scan_response.address.addr, 6);
-
-            ble_msg_cb.ble_gap_event(GAP_BLE_SCAN_RESULT_EVT, &data);
-			break;
-		}
         case gecko_evt_le_connection_parameters_id:
-		{
-            gl_ble_gap_data_t data;
-            data.update_conn_data.txsize = p->data.evt_le_connection_parameters.txsize;
-            data.update_conn_data.latency = p->data.evt_le_connection_parameters.latency;
-            data.update_conn_data.timeout = p->data.evt_le_connection_parameters.timeout;
-            data.update_conn_data.interval = p->data.evt_le_connection_parameters.interval;
-            data.update_conn_data.security_mode = p->data.evt_le_connection_parameters.security_mode;
-
-            char tmp_address[MAC_STR_LEN] = {0};
-			uint16_t ret = ble_dev_mgr_get_address(p->data.evt_le_connection_parameters.connection, tmp_address);
-			if(ret != 0)
-			{
-				log_err("get dev mac from dev-list failed!\n");
-				return;
-			}
-            str2addr(tmp_address, data.update_conn_data.address);
-
-            ble_msg_cb.ble_gap_event(GAP_BLE_UPDATE_CONN_EVT, &data);
-			break;
-		}
         case gecko_evt_le_connection_opened_id:
 		{
-            char addr[MAC_STR_LEN] = {0};
-			addr2str(p->data.evt_le_connection_opened.address.addr,addr);
-			ble_dev_mgr_add(addr, p->data.evt_le_connection_opened.connection);
+            msg_data.msgtype = 1;
+            msg_evt_len = BGLIB_MSG_HEADER_LEN + BGLIB_MSG_LEN(p->header);
+            memcpy(&(msg_data.evt), p, msg_evt_len);
 
-            gl_ble_gap_data_t data;
-            data.connect_open_data.bonding = p->data.evt_le_connection_opened.bonding;
-            data.connect_open_data.conn_role = p->data.evt_le_connection_opened.master;
-            data.connect_open_data.advertiser = p->data.evt_le_connection_opened.advertiser;
-            data.connect_open_data.ble_addr_type = p->data.evt_le_connection_opened.address_type;
-            memcpy(data.connect_open_data.address, p->data.evt_le_connection_opened.address.addr, 6);
-
-            ble_msg_cb.ble_gap_event(GAP_BLE_CONNECT_EVT, &data);
+            // send evt msg to msg queue
+            if(-1 == msgsnd(evt_msqid, (void*)&msg_data, msg_evt_len, IPC_NOWAIT))
+            {
+                log_debug("silabs evt msgsnd error!  errno: %d\n", errno);
+            }
 			break;
 		}
+
 		case gecko_evt_gatt_service_id:
 		case gecko_evt_gatt_characteristic_id:
 		{

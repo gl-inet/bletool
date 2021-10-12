@@ -36,4 +36,7 @@ typedef struct {
 /*Initilize the hal*/
 int hal_init(void);
 
+int hal_destroy(void);
+
+
 #endif

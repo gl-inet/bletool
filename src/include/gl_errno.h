@@ -59,12 +59,12 @@ typedef enum gl_error {
 /**
  * @brief The generic "unknow error" message.
  */
-	GL_UNKNOW_ERR					= GL_ERR_BASE	+ 1, 			
+	GL_UNKNOW_ERR					= GL_ERR_BASE + 1, 			
 
 /**
  * @brief Response missing.
  */
-	GL_ERR_RESP_MISSING				= GL_ERR_BASE	+ 2, 			
+	GL_ERR_RESP_MISSING				= GL_ERR_BASE + 2, 			
 
 /**
  * @brief Event missing.
@@ -84,47 +84,13 @@ typedef enum gl_error {
 /**
  * @brief Param error.
  */	
-	GL_ERR_PARAM					= GL_ERR_BASE	+ 6, 			
+	GL_ERR_PARAM					= GL_ERR_BASE + 6, 			
 
 /**
- * @brief UBUS connect error.
- */
-	GL_ERR_UBUS_CONNECT				= GL_ERR_BASE	+ 20,            
-
-/**
- * @brief UBUS lookup ID error.
+ * @brief Invoking function in error mode.
  */	
-	GL_ERR_UBUS_LOOKUP				= GL_ERR_BASE	+ 21,			
+	GL_ERR_INVOKE					= GL_ERR_BASE + 7, 
 
-/**
- * @brief UBUS subscribe error.
- */	
-	GL_ERR_UBUS_SUBSCRIBE			= GL_ERR_BASE	+ 22,			
-
-/**
- * @brief UBUS invoke error.
- */	
-	GL_ERR_UBUS_INVOKE				= GL_ERR_BASE	+ 23,			
-
-/**
- * @brief UBUS register error.
- */	
-	GL_ERR_UBUS_REGISTER			= GL_ERR_BASE	+ 24,			
-
-/**
- * @brief UBUS CALL return error.
- */	
-	GL_ERR_UBUS_CALL_STR			= GL_ERR_BASE	+ 25,            
-
-/**
- * @brief UBUS return json parse error.
- */	
-	GL_ERR_UBUS_JSON_PARSE			= GL_ERR_BASE	+ 26,			
-
-/**
- * @brief UBUS unsubscribe error.
- */	
-	GL_ERR_UBUS_UNSUBSCRIBE			= GL_ERR_BASE	+ 27,			
 }errcode_t;
 
 #endif

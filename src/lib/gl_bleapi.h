@@ -37,9 +37,17 @@
 GL_RET gl_ble_init(void);
 
 /**
+ *  @brief  This function will destroy the ble thread and wait for thread resources to be received.
+ * 
+ *  @retval  GL-RETURN-CODE
+ */
+GL_RET gl_ble_destroy(void);
+
+
+/**
  *  @brief  This function will subscribe events generate from BLE module. 
  * 
- *  @warning  Note that it is a loop , it will continuously pass events to function callback.
+ *  @warning  Note that it will create a new thread(watcher) to get event. If you want to destroy watcher thread, please call gl_ble_unsubscribe().
  * 
  *  @param callback: This callback will be called when module receive a system boot, GAP and GATT event. 
  * 

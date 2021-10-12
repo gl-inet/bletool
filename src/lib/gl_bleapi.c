@@ -16,6 +16,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ******************************************************************************/
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <unistd.h>
+#include <errno.h>
+
 #include "gl_bleapi.h"
 #include "gl_dev_mgr.h"
 #include "gl_log.h"
@@ -23,10 +31,13 @@
 #include "gl_hal.h"
 #include "gl_methods.h"
 #include "gl_thread.h"
+#include "silabs_msg.h"
+#include "silabs_evt.h"
 
 gl_ble_cbs ble_msg_cb;
 
 static void create_module_thread(void);
+static void destroy_module_thread(void);
 
 static int32_t ble_gap_evt_default_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int32_t ble_gatt_evt_default_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data);
@@ -34,96 +45,144 @@ static int32_t ble_module_evt_default_cb(gl_ble_module_event_t event, gl_ble_mod
 
 /************************************************************************************************************************************/
 
-static void create_module_thread(void)
-{
-	thread_ctx_t* ctx = _thread_get_ctx();
+void *ble_driver_thread_ctx = NULL;
+void *ble_watcher_thread_ctx = NULL;
 
-    ctx->mutex = HAL_MutexCreate();
-    if (ctx->mutex == NULL) {
-        printf("Not Enough Memory");
-        return ;
-    }
+static int* msqid = NULL;
+static driver_param_t* _driver_param = NULL;
+static watcher_param_t* _watcher_param = NULL;
 
-    int ret;
-    ret = HAL_ThreadCreate(&ctx->g_dispatch_thread, ble_run, NULL, NULL, NULL);
-    if (ret != 0) {
-        printf("pthread_create failed!\n");
-        return ;
-    }
-}
-
+/************************************************************************************************************************************/
 GL_RET gl_ble_init(void)
 {
+	// err return if ble driver thread exist
+	if((NULL != _driver_param) || (NULL != ble_driver_thread_ctx))
+	{
+		return GL_ERR_INVOKE;
+	}
+
+	// init work thread param
+	_driver_param = (driver_param_t*)malloc(sizeof(driver_param_t));
+	
+	// create an event message queue if it not exist
+	if(NULL == msqid)
+	{
+		msqid = (int*)malloc(sizeof(int));
+		*msqid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+		if(*msqid == -1)
+		{
+			log_err("create msg queue error!!!\n");
+			return GL_UNKNOW_ERR;
+		}
+	}
+	_driver_param->evt_msgid = *msqid;
+
 	/* Init device manage */
 	ble_dev_mgr_init();
 	
-	// init callback
-	ble_msg_cb.ble_module_event = ble_module_evt_default_cb;
-	ble_msg_cb.ble_gap_event = ble_gap_evt_default_cb;
-	ble_msg_cb.ble_gatt_event = ble_gatt_evt_default_cb;
-
-	// turn off ble chip
-	log_debug("Reset ble chip!\n");
-	system(rstoff); 
-
 	// init hal
 	hal_init();
 
 	// create a thread to recv module message
-	create_module_thread();
+    int ret;
+    ret = HAL_ThreadCreate(&ble_driver_thread_ctx, ble_driver, _driver_param, NULL, NULL);
+    if (ret != 0) {
+        log_err("pthread_create ble_driver_thread_ctx failed!\n");
+		// free driver_param_t & driver ctx
+		free(_driver_param);
+		_driver_param = NULL;
+		ble_driver_thread_ctx = NULL;
 
-	system(rston); 
+		// close hal fd
+		hal_destroy();
+		
+		// destroy device list
+		ble_dev_mgr_destroy();
+        return GL_UNKNOW_ERR;
+    }
+
+	// reset ble module to make sure it is a usable mode
+	gl_ble_hard_reset();
+
+	return GL_SUCCESS;
+}
+
+GL_RET gl_ble_destroy(void)
+{
+	// close msg thread
+	HAL_ThreadDelete(ble_driver_thread_ctx);
+	ble_driver_thread_ctx = NULL;
+
+	// free driver_param_t
+	free(_driver_param);
+	_driver_param = NULL;
+
+	// close hal fd
+	hal_destroy();
+
+	// destroy device list
+	ble_dev_mgr_destroy();
+
+	// destroy evt msg queue
+	if(-1 == msgctl(*msqid, IPC_RMID, NULL))
+	{
+		log_err("msgctl error");
+		return GL_UNKNOW_ERR;
+	}
 
 	return GL_SUCCESS;
 }
 
 GL_RET gl_ble_subscribe(gl_ble_cbs *callback)
 {
-	if(NULL != callback->ble_module_event)
+	if(NULL == callback)
 	{
-		ble_msg_cb.ble_module_event = callback->ble_module_event;
+		return GL_ERR_PARAM;
 	}
 
-	if (NULL != callback->ble_gap_event)
+	// error return if watcher thread exist
+	if((NULL != _watcher_param) || (NULL != ble_watcher_thread_ctx))
 	{
-		ble_msg_cb.ble_gap_event = callback->ble_gap_event;
+		return GL_ERR_INVOKE;
 	}
 
-	if(NULL != callback->ble_gatt_event)
+	_watcher_param = (watcher_param_t*)malloc(sizeof(watcher_param_t));
+
+	// create an event message queue if it not exist
+	if(NULL == msqid)
 	{
-		ble_msg_cb.ble_gatt_event = callback->ble_gatt_event;
+		msqid = (int*)malloc(sizeof(int));
+		*msqid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+		if(*msqid == -1)
+		{
+			log_err("create msg queue error!!!\n");
+			return GL_UNKNOW_ERR;
+		}
 	}
+	_watcher_param->evt_msgid = *msqid;
+	_watcher_param->cbs = callback;
+
+    int ret;
+    ret = HAL_ThreadCreate(&ble_watcher_thread_ctx, ble_watcher, _watcher_param, NULL, NULL);
+    if (ret != 0) {
+        log_err("pthread_create failed!\n");
+		// free watcher_param_t
+		free(_watcher_param);
+		_watcher_param = NULL;
+        return ;
+    }
 
 	return GL_SUCCESS;
 
 }
 
-static int32_t ble_gap_evt_default_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
-{
-	/*          do nothing            */
-	log_debug("ble_gap_evt_default_cb\n");
-	return 0;
-}
-
-static int32_t ble_gatt_evt_default_cb(gl_ble_gatt_event_t event, gl_ble_gatt_data_t *data)
-{
-	/*          do nothing            */
-	log_debug("ble_gatt_evt_default_cb\n");
-	return 0;
-}
-
-static int32_t ble_module_evt_default_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data)
-{
-	/*          do nothing            */
-	log_debug("ble_module_evt_default_cb\n");
-	return 0;
-}
-
 GL_RET gl_ble_unsubscribe(void)
 {
-	ble_msg_cb.ble_gap_event = ble_gap_evt_default_cb;
-	ble_msg_cb.ble_gatt_event = ble_gatt_evt_default_cb;
-	ble_msg_cb.ble_module_event = ble_module_evt_default_cb;
+	HAL_ThreadDelete(ble_watcher_thread_ctx);
+
+	// free watcher_param_t
+	free(_watcher_param);
+	_watcher_param = NULL;
 
 	return GL_SUCCESS;
 }

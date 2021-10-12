@@ -18,6 +18,7 @@
  ******************************************************************************/
 #include <stdio.h>
 #include <stdint.h>
+#include <signal.h>
 
 #include "gl_errno.h"
 #include "gl_type.h"
@@ -26,6 +27,7 @@
 #include "gl_errno.h"
 #include "gl_common.h"
 
+static void sigal_hander(int sig);
 static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data);
 static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data);
 
@@ -44,6 +46,10 @@ int main(int argc, char *argv[])
 	ble_cb.ble_gatt_event = NULL;
 	ble_cb.ble_module_event = ble_module_cb;
 	gl_ble_subscribe(&ble_cb);
+
+	signal(SIGTERM, sigal_hander);
+	signal(SIGINT, sigal_hander);
+	signal(SIGQUIT, sigal_hander);
 
 	// wait for module reset
 	while(!module_work);
@@ -73,10 +79,16 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    while(1);
+	while(1)
+	{
+		sleep(1000);
+	}
 
 	return 0;
 }
+
+
+
 
 
 static int ble_gap_cb(gl_ble_gap_event_t event, gl_ble_gap_data_t *data)
@@ -123,4 +135,15 @@ static int ble_module_cb(gl_ble_module_event_t event, gl_ble_module_data_t *data
 		default:
 			break;
 	}
+}
+
+
+static void sigal_hander(int sig)
+{
+	printf("bleScanner exit!\n");
+
+	gl_ble_unsubscribe();
+	gl_ble_destroy();
+
+    exit(0);
 }
