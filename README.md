@@ -1,5 +1,7 @@
 # bletool
 
+**Note: This project has been replaced by https://github.com/gl-inet/gl-ble-sdk**
+
 BleTool is a software develop kit for Bluetooth Low Energy (BLE) in GL-iNET’s products. It provides a basic and simple method for developers to operate all the BLE functions. 
 Different from BlueZ which includes the full Bluetooth protocol stack in the host system, bletool is a light weight tool to operate hostless BLE modules which has fully built-in protocol stack. The module can fully operate on itself rather than depending on the host system.
 To use BleTool, you need to have one of the following devices.
