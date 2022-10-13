@@ -6,14 +6,14 @@ BleTool is a software develop kit for Bluetooth Low Energy (BLE) in GL-iNET’s 
 Different from BlueZ which includes the full Bluetooth protocol stack in the host system, bletool is a light weight tool to operate hostless BLE modules which has fully built-in protocol stack. The module can fully operate on itself rather than depending on the host system.
 To use BleTool, you need to have one of the following devices.
 
-- GL-S1300 (Convexa-S): Smarthome gateway with beamforming Wi-Fi
-- GL-X750 (Spitz): LTE IoT gateway
-- GL-XE300 (MEET PULI): Portable 4G LTE WiFi Hotspot with Security Features
-- GL-MT300N-V2: (Mini Smart Router): Converting a public network (wired/wireless) to a private Wi-Fi for secure surfing.
-- Gl-E750 (MEET MUDI): 4G LTE Privacy Router for Road Warriors
-- GL-X300B (MEET COLLIE): 4G LTE Industrial Wireless Gateway
-- GL-AP1300 (MEET CIRRUS): Enterprise Ceiling Wireless Access Point
-- GL-B2200 (Velica): Whole home mesh system and gateway
+- GL-S1300 (Convexa-S): Build-in BLE
+- GL-X750 (Spitz): Please choose BLE version
+- GL-XE300 (MEET PULI): Pls choose BLE version
+- GL-MT300N-V2: (Mini Smart Router): The router does come with BLE. Only customized version with BLE is supported.
+- Gl-E750 (MEET MUDI): Pls choose BLE version
+- GL-X300B (MEET COLLIE): Pls choose IoT (BLE) version
+- GL-AP1300 (MEET CIRRUS): Pls choose BLE version
+- GL-B2200 (Velica): Build-in BLE
 
 You can also use BleTool if you use Silconlabs EFR32 BLE modules which use UART/SPI to connect to your host Linux.
 
