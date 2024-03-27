@@ -16,76 +16,93 @@
 
 
 hw_cfg_t X750_BLE_HW_CFG = {                                         
-    "x750",      // model name                                     
-    "/dev/ttyS0", // serial port name                              
+    "x750",         // model name                                     
+    "/dev/ttyS0",   // serial port name                              
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    1,              // RTS IO                                      
+    1,              // RTS IO   
+    0xff,           // DFU IO                         
 };
 
 hw_cfg_t S1300_BLE_HW_CFG = {                                        
-    "s1300",      // model name                                    
+    "s1300",        // model name                                    
     "/dev/ttyMSM1", // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    48,              // RTS IO                                      
+    48,             // RTS IO  
+    0xff,           // DFU IO                           
 };
 
 hw_cfg_t XE300_BLE_HW_CFG = {                                      
-    "xe300",      // model name                                  
-    "/dev/ttyS0", // serial port name                            
+    "xe300",        // model name                                  
+    "/dev/ttyS0",   // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    14,              // RTS IO                                      
+    14,             // RTS IO            
+    0xff,           // DFU IO                 
 };
 
 hw_cfg_t MT300N_V2_BLE_HW_CFG = {                                                                    
-    "mt300n-v2",      // model name                                  
-    "/dev/ttyS1", // serial port name                            
+    "mt300n-v2",    // model name                                  
+    "/dev/ttyS1",   // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    5,              // RTS IO                                      
+    5,              // RTS IO       
+    0xff,           // DFU IO                      
 };
 
 hw_cfg_t E750_BLE_HW_CFG = {                                        
-    "e750",      // model name                                    
+    "e750",         // model name                                    
     "/dev/ttyUSB0", // serial port name                           
     115200,         // baud rate (bits/second)                    
     0,              // true enables RTS/CTS flow control          
     1,              // rst trigger: 1 means high, 0 means low     
-    17,              // RTS IO                                    
+    17,             // RTS IO      
+    0xff,           // DFU IO                    
 };
 
 hw_cfg_t X300B_BLE_HW_CFG = {                                                                    
-    "x300b",      // model name                                  
-    "/dev/ttyS0", // serial port name                            
+    "x300b",        // model name                                  
+    "/dev/ttyS0",   // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    13,              // RTS IO                                      
+    13,             // RTS IO       
+    0xff,           // DFU IO                     
 };
 
 hw_cfg_t AP1300_BLE_HW_CFG = {                                                                    
-    "ap1300",      // model name                                  
+    "ap1300",       // model name                                  
     "/dev/ttyUSB0", // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    62,              // RTS IO                                      
+    62,             // RTS IO    
+    0xff,           // DFU IO                        
 };
 
 hw_cfg_t B2200_BLE_HW_CFG = {                                                                    
-    "b2200",      // model name                                  
-    "/dev/ttyHS0", // serial port name                            
+    "b2200",        // model name                                  
+    "/dev/ttyHS0",  // serial port name                            
     115200,         // baud rate (bits/second)                     
     0,              // true enables RTS/CTS flow control           
     1,              // rst trigger: 1 means high, 0 means low      
-    43,              // RTS IO                                      
+    43,             // RTS IO      
+    0xff,           // DFU IO                      
 };
 
+hw_cfg_t S200_BLE_HW_CFG = {                                                                    
+    "s200",                 // model name                                  
+    "/dev/ttyCH343USB1",    // serial port name                            
+    115200,                 // baud rate (bits/second)                     
+    0,                      // true enables RTS/CTS flow control           
+    1,                      // rst trigger: 1 means high, 0 means low      
+    1,                      // RTS IO          
+    11,                     // DFU IO                                 
+};
 
 #endif

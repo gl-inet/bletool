@@ -160,9 +160,12 @@ static GL_RET get_model_hw_cfg(void)
 
     if(guci2_get(ctx,"glconfig.general.model",model) < 0)
     {
-		guci2_free(ctx);
-        log_err("serial config missing.\n");
-        return -1;
+		if(guci2_get(ctx,"gl_ble_hw.model",model) < 0)
+		{
+			guci2_free(ctx);
+			log_err("serial config missing.\n");
+			return -1;
+		}
     }
 
 	guci2_free(ctx);
@@ -203,6 +206,9 @@ static GL_RET get_model_hw_cfg(void)
 
 	}else if(0 == strcmp(model, "e750")){
 		ble_hw_cfg = &E750_BLE_HW_CFG;
+
+	}else if(0 == strcmp(model, "s200")){
+		ble_hw_cfg = &S200_BLE_HW_CFG;
 
 	}else{
 		log_err("Unknow model!\n");
